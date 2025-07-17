@@ -1,25 +1,132 @@
-import axiosClient from "./fetch";
+// Import từ file API đơn giản
+import {
+  getEmployees,
+  getCurrentEmployee,
+  getSuppliers,
+  getProducts,
+  getProductsBySupplier,
+  getProductDetails,
+  getPurchaseOrders,
+  createPurchaseOrder,
+  getPurchaseOrderById,
+  updatePurchaseOrderStatus,
+  getAvailablePurchaseOrders,
+  getPurchaseOrderForReceipt,
+  getGoodsReceipts,
+  createGoodsReceipt,
+  getGoodsReceiptById,
+  updateInventoryAfterReceipt,
+  getColors,
+  getSizes,
+  getPurchaseOrderStatuses,
+} from "./api";
+
+// ===================
+// EMPLOYEE SERVICES
+// ===================
 
 // Lấy danh sách nhân viên
-export const getEmployees = async () => {
-  const res = await axiosClient.get("/employees");
-  return res.data;
-};
+export { getEmployees };
 
 // Lấy thông tin nhân viên hiện tại
-export const getCurrentEmployee = async () => {
-  const res = await axiosClient.get("/auth/profile");
-  return res.data;
-};
+export { getCurrentEmployee };
+
+// ===================
+// BASIC DATA SERVICES
+// ===================
 
 // Lấy danh sách màu sắc
-export const getColors = async () => {
-  const res = await axiosClient.get("/colors");
-  return res.data;
-};
+export { getColors };
 
-// Lấy danh sách kích thước  
-export const getSizes = async () => {
-  const res = await axiosClient.get("/sizes");
-  return res.data;
+// Lấy danh sách kích thước
+export { getSizes };
+
+// Lấy danh sách nhà cung cấp
+export { getSuppliers };
+
+// Lấy danh sách trạng thái đặt hàng
+export { getPurchaseOrderStatuses };
+
+// ===================
+// PRODUCT SERVICES
+// ===================
+
+// Lấy danh sách sản phẩm chi tiết (có size, màu)
+export { getProductDetails };
+
+// Lấy sản phẩm theo nhà cung cấp
+export { getProductsBySupplier };
+
+// ===================
+// PURCHASE ORDER SERVICES
+// ===================
+
+// Tạo phiếu đặt hàng mới
+export { createPurchaseOrder };
+
+// Lấy danh sách phiếu đặt hàng
+export { getPurchaseOrders };
+
+// Lấy chi tiết phiếu đặt hàng
+export { getPurchaseOrderById };
+
+// Cập nhật trạng thái phiếu đặt hàng
+export { updatePurchaseOrderStatus };
+
+// Lấy danh sách phiếu đặt hàng có thể tạo phiếu nhập
+export { getAvailablePurchaseOrders };
+
+// Lấy chi tiết phiếu đặt hàng để tạo phiếu nhập
+export { getPurchaseOrderForReceipt };
+
+// ===================
+// GOODS RECEIPT SERVICES
+// ===================
+
+// Tạo phiếu nhập hàng mới
+export { createGoodsReceipt };
+
+// Lấy danh sách phiếu nhập hàng
+export { getGoodsReceipts };
+
+// Lấy chi tiết phiếu nhập hàng
+export { getGoodsReceiptById };
+
+// Cập nhật số lượng tồn kho sau khi nhập hàng
+export { updateInventoryAfterReceipt };
+
+// ===================
+// EXPORT TẤT CẢ SERVICES
+// ===================
+
+// Export default object cho tiện sử dụng
+export default {
+  // Employee
+  getEmployees,
+  getCurrentEmployee,
+  
+  // Basic Data
+  getColors,
+  getSizes,
+  getSuppliers,
+  getPurchaseOrderStatuses,
+  
+  // Product
+  getProducts,
+  getProductsBySupplier,
+  getProductDetails,
+  
+  // Purchase Order
+  getPurchaseOrders,
+  createPurchaseOrder,
+  getPurchaseOrderById,
+  updatePurchaseOrderStatus,
+  getAvailablePurchaseOrders,
+  getPurchaseOrderForReceipt,
+  
+  // Goods Receipt
+  getGoodsReceipts,
+  createGoodsReceipt,
+  getGoodsReceiptById,
+  updateInventoryAfterReceipt,
 }; 
