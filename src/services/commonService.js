@@ -6,6 +6,7 @@ import {
   getProducts,
   getProductsBySupplier,
   getProductDetails,
+  getProductColorsSizes,
   getPurchaseOrders,
   createPurchaseOrder,
   getPurchaseOrderById,
@@ -53,6 +54,9 @@ export { getPurchaseOrderStatuses };
 
 // Lấy danh sách sản phẩm chi tiết (có size, màu)
 export { getProductDetails };
+
+// Lấy màu và kích thước theo sản phẩm
+export { getProductColorsSizes };
 
 // Lấy sản phẩm theo nhà cung cấp
 export { getProductsBySupplier };
@@ -115,6 +119,7 @@ export default {
   getProducts,
   getProductsBySupplier,
   getProductDetails,
+  getProductColorsSizes,
   
   // Purchase Order
   getPurchaseOrders,

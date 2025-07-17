@@ -1,8 +1,8 @@
 export interface PurchaseOrderItem {
-  productId: string;
+  MaSP: string;
   productName: string;
-  selectedColor: string;
-  selectedSize: string;
+  MaMau: number | "";
+  MaKichThuoc: number | "";
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -36,6 +36,22 @@ export interface Product {
   price: number;
   description?: string;
   category?: string;
+}
+
+export interface Color {
+  MaMau: number;
+  TenMau: string;
+  MaHex?: string;
+}
+
+export interface Size {
+  MaKichThuoc: number;
+  TenKichThuoc: string;
+}
+
+export interface ProductColorSize {
+  colors: Color[];
+  sizes: Size[];
 }
 
 export interface POForm {
