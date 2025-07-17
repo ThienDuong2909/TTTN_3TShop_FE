@@ -12,6 +12,7 @@ import {
   X,
   Star,
 } from "lucide-react";
+import AdminHeader from "../components/AdminHeader";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import {
@@ -309,8 +310,12 @@ export default function ProductManagement() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="space-y-6">
+    <div>
+      <AdminHeader title="Quản lý sản phẩm" />
+
+      <main className="py-8">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -509,7 +514,9 @@ export default function ProductManagement() {
             <ProductForm isEdit />
           </DialogContent>
         </Dialog>
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

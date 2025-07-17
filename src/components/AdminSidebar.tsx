@@ -31,24 +31,28 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       id: "overview",
       icon: BarChart3,
       permission: "all",
+      route: "/admin",
     },
     {
       name: "Sản phẩm",
       id: "products",
       icon: Package,
       permission: "view_products",
+      route: "/admin/products",
     },
     {
       name: "Đơn hàng",
       id: "orders",
       icon: ShoppingCart,
       permission: "view_orders",
+      route: "/admin/orders",
     },
     {
       name: "Khách hàng",
       id: "customers",
       icon: Users,
       permission: "view_customers",
+      route: "/admin/customers",
     },
     {
       name: "Phiếu đặt hàng",
@@ -71,12 +75,14 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       icon: Truck,
       permission: "view_suppliers",
       adminOnly: true,
+      route: "/admin/suppliers",
     },
     {
       name: "Hóa đơn",
       id: "invoices",
       icon: FileText,
       permission: "view_invoices",
+      route: "/admin/invoices",
     },
     {
       name: "Giảm giá",
@@ -84,12 +90,14 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       icon: Tags,
       permission: "manage_discounts",
       adminOnly: true,
+      route: "/admin/discounts",
     },
     {
       name: "Bình luận",
       id: "reviews",
       icon: MessageSquare,
       permission: "manage_reviews",
+      route: "/admin/reviews",
     },
     {
       name: "Nhân viên",
@@ -97,6 +105,7 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       icon: UserCheck,
       permission: "manage_staff",
       adminOnly: true,
+      route: "/admin/staff",
     },
     {
       name: "Bộ phận",
@@ -104,6 +113,7 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       icon: Building2,
       permission: "manage_departments",
       adminOnly: true,
+      route: "/admin/departments",
     },
   ];
 
@@ -115,11 +125,7 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
   });
 
   const handleItemClick = (item: typeof navigation[0]) => {
-    if (item.route) {
-      navigate(item.route);
-    } else {
-      setActiveTab(item.id);
-    }
+    navigate(item.route);
   };
 
   return (
