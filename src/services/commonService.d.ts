@@ -7,6 +7,7 @@ export function getSuppliers(): Promise<any[]>;
 export function getEmployees(): Promise<any[]>;
 export function getPurchaseOrderStatuses(): Promise<any[]>;
 export function getProductDetails(): Promise<any[]>;
+export function getProductColorsSizes(productId: string): Promise<any>;
 
 // Goods Receipt functions
 export function getGoodsReceipts(): Promise<any[]>;
@@ -30,6 +31,7 @@ declare const commonService: {
   getEmployees(): Promise<any[]>;
   getPurchaseOrderStatuses(): Promise<any[]>;
   getProductDetails(): Promise<any[]>;
+  getProductColorsSizes(productId: string): Promise<any>;
   getGoodsReceipts(): Promise<any[]>;
   createGoodsReceipt(data: any): Promise<any>;
   getGoodsReceiptById(id: string): Promise<any>;

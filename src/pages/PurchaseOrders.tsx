@@ -52,6 +52,8 @@ export default function PurchaseOrders() {
     setSelectedPO,
   } = usePurchaseOrderData(state.user.id);
 
+  console.log("purchaseOrders", purchaseOrders);
+
   const {
     poForm,
     setPOForm,

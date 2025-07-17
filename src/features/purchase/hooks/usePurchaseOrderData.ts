@@ -23,10 +23,10 @@ const transformPurchaseOrderFromAPI = (apiPO: any): PurchaseOrder => ({
   supplierId: apiPO.MaNCC,
   supplierName: apiPO.TenNCC || apiPO.MaNCC,
   items: (apiPO.details || []).map((item: any) => ({
-    productId: item.MaCTSP,
+    MaSP: item.MaCTSP,
     productName: item.TenSP || item.MaCTSP,
-    selectedColor: item.MauSac || "#000000",
-    selectedSize: item.KichThuoc || "",
+    MaMau: item.MaMau || "",
+    MaKichThuoc: item.MaKichThuoc || "",
     quantity: item.SoLuong || 0,
     unitPrice: item.DonGia || 0,
     totalPrice: item.ThanhTien || (item.SoLuong * item.DonGia) || 0,
@@ -49,7 +49,7 @@ const transformSupplierFromAPI = (apiSupplier: any): Supplier => ({
 });
 
 const transformProductFromAPI = (apiProduct: any): Product => ({
-  id: apiProduct.MaCTSP,
+  id: apiProduct.MaSP,
   name: apiProduct.TenSP || apiProduct.MaCTSP,
   price: apiProduct.DonGia || 0,
   description: apiProduct.MoTa || "",
@@ -64,16 +64,6 @@ const getStatusFromTrangThai = (maTrangThai: number): PurchaseOrder["status"] =>
     case 3: return "confirmed";
     case 4: return "completed";
     default: return "draft";
-  }
-};
-
-const getTrangThaiFromStatus = (status: PurchaseOrder["status"]): number => {
-  switch (status) {
-    case "draft": return 1;
-    case "sent": return 2;
-    case "confirmed": return 3;
-    case "completed": return 4;
-    default: return 1;
   }
 };
 
@@ -134,7 +124,7 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         totalValue,
         monthlyOrders,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading purchase orders:", error);
       toast({
         title: "Lỗi tải dữ liệu",
@@ -148,15 +138,36 @@ export const usePurchaseOrderData = (currentUserId: string) => {
 
   // Load suppliers
   const loadSuppliers = async () => {
+    console.log("loadSuppliers called");
     setLoading(prev => ({ ...prev, suppliers: true }));
     
     try {
+      console.log("Calling getSuppliers API...");
       const response = await getSuppliers();
-      const supplierData = Array.isArray(response) ? response : [];
-      const transformedSuppliers = supplierData.map(transformSupplierFromAPI);
-      setSuppliers(transformedSuppliers);
-    } catch (error) {
+      
+      // Try to handle different response formats
+      let supplierData: any[] = [];
+      if (Array.isArray(response)) {
+        supplierData = response;
+      } else if (response && Array.isArray((response as any).data)) {
+        supplierData = (response as any).data;
+      } else if (response && typeof response === 'object') {
+        // If response is an object, try to find array in common properties
+        const responseObj = response as any;
+        supplierData = responseObj.suppliers || responseObj.items || responseObj.result || [];
+      }
+      
+      if (supplierData.length > 0) {
+        const transformedSuppliers = supplierData.map(transformSupplierFromAPI);
+        console.log("Transformed suppliers:", transformedSuppliers);
+        setSuppliers(transformedSuppliers);
+      } else {
+        console.log("No suppliers found or empty array");
+        setSuppliers([]);
+      }
+    } catch (error: any) {
       console.error("Error loading suppliers:", error);
+      setSuppliers([]);
       toast({
         title: "Lỗi tải nhà cung cấp",
         description: "Không thể tải danh sách nhà cung cấp",
@@ -169,15 +180,36 @@ export const usePurchaseOrderData = (currentUserId: string) => {
 
   // Load products
   const loadProducts = async () => {
+    console.log("loadProducts called");
     setLoading(prev => ({ ...prev, products: true }));
     
     try {
+      console.log("Calling getProductDetails API...");
       const response = await getProductDetails();
-      const productData = Array.isArray(response) ? response : [];
-      const transformedProducts = productData.map(transformProductFromAPI);
-      setProducts(transformedProducts);
-    } catch (error) {
+      
+      // Try to handle different response formats
+      let productData: any[] = [];
+      if (Array.isArray(response)) {
+        productData = response;
+      } else if (response && Array.isArray((response as any).data)) {
+        productData = (response as any).data;
+      } else if (response && typeof response === 'object') {
+        // If response is an object, try to find array in common properties
+        const responseObj = response as any;
+        productData = responseObj.products || responseObj.items || responseObj.result || responseObj.productDetails || [];
+      }
+      
+      
+      if (productData.length > 0) {
+        const transformedProducts = productData.map(transformProductFromAPI);
+        setProducts(transformedProducts);
+      } else {
+        console.log("No products found or empty array");
+        setProducts([]);
+      }
+    } catch (error: any) {
       console.error("Error loading products:", error);
+      setProducts([]);
       toast({
         title: "Lỗi tải sản phẩm",
         description: "Không thể tải danh sách sản phẩm",
@@ -202,6 +234,10 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     setLoading(prev => ({ ...prev, creating: true }));
     
     try {
+      console.log("Creating purchase order with form data:", poForm);
+      console.log("Current user ID:", currentUserId);
+      console.log("Available suppliers:", suppliers);
+      
       const supplier = suppliers.find(s => s.id === poForm.supplierId);
       if (!supplier) {
         throw new Error("Không tìm thấy nhà cung cấp");
@@ -211,19 +247,31 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       const apiData = {
         MaPDH: `PO${Date.now()}`, // Generate unique ID
         NgayDat: new Date().toISOString().split('T')[0],
-        MaNV: currentUserId,
+        // MaNV: currentUserId,
+        MaNV: 1,
         MaNCC: poForm.supplierId,
         MaTrangThai: 1, // Draft status
         GhiChu: poForm.notes || "",
         details: poForm.items.map(item => ({
-          MaCTSP: item.productId,
+          MaCTSP: item.MaSP,
+          MaMau: item.MaMau,
+          MaKichThuoc: item.MaKichThuoc,
           SoLuong: item.quantity,
           DonGia: item.unitPrice,
           ThanhTien: item.quantity * item.unitPrice,
         })),
       };
 
-      await createPurchaseOrderAPI(apiData);
+      console.log("Sending API data:", apiData);
+      const token = localStorage.getItem("token");
+      console.log("Token exists:", !!token);
+      console.log("Token preview:", token ? `${token.substring(0, 20)}...` : "null");
+      console.log("API URL:", (import.meta as any).env?.VITE_API_URL);
+
+      console.log("=== CALLING createPurchaseOrderAPI ===");
+      const result = await createPurchaseOrderAPI(apiData);
+      console.log("=== API CALL SUCCESS ===");
+      console.log("Result:", result);
       
       toast({
         title: "Thành công",
@@ -234,11 +282,28 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       await loadPurchaseOrders();
       
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating purchase order:", error);
+      console.error("Error details:", {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      
+      let errorMessage = "Không thể tạo phiếu đặt hàng";
+      
+      if (error.response?.status === 401) {
+        errorMessage = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+      } else if (error.response?.status === 403) {
+        errorMessage = "Bạn không có quyền tạo phiếu đặt hàng.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
       toast({
         title: "Lỗi tạo phiếu đặt hàng",
-        description: "Không thể tạo phiếu đặt hàng",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -260,7 +325,7 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       });
       
       await loadPurchaseOrders();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending purchase order:", error);
       toast({
         title: "Lỗi gửi phiếu đặt hàng",
@@ -285,7 +350,7 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       });
       
       await loadPurchaseOrders();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error confirming purchase order:", error);
       toast({
         title: "Lỗi xác nhận phiếu đặt hàng",
@@ -317,7 +382,7 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         title: "Dữ liệu đã được cập nhật",
         description: "Tất cả dữ liệu đã được tải lại thành công",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error refreshing data:", error);
     } finally {
       setLoading(prev => ({ ...prev, refreshing: false }));

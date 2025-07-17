@@ -49,6 +49,7 @@ export const getCurrentEmployee = async () => {
 export const getSuppliers = async () => {
   try {
     const response = await api.get("/suppliers");
+    console.log(response.data);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -93,6 +94,18 @@ export const getProductsBySupplier = async (supplierId) => {
 export const getProductDetails = async () => {
   try {
     const response = await api.get("/product-details");
+    console.log("getProductDetails response:", response.data);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Lấy màu và kích thước theo sản phẩm
+export const getProductColorsSizes = async (productId) => {
+  try {
+    const response = await api.get(`/products/${productId}/colors-sizes`);
+    console.log("getProductColorsSizes response:", response.data);
     return response.data;
   } catch (error) {
     handleError(error);
