@@ -13,6 +13,7 @@ import {
   FileSpreadsheet,
   Edit,
 } from "lucide-react";
+import AdminHeader from "../components/AdminHeader";
 import * as XLSX from "xlsx";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -799,18 +800,14 @@ export default function GoodsReceipt() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="space-y-6">
+    <div>
+      <AdminHeader title="Quản lý phiếu nhập hàng" />
+
+      <main className="py-8">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Quản lý phiếu nhập hàng
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              Xác nhận và quản lý việc nhập hàng vào kho
-            </p>
-          </div>
+        <div className="flex justify-end items-center">
           <Dialog open={isCreateGROpen} onOpenChange={setIsCreateGROpen}>
             <DialogTrigger asChild>
               <Button className="bg-brand-600 hover:bg-brand-700">
@@ -948,7 +945,9 @@ export default function GoodsReceipt() {
             </Table>
           </CardContent>
         </Card>
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

@@ -11,21 +11,48 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [activeTab, setActiveTab] = useState(() => {
     // Determine active tab based on current route
     const path = location.pathname;
+    if (path.includes("/admin/dashboard")) return "overview";
+    if (path.includes("/admin/products")) return "products";
+    if (path.includes("/admin/orders")) return "orders";
+    if (path.includes("/admin/customers")) return "customers";
     if (path.includes("/admin/purchase-orders")) return "purchase-orders";
     if (path.includes("/admin/goods-receipt")) return "goods-receipt";
-    if (path.includes("/admin/products")) return "products";
+    if (path.includes("/admin/suppliers")) return "suppliers";
+    if (path.includes("/admin/invoices")) return "invoices";
+    if (path.includes("/admin/discounts")) return "discounts";
+    if (path.includes("/admin/reviews")) return "reviews";
+    if (path.includes("/admin/staff")) return "staff";
+    if (path.includes("/admin/departments")) return "departments";
     return "overview";
   });
 
   // Update active tab when route changes
   useEffect(() => {
     const path = location.pathname;
-    if (path.includes("/admin/purchase-orders")) {
+    if (path.includes("/admin/dashboard")) {
+      setActiveTab("overview");
+    } else if (path.includes("/admin/products")) {
+      setActiveTab("products");
+    } else if (path.includes("/admin/orders")) {
+      setActiveTab("orders");
+    } else if (path.includes("/admin/customers")) {
+      setActiveTab("customers");
+    } else if (path.includes("/admin/purchase-orders")) {
       setActiveTab("purchase-orders");
     } else if (path.includes("/admin/goods-receipt")) {
       setActiveTab("goods-receipt");
-    } else if (path.includes("/admin/products")) {
-      setActiveTab("products");
+    } else if (path.includes("/admin/suppliers")) {
+      setActiveTab("suppliers");
+    } else if (path.includes("/admin/invoices")) {
+      setActiveTab("invoices");
+    } else if (path.includes("/admin/discounts")) {
+      setActiveTab("discounts");
+    } else if (path.includes("/admin/reviews")) {
+      setActiveTab("reviews");
+    } else if (path.includes("/admin/staff")) {
+      setActiveTab("staff");
+    } else if (path.includes("/admin/departments")) {
+      setActiveTab("departments");
     } else {
       setActiveTab("overview");
     }

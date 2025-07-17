@@ -16,6 +16,7 @@ import {
   Save,
   X,
 } from "lucide-react";
+import AdminHeader from "../components/AdminHeader";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import {
@@ -422,18 +423,14 @@ export default function PurchaseOrders() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="space-y-6">
+    <div>
+      <AdminHeader title="Quản lý phiếu đặt hàng" />
+
+      <main className="py-8">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Quản lý phiếu đặt hàng
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              Tạo và quản lý phiếu đặt hàng với nhà cung cấp
-            </p>
-          </div>
+        <div className="flex justify-end items-center">
           <Dialog open={isCreatePOOpen} onOpenChange={setIsCreatePOOpen}>
             <DialogTrigger asChild>
               <Button className="bg-brand-600 hover:bg-brand-700">
@@ -679,7 +676,9 @@ export default function PurchaseOrders() {
             )}
           </DialogContent>
         </Dialog>
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

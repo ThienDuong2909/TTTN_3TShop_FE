@@ -26,6 +26,14 @@ import AdminDashboard from './pages/AdminDashboard';
 import ProductManagement from './pages/ProductManagement';
 import PurchaseOrders from './pages/PurchaseOrders';
 import GoodsReceipt from './pages/GoodsReceipt';
+import Orders from './pages/Orders';
+import Customers from './pages/Customers';
+import Suppliers from './pages/Suppliers';
+import Invoices from './pages/Invoices';
+import Discounts from './pages/Discounts';
+import Reviews from './pages/Reviews';
+import Staff from './pages/Staff';
+import Departments from './pages/Departments';
 import AdminLayout from './layouts/AdminLayout';
 
 // Wrapper component for main layout
@@ -79,6 +87,62 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AdminLayout>
                 <GoodsReceipt />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/orders" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <Orders />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/customers" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <Customers />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/suppliers" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <Suppliers />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/invoices" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <Invoices />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/discounts" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <Discounts />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/reviews" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <Reviews />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/staff" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <Staff />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/departments" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <Departments />
               </AdminLayout>
             </ProtectedRoute>
           } />

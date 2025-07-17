@@ -26,7 +26,7 @@ export default function AdminHeader({
           {showBackButton && (
             <Link
               to={backLink}
-              className="text-sm text-muted-foreground hover:text-brand-600"
+              className="text-sm text-muted-foreground hover:text-brand-600 flex items-center"
             >
               ← Về trang chủ
             </Link>
