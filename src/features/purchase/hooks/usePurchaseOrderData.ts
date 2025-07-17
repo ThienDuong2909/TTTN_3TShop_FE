@@ -247,7 +247,8 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       const apiData = {
         MaPDH: `PO${Date.now()}`, // Generate unique ID
         NgayDat: new Date().toISOString().split('T')[0],
-        MaNV: currentUserId,
+        // MaNV: currentUserId,
+        MaNV: 1,
         MaNCC: poForm.supplierId,
         MaTrangThai: 1, // Draft status
         GhiChu: poForm.notes || "",

@@ -15,6 +15,9 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // TẠM THỜI BYPASS AUTHENTICATION CHO TEST
+  // Thêm một token dummy hoặc comment out để test
+  // config.headers.Authorization = `Bearer dummy-token-for-testing`;
   return config;
 });
 
@@ -39,14 +42,11 @@ api.interceptors.response.use(
       console.error("Full error:", error);
       console.error("=== END DEBUG ===");
       
-      // TẠM THỜI COMMENT OUT REDIRECT ĐỂ DEBUG
       // setTimeout(() => {
       //   localStorage.removeItem("token");
       //   window.location.href = "/login";
       // }, 2000);
       
-      // Thay vào đó, chỉ alert để debug
-      alert("Lỗi 401 - Kiểm tra console để xem chi tiết!");
     }
     
     return Promise.reject(error);
