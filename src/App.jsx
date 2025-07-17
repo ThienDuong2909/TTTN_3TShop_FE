@@ -26,6 +26,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ProductManagement from './pages/ProductManagement';
 import PurchaseOrders from './pages/PurchaseOrders';
 import GoodsReceipt from './pages/GoodsReceipt';
+import AdminLayout from './layouts/AdminLayout';
 
 // Wrapper component for main layout
 const MainLayout = ({ children }) => (
@@ -38,66 +39,48 @@ const MainLayout = ({ children }) => (
   </div>
 );
 
-// Admin layout - chỉ content với navbar đơn giản
-const AdminLayout = ({ children }) => {
-  const { setUser } = useApp();
-  const navigate = useNavigate();
-  
-  const handleLogout = () => {
-    setUser(null);
-    navigate('/');
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">  
-      {/* Content */}
-      <main>
-        {children}
-      </main>
-    </div>
-  );
-};
+// Admin layout wrapper - removed inline AdminLayout as we now have a separate component
 
 function App() {
   return (
     <ThemeProvider>
       <AppProvider>
         <Routes>
-          {/* Admin Routes - Sử dụng AdminLayout không có header */}
+          {/* Admin Routes - Sử dụng AdminLayout với sidebar */}
           <Route path="/admin" element={
-            <AdminLayout>
-              <ProtectedRoute requireAdmin>
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
                 <AdminDashboard />
-              </ProtectedRoute>
-            </AdminLayout>
+              </AdminLayout>
+            </ProtectedRoute>
           } />
           <Route path="/admin/dashboard" element={
-            <AdminLayout>
-              <ProtectedRoute requireAdmin>
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
                 <AdminDashboard />
-              </ProtectedRoute>
-            </AdminLayout>
+              </AdminLayout>
+            </ProtectedRoute>
           } />
           <Route path="/admin/products" element={
-            <AdminLayout>
-              <ProtectedRoute requireAdmin>
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
                 <ProductManagement />
-              </ProtectedRoute>
-            </AdminLayout>
+              </AdminLayout>
+            </ProtectedRoute>
           } />
           <Route path="/admin/purchase-orders" element={
-            <AdminLayout>
-              <ProtectedRoute requireAdmin>
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
                 <PurchaseOrders />
-              </ProtectedRoute>
-            </AdminLayout>
+              </AdminLayout>
+            </ProtectedRoute>
           } />
           <Route path="/admin/goods-receipt" element={
-            <AdminLayout>
-              <ProtectedRoute requireAdmin>
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
                 <GoodsReceipt />
-              </ProtectedRoute>
-            </AdminLayout>
+              </AdminLayout>
+            </ProtectedRoute>
           } />
 
           {/* Public Routes */}

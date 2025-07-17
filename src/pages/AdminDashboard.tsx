@@ -594,16 +594,11 @@ export default function AdminDashboard() {
           <div className="text-center py-20">
             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Chuyển hướng đến trang quản lý phiếu đặt hàng
+              Quản lý phiếu đặt hàng
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               Chức năng này được triển khai trên trang riêng biệt.
             </p>
-            <Link to="/admin/purchase-orders">
-              <Button className="bg-brand-600 hover:bg-brand-700">
-                Đi đến trang quản lý phiếu đặt hàng
-              </Button>
-            </Link>
           </div>
         );
       case "goods-receipt":
@@ -611,16 +606,11 @@ export default function AdminDashboard() {
           <div className="text-center py-20">
             <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Chuyển hướng đến trang quản lý phiếu nhập hàng
+              Quản lý phiếu nhập hàng
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               Chức năng này được triển khai trên trang riêng biệt.
             </p>
-            <Link to="/admin/goods-receipt">
-              <Button className="bg-brand-600 hover:bg-brand-700">
-                Đi đến trang quản lý phiếu nhập hàng
-              </Button>
-            </Link>
           </div>
         );
       case "suppliers":

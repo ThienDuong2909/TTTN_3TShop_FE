@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useApp } from "../contexts/AppContext";
+import { useNavigate } from "react-router-dom";
 
 interface AdminSidebarProps {
   activeTab: string;
@@ -20,6 +21,7 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
   const { state } = useApp();
+  const navigate = useNavigate();
 
   const isAdmin = state.user?.role === "admin";
 
@@ -54,12 +56,14 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       icon: FileText,
       permission: "manage_inventory",
       adminOnly: true,
+      route: "/admin/purchase-orders",
     },
     {
       name: "Phiếu nhập hàng",
       id: "goods-receipt",
       icon: Package,
       permission: "manage_inventory",
+      route: "/admin/goods-receipt",
     },
     {
       name: "Nhà cung cấp",
@@ -110,6 +114,14 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
     return state.user?.permissions?.includes(item.permission);
   });
 
+  const handleItemClick = (item: typeof navigation[0]) => {
+    if (item.route) {
+      navigate(item.route);
+    } else {
+      setActiveTab(item.id);
+    }
+  };
+
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72 lg:flex-col">
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-6 pb-4 shadow-sm">
@@ -139,7 +151,7 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
                   return (
                     <li key={item.name}>
                       <button
-                        onClick={() => setActiveTab(item.id)}
+                        onClick={() => handleItemClick(item)}
                         className={`group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold w-full text-left ${
                           isActive
                             ? "bg-brand-50 text-brand-600 dark:bg-brand-900/50 dark:text-brand-400"
