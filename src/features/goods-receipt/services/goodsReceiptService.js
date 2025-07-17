@@ -14,7 +14,20 @@ export const getPurchaseOrderForReceipt = async (purchaseOrderId) => {
 
 // Tạo phiếu nhập hàng mới
 export const createGoodsReceipt = async (goodsReceiptData) => {
-  const res = await axiosClient.post("/goods-receipts", goodsReceiptData);
+  // Đảm bảo dữ liệu khớp với database schema
+  const formattedData = {
+    SoPN: goodsReceiptData.SoPN,
+    NgayNhap: goodsReceiptData.NgayNhap,
+    MaPDH: goodsReceiptData.MaPDH,
+    MaNV: goodsReceiptData.MaNV,
+    details: goodsReceiptData.details.map(item => ({
+      MaCTSP: item.MaCTSP,
+      SoLuong: item.SoLuong,
+      DonGia: item.DonGia
+    }))
+  };
+  
+  const res = await axiosClient.post("/goods-receipts", formattedData);
   return res.data;
 };
 

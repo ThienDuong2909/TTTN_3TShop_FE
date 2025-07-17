@@ -26,7 +26,21 @@ export const getPurchaseOrderStatuses = async () => {
 
 // Tạo phiếu đặt hàng mới
 export const createPurchaseOrder = async (purchaseOrderData) => {
-  const res = await axiosClient.post("/purchase-orders", purchaseOrderData);
+  // Đảm bảo dữ liệu khớp với database schema
+  const formattedData = {
+    MaPDH: purchaseOrderData.MaPDH,
+    NgayDat: purchaseOrderData.NgayDat,
+    MaNV: purchaseOrderData.MaNV,
+    MaNCC: purchaseOrderData.MaNCC,
+    MaTrangThai: purchaseOrderData.MaTrangThai,
+    details: purchaseOrderData.details.map(item => ({
+      MaCTSP: item.MaCTSP,
+      SoLuong: item.SoLuong,
+      DonGia: item.DonGia
+    }))
+  };
+  
+  const res = await axiosClient.post("/purchase-orders", formattedData);
   return res.data;
 };
 
@@ -44,6 +58,6 @@ export const getPurchaseOrderById = async (id) => {
 
 // Cập nhật trạng thái phiếu đặt hàng
 export const updatePurchaseOrderStatus = async (id, statusId) => {
-  const res = await axiosClient.put(`/purchase-orders/${id}/status`, { statusId });
+  const res = await axiosClient.put(`/purchase-orders/${id}/status`, { MaTrangThai: statusId });
   return res.data;
 }; 
