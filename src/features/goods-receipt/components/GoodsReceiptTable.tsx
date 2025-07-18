@@ -16,6 +16,14 @@ import {
   TableRow,
 } from "../../../components/ui/table";
 import { formatPrice, formatDate } from "../../../services/api";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../../../components/ui/dialog";
 
 interface GoodsReceiptItem {
   purchaseOrderItemId: string;
@@ -29,6 +37,7 @@ interface GoodsReceiptItem {
   condition: "good" | "damaged" | "defective";
   notes?: string;
   totalReceivedValue: number;
+  colorName?: string; // thêm dòng này
 }
 
 interface GoodsReceipt {
@@ -55,6 +64,14 @@ export default function GoodsReceiptTable({
   loading, 
   onViewDetails 
 }: GoodsReceiptTableProps) {
+  const [openDetail, setOpenDetail] = useState(false);
+  const [selectedGR, setSelectedGR] = useState<GoodsReceipt | null>(null);
+
+  const handleViewDetails = (gr: GoodsReceipt) => {
+    setSelectedGR(gr);
+    setOpenDetail(true);
+  };
+  console.log(goodsReceipts);
   return (
     <Card>
       <CardHeader>
@@ -108,7 +125,7 @@ export default function GoodsReceiptTable({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => onViewDetails(gr)}
+                          onClick={() => handleViewDetails(gr)}
                         >
                           <Eye className="h-3 w-3" />
                         </Button>
@@ -124,6 +141,65 @@ export default function GoodsReceiptTable({
           </Table>
         )}
       </CardContent>
+      {/* Dialog chi tiết phiếu nhập */}
+      <Dialog open={openDetail} onOpenChange={setOpenDetail}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Chi tiết phiếu nhập</DialogTitle>
+            <DialogDescription>
+              Thông tin chi tiết phiếu nhập hàng và các sản phẩm đã nhận.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedGR && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><b>Mã phiếu:</b> {selectedGR.id}</div>
+                <div><b>Đơn đặt hàng:</b> {selectedGR.purchaseOrderId}</div>
+                <div><b>Nhà cung cấp:</b> {selectedGR.supplierName}</div>
+                <div><b>Người nhận:</b> {selectedGR.receivedBy}</div>
+                <div><b>Ngày nhập:</b> {formatDate(selectedGR.receiptDate)}</div>
+                <div><b>Tổng giá trị nhận:</b> {formatPrice(selectedGR.totalReceivedValue)}</div>
+                {selectedGR.notes && <div className="col-span-2"><b>Ghi chú:</b> {selectedGR.notes}</div>}
+              </div>
+              <div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sản phẩm</TableHead>
+                      <TableHead>Màu</TableHead>
+                      <TableHead>Kích thước</TableHead>
+                      <TableHead>Số lượng</TableHead>
+                      <TableHead>Đơn giá</TableHead>
+                      <TableHead>Thành tiền</TableHead>
+                      <TableHead>Ghi chú</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedGR.items.map((item, idx) => (
+                      <TableRow key={item.purchaseOrderItemId || idx}>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell>
+                          {item.selectedColor && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 rounded border" style={{ backgroundColor: item.selectedColor }} />
+                              <span>{item.colorName}</span>
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>{item.selectedSize}</TableCell>
+                        <TableCell>{item.receivedQuantity}</TableCell>
+                        <TableCell>{formatPrice(item.unitPrice)}</TableCell>
+                        <TableCell>{formatPrice(item.unitPrice * item.receivedQuantity)}</TableCell>
+                        <TableCell>{item.notes || "-"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 } 

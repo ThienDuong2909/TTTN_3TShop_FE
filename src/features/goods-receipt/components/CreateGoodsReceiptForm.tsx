@@ -29,6 +29,8 @@ import {
 } from "../../../components/ui/tabs";
 import { formatPrice, formatDate } from "../../../services/api";
 import ExcelImport from "./ExcelImport";
+import { data } from "react-router-dom";
+import clsx from "clsx";
 
 interface GoodsReceiptItem {
   purchaseOrderItemId: string;
@@ -42,6 +44,7 @@ interface GoodsReceiptItem {
   condition: "good" | "damaged" | "defective";
   notes?: string;
   totalReceivedValue: number;
+  colorName?: string; // thêm dòng này
 }
 
 interface PurchaseOrder {
@@ -105,6 +108,8 @@ interface CreateGoodsReceiptFormProps {
   currentUserId: string;
 }
 
+import { getStatusFromTrangThai } from "../hooks/useGoodsReceiptData";
+
 export default function CreateGoodsReceiptForm({
   grForm,
   setGRForm,
@@ -120,6 +125,15 @@ export default function CreateGoodsReceiptForm({
   const [inputMethod, setInputMethod] = useState<"manual" | "excel">("manual");
   const [excelData, setExcelData] = useState<any[]>([]);
   const [excelError, setExcelError] = useState<string>("");
+
+  // Validate form
+  const [touched, setTouched] = useState<{[key: string]: boolean}>({});
+  const isFieldInvalid = (field: string, value: any) => {
+    if (!touched[field]) return false;
+    if (typeof value === 'string') return !value.trim();
+    if (typeof value === 'number') return value === 0;
+    return !value;
+  };
 
   const getConditionBadge = (condition: string) => {
     const conditionMap = {
@@ -149,14 +163,20 @@ export default function CreateGoodsReceiptForm({
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
-      draft: { label: "Nháp", variant: "secondary" as const },
-      completed: { label: "Hoàn thành", variant: "default" as const },
-      pending: { label: "Chờ xử lý", variant: "secondary" as const },
+      draft: { label: "Nháp", className: "bg-gray-300 text-gray-900" },
+      sent: { label: "Đã gửi", className: "bg-blue-200 text-blue-900" },
+      confirmed: { label: "Đã xác nhận", className: "bg-indigo-500 text-white" },
+      partially_received: { // Sửa key và label
+        label: "Đã gửi một phần",
+        className: "bg-yellow-300 text-yellow-900"
+      },
+      completed: { label: "Hoàn thành", className: "bg-green-600 text-white" },
+      cancelled: { label: "Đã hủy", className: "bg-red-500 text-white" },
     };
 
     const statusInfo = statusMap[status as keyof typeof statusMap];
     return (
-      <Badge variant={statusInfo?.variant || "secondary"}>
+      <Badge className={statusInfo?.className || "bg-gray-300 text-gray-900"}>
         {statusInfo?.label || status}
       </Badge>
     );
@@ -203,6 +223,32 @@ export default function CreateGoodsReceiptForm({
     onCancel();
   };
 
+  // Thay thế onPOSelect để khởi tạo lại danh sách sản phẩm nhận khi chọn phiếu đặt hàng
+  const handlePOSelect = (poId: string) => {
+    const po = availablePOs.find(po => po.MaPDH === poId || po.id === poId);
+    if (po) {
+      console.log(po);
+      setGRForm({
+        ...grForm,
+        purchaseOrderId: poId,
+        items: (po.CT_PhieuDatHangNCCs || []).map((ct: any) => ({
+          purchaseOrderItemId: ct.MaCTSP,
+          productId: ct.MaCTSP,
+          productName: ct.ChiTietSanPham?.SanPham?.TenSP || ct.TenSP || "",
+          selectedColor: ct.ChiTietSanPham?.Mau?.MaHex ? `#${ct.ChiTietSanPham.Mau.MaHex}` : (ct.Mau?.MaHex ? `#${ct.Mau.MaHex}` : ""),
+          colorName: ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
+          selectedSize: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ct.KichThuoc?.TenKichThuoc || "",
+          orderedQuantity: ct.SoLuong,
+          receivedQuantity: ct.SoLuong, // mặc định nhận đủ
+          unitPrice: parseFloat(ct.DonGia),
+          condition: "good",
+          notes: "",
+        }))
+      });
+    }
+    onPOSelect(poId);
+  };
+
   return (
     <div className="space-y-6">
       {/* Basic Info */}
@@ -211,18 +257,25 @@ export default function CreateGoodsReceiptForm({
           <Label htmlFor="purchaseOrder">Phiếu đặt hàng *</Label>
           <Select
             value={grForm.purchaseOrderId}
-            onValueChange={onPOSelect}
+            onValueChange={handlePOSelect}
             disabled={loading.purchaseOrders}
           >
-            <SelectTrigger>
+            <SelectTrigger
+              className={clsx(isFieldInvalid('purchaseOrderId', grForm.purchaseOrderId) && 'border-red-500', 'focus:outline-none')}
+              onBlur={() => setTouched(t => ({...t, purchaseOrderId: true}))}
+            >
               <SelectValue placeholder="Chọn phiếu đặt hàng" />
             </SelectTrigger>
             <SelectContent>
-              {availablePOs.map((po: any) => (
-                <SelectItem key={po.MaPDH || po.id} value={po.MaPDH || po.id}>
-                  {po.MaPDH || po.id} - {po.NhaCungCap?.TenNCC || po.supplierName}
-                </SelectItem>
-              ))}
+              {availablePOs.length === 0 ? (
+                <div className="px-4 py-2 text-muted-foreground">Không có dữ liệu</div>
+              ) : (
+                availablePOs.map((po: any) => (
+                  <SelectItem key={po.MaPDH || po.id} value={po.MaPDH || po.id}>
+                    {po.MaPDH || po.id} - {po.NhaCungCap?.TenNCC || po.supplierName}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -240,21 +293,26 @@ export default function CreateGoodsReceiptForm({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <Label>Nhà cung cấp</Label>
-                <div className="font-medium">{selectedPO?.supplierName || "N/A"}</div>
+                <div className="font-medium">{selectedPO?.NhaCungCap?.TenNCC || "N/A"}</div>
               </div>
               <div>
                 <Label>Ngày đặt</Label>
-                <div>{formatDate(selectedPO?.orderDate || new Date())}</div>
+                <div>{formatDate(selectedPO?.NgayDat || new Date())}</div>
               </div>
               <div>
                 <Label>Tổng tiền đặt</Label>
                 <div className="font-medium">
-                  {formatPrice(selectedPO?.totalAmount || 0)}
+                  {formatPrice(
+                    (selectedPO?.CT_PhieuDatHangNCCs || []).reduce(
+                      (sum: number, ct: any) => sum + (parseFloat(ct.DonGia) * ct.SoLuong),
+                      0
+                    )
+                  )}
                 </div>
               </div>
               <div>
                 <Label>Trạng thái</Label>
-                <div>{getStatusBadge(selectedPO?.status || "unknown")}</div>
+                <div>{getStatusBadge(getStatusFromTrangThai(selectedPO?.MaTrangThai) || "draft")}</div>
               </div>
             </div>
           </CardContent>
@@ -290,10 +348,10 @@ export default function CreateGoodsReceiptForm({
                     <TableHeader>
                       <TableRow>
                         <TableHead>Sản phẩm</TableHead>
-                        <TableHead>Màu/Size</TableHead>
+                        <TableHead>Màu</TableHead>
+                        <TableHead>Kích thước</TableHead>
                         <TableHead>Đặt hàng</TableHead>
                         <TableHead>Nhận thực tế</TableHead>
-                        <TableHead>Tình trạng</TableHead>
                         <TableHead>Thành tiền</TableHead>
                         <TableHead>Ghi chú</TableHead>
                       </TableRow>
@@ -309,13 +367,14 @@ export default function CreateGoodsReceiptForm({
                               <div className="flex items-center gap-2">
                                 <div
                                   className="w-4 h-4 rounded border"
-                                  style={{
-                                    backgroundColor: item.selectedColor,
-                                  }}
+                                  style={{ backgroundColor: item.selectedColor }}
                                 />
-                                {item.selectedSize}
+                                <span>{item.colorName}</span>
                               </div>
                             )}
+                          </TableCell>
+                          <TableCell>
+                            {item.selectedSize}
                           </TableCell>
                           <TableCell>{item.orderedQuantity}</TableCell>
                           <TableCell>
@@ -326,30 +385,14 @@ export default function CreateGoodsReceiptForm({
                                 updateGRItem(
                                   index,
                                   "receivedQuantity",
-                                  parseInt(e.target.value) || 0
+                                  Math.max(0, Math.min(parseInt(e.target.value) || 0, item.orderedQuantity))
                                 )
                               }
+                              onBlur={() => setTouched(t => ({...t, [`receivedQuantity_${index}`]: true}))}
                               min="0"
                               max={item.orderedQuantity}
-                              className="w-20"
+                              className={clsx("w-20 focus:outline-none", isFieldInvalid(`receivedQuantity_${index}`, item.receivedQuantity) && 'border-red-500')}
                             />
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={item.condition}
-                              onValueChange={(value: string) =>
-                                updateGRItem(index, "condition", value)
-                              }
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="good">Tốt</SelectItem>
-                                <SelectItem value="damaged">Hư hỏng</SelectItem>
-                                <SelectItem value="defective">Lỗi</SelectItem>
-                              </SelectContent>
-                            </Select>
                           </TableCell>
                           <TableCell className="font-medium">
                             {formatPrice(item.receivedQuantity * item.unitPrice)}
@@ -361,7 +404,7 @@ export default function CreateGoodsReceiptForm({
                                 updateGRItem(index, "notes", e.target.value)
                               }
                               placeholder="Ghi chú..."
-                              className="w-32"
+                              className="w-32 focus:outline-none"
                             />
                           </TableCell>
                         </TableRow>
@@ -403,10 +446,10 @@ export default function CreateGoodsReceiptForm({
                       <TableHeader>
                         <TableRow>
                           <TableHead>Sản phẩm</TableHead>
-                          <TableHead>Màu/Size</TableHead>
+                          <TableHead>Màu</TableHead>
+                          <TableHead>Kích thước</TableHead>
                           <TableHead>Đặt hàng</TableHead>
                           <TableHead>Nhận thực tế</TableHead>
-                          <TableHead>Tình trạng</TableHead>
                           <TableHead>Thành tiền</TableHead>
                           <TableHead>Ghi chú</TableHead>
                         </TableRow>
@@ -422,20 +465,18 @@ export default function CreateGoodsReceiptForm({
                                 <div className="flex items-center gap-2">
                                   <div
                                     className="w-4 h-4 rounded border"
-                                    style={{
-                                      backgroundColor: item.selectedColor,
-                                    }}
+                                    style={{ backgroundColor: item.selectedColor }}
                                   />
-                                  {item.selectedSize}
+                                  {item.selectedColor}
                                 </div>
                               )}
+                            </TableCell>
+                            <TableCell>
+                              {item.selectedSize}
                             </TableCell>
                             <TableCell>{item.orderedQuantity}</TableCell>
                             <TableCell className="font-medium">
                               {item.receivedQuantity}
-                            </TableCell>
-                            <TableCell>
-                              {getConditionBadge(item.condition)}
                             </TableCell>
                             <TableCell>
                               {formatPrice(item.receivedQuantity * item.unitPrice)}
