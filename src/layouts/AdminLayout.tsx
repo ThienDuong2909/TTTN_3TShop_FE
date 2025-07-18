@@ -13,8 +13,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     const path = location.pathname;
     if (path.includes("/admin/dashboard")) return "overview";
     if (path.includes("/admin/products")) return "products";
+    if (path.includes("/admin/categories")) return "categories";
     if (path.includes("/admin/orders")) return "orders";
-    if (path.includes("/admin/customers")) return "customers";
     if (path.includes("/admin/purchase-orders")) return "purchase-orders";
     if (path.includes("/admin/goods-receipt")) return "goods-receipt";
     if (path.includes("/admin/suppliers")) return "suppliers";
@@ -33,10 +33,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       setActiveTab("overview");
     } else if (path.includes("/admin/products")) {
       setActiveTab("products");
+    } else if (path.includes("/admin/categories")) {
+      setActiveTab("ctegories");
     } else if (path.includes("/admin/orders")) {
       setActiveTab("orders");
-    } else if (path.includes("/admin/customers")) {
-      setActiveTab("customers");
     } else if (path.includes("/admin/purchase-orders")) {
       setActiveTab("purchase-orders");
     } else if (path.includes("/admin/goods-receipt")) {

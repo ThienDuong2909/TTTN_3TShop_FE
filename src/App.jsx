@@ -1,5 +1,6 @@
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+
 import { AppProvider } from './contexts/AppContext';
 import { ThemeProvider } from './components/ThemeProvider';
 import Header from './components/Header';
@@ -24,6 +25,7 @@ import Checkout from './pages/Checkout';
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
 import ProductManagement from './pages/ProductManagement';
+import CategoriesManagement from './pages/CategoriesManagement';
 import PurchaseOrders from './pages/PurchaseOrders';
 import GoodsReceipt from './pages/GoodsReceipt';
 import Orders from './pages/Orders';
@@ -73,6 +75,13 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AdminLayout>
                 <ProductManagement />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/categories" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <CategoriesManagement />
               </AdminLayout>
             </ProtectedRoute>
           } />
