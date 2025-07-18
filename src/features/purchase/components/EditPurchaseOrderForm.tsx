@@ -18,6 +18,7 @@ import { formatPrice } from "../../../services/api";
 import { getProductColorsSizes, getProductsBySupplier } from "../../../services/commonService";
 import { POForm, Supplier, Product, PurchaseOrderItem, Color, Size } from "../types";
 import { useState, useEffect } from "react";
+import clsx from "clsx";
 
 interface EditPurchaseOrderFormProps {
   poForm: POForm;
@@ -42,6 +43,14 @@ export default function EditPurchaseOrderForm({
   const [itemColorsSizes, setItemColorsSizes] = useState<{ [key: number]: { colors: Color[], sizes: Size[] } }>({});
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  // Validate form
+  const [touched, setTouched] = useState<{[key: string]: boolean}>({});
+  const isFieldInvalid = (field: string, value: any) => {
+    if (!touched[field]) return false;
+    if (typeof value === 'string') return !value.trim();
+    if (typeof value === 'number') return value === 0;
+    return !value;
+  };
 
   useEffect(() => {
     if (!poForm.supplierId) {
@@ -304,10 +313,11 @@ export default function EditPurchaseOrderForm({
               loadProductsBySupplier(value);
             }}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Chọn nhà cung cấp">
-                {suppliers.find(s => s.id == poForm.supplierId)?.name || "Chọn nhà cung cấp"}
-              </SelectValue>
+            <SelectTrigger
+              className={clsx(isFieldInvalid('supplierId', poForm.supplierId) && 'border-red-500', 'focus:outline-none')}
+              onBlur={() => setTouched(t => ({...t, supplierId: true}))}
+            >
+              <SelectValue placeholder="Chọn nhà cung cấp" />
             </SelectTrigger>
             <SelectContent>
               {(() => {
@@ -368,7 +378,10 @@ export default function EditPurchaseOrderForm({
                           updatePOItem(index, "MaSP", value);
                         }}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger
+                          className={clsx('focus:outline-none', isFieldInvalid(`MaSP_${index}`, item.MaSP) && 'border-red-500')}
+                          onBlur={() => setTouched(t => ({...t, [`MaSP_${index}`]: true}))}
+                        >
                           <SelectValue placeholder="Chọn sản phẩm">
                             {filteredProducts.find(p => p.id == item.MaSP)?.name || products.find(p => p.id == item.MaSP)?.name || item.productName || "Chọn sản phẩm"}
                           </SelectValue>
@@ -421,7 +434,10 @@ export default function EditPurchaseOrderForm({
                           updatePOItem(index, "MaMau", parseInt(value) || "")
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger
+                          className={clsx('focus:outline-none', isFieldInvalid(`MaMau_${index}`, item.MaMau) && 'border-red-500')}
+                          onBlur={() => setTouched(t => ({...t, [`MaMau_${index}`]: true}))}
+                        >
                           <SelectValue placeholder="Chọn màu">
                             {itemColorsSizes[index]?.colors.find(c => c.MaMau == item.MaMau)?.TenMau || item.colorName || "Chọn màu"}
                           </SelectValue>
@@ -470,7 +486,10 @@ export default function EditPurchaseOrderForm({
                           updatePOItem(index, "MaKichThuoc", parseInt(value) || "")
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger
+                          className={clsx('focus:outline-none', isFieldInvalid(`MaKichThuoc_${index}`, item.MaKichThuoc) && 'border-red-500')}
+                          onBlur={() => setTouched(t => ({...t, [`MaKichThuoc_${index}`]: true}))}
+                        >
                           <SelectValue placeholder="Chọn kích thước">
                             {itemColorsSizes[index]?.sizes.find(s => s.MaKichThuoc == item.MaKichThuoc)?.TenKichThuoc || item.sizeName || "Chọn kích thước"}
                           </SelectValue>
@@ -521,6 +540,8 @@ export default function EditPurchaseOrderForm({
                         }}
                         min="1"
                         placeholder="Nhập số lượng"
+                        className={clsx('focus:outline-none', isFieldInvalid(`quantity_${index}`, item.quantity) && 'border-red-500')}
+                        onBlur={() => setTouched(t => ({...t, [`quantity_${index}`]: true}))}
                       />
                     </div>
                     <div>
@@ -542,6 +563,8 @@ export default function EditPurchaseOrderForm({
                         }}
                         min="0"
                         placeholder="Nhập đơn giá"
+                        className={clsx('focus:outline-none', isFieldInvalid(`unitPrice_${index}`, item.unitPrice) && 'border-red-500')}
+                        onBlur={() => setTouched(t => ({...t, [`unitPrice_${index}`]: true}))}
                       />
                     </div>
                     <div className="flex items-center gap-2">

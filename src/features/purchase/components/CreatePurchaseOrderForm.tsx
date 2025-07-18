@@ -18,6 +18,7 @@ import { formatPrice } from "../../../services/api";
 import { getProductColorsSizes, getProductsBySupplier } from "../../../services/commonService";
 import { POForm, Supplier, Product, PurchaseOrderItem, Color, Size } from "../types";
 import { useState, useEffect } from "react";
+import clsx from "clsx";
 
 interface CreatePurchaseOrderFormProps {
   poForm: POForm;
@@ -44,6 +45,15 @@ export default function CreatePurchaseOrderForm({
   // State for filtered products (when supplier is selected first)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  
+  // Validate form
+  const [touched, setTouched] = useState<{[key: string]: boolean}>({});
+  const isFieldInvalid = (field: string, value: any) => {
+    if (!touched[field]) return false;
+    if (typeof value === 'string') return !value.trim();
+    if (typeof value === 'number') return value === 0;
+    return !value;
+  };
   
   // Debug log for suppliers
   console.log("CreatePurchaseOrderForm - suppliers:", suppliers);
@@ -436,7 +446,10 @@ export default function CreatePurchaseOrderForm({
               loadProductsBySupplier(value);
             }}
           >
-            <SelectTrigger>
+            <SelectTrigger
+              className={clsx(isFieldInvalid('supplierId', poForm.supplierId) && 'border-red-500', 'focus:outline-none')}
+              onBlur={() => setTouched(t => ({...t, supplierId: true}))}
+            >
               <SelectValue placeholder="Chọn nhà cung cấp" />
             </SelectTrigger>
             <SelectContent>
@@ -505,7 +518,10 @@ export default function CreatePurchaseOrderForm({
                           updatePOItem(index, "MaSP", value);
                         }}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger
+                          className={clsx('focus:outline-none', isFieldInvalid(`MaSP_${index}`, item.MaSP) && 'border-red-500')}
+                          onBlur={() => setTouched(t => ({...t, [`MaSP_${index}`]: true}))}
+                        >
                           <SelectValue placeholder="Chọn sản phẩm" />
                         </SelectTrigger>
                         <SelectContent>
@@ -572,7 +588,10 @@ export default function CreatePurchaseOrderForm({
                           updatePOItem(index, "MaMau", parseInt(value) || "")
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger
+                          className={clsx('focus:outline-none', isFieldInvalid(`MaMau_${index}`, item.MaMau) && 'border-red-500')}
+                          onBlur={() => setTouched(t => ({...t, [`MaMau_${index}`]: true}))}
+                        >
                           <SelectValue placeholder="Chọn màu" />
                         </SelectTrigger>
                         <SelectContent>
@@ -635,7 +654,10 @@ export default function CreatePurchaseOrderForm({
                           updatePOItem(index, "MaKichThuoc", parseInt(value) || "")
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger
+                          className={clsx('focus:outline-none', isFieldInvalid(`MaKichThuoc_${index}`, item.MaKichThuoc) && 'border-red-500')}
+                          onBlur={() => setTouched(t => ({...t, [`MaKichThuoc_${index}`]: true}))}
+                        >
                           <SelectValue placeholder="Chọn kích thước" />
                         </SelectTrigger>
                         <SelectContent>
@@ -701,6 +723,8 @@ export default function CreatePurchaseOrderForm({
                         }}
                         min="1"
                         placeholder="Nhập số lượng"
+                        className={clsx('focus:outline-none', isFieldInvalid(`quantity_${index}`, item.quantity) && 'border-red-500')}
+                        onBlur={() => setTouched(t => ({...t, [`quantity_${index}`]: true}))}
                       />
                     </div>
 
@@ -724,6 +748,8 @@ export default function CreatePurchaseOrderForm({
                         }}
                         min="0"
                         placeholder="Nhập đơn giá"
+                        className={clsx('focus:outline-none', isFieldInvalid(`unitPrice_${index}`, item.unitPrice) && 'border-red-500')}
+                        onBlur={() => setTouched(t => ({...t, [`unitPrice_${index}`]: true}))}
                       />
                     </div>
 

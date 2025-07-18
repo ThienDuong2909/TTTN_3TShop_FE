@@ -43,9 +43,9 @@ export default function PurchaseOrderTable({
       confirmed: { label: "Đã xác nhận", className: "bg-indigo-500 text-white" },
       partially_received: {
         label: "Nhập một phần",
-        className: "bg-yellow-300 text-yellow-900"
+        className: "bg-yellow-200 text-yellow-900"
       },
-      completed: { label: "Hoàn thành", className: "bg-green-600 text-white" },
+      completed: { label: "Hoàn thành", className: "bg-green-500 text-white" },
       cancelled: { label: "Đã hủy", className: "bg-red-500 text-white" },
     };
 

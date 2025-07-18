@@ -80,6 +80,18 @@ interface GRForm {
   items: Omit<GoodsReceiptItem, "totalReceivedValue">[];
 }
 
+export const getStatusFromTrangThai = (maTrangThai: number): PurchaseOrder["status"] => {
+  switch (maTrangThai) {
+    case 1: return "draft";
+    case 2: return "sent";
+    case 3: return "confirmed";
+    case 4: return "partially_received";
+    case 5: return "completed";
+    case 5: return "cancelled";
+    default: return "draft";
+  }
+};
+
 export const useGoodsReceiptData = (currentUserId: string) => {
   const { toast } = useToast();
   
@@ -108,10 +120,37 @@ export const useGoodsReceiptData = (currentUserId: string) => {
     
     try {
       const response = await getGoodsReceipts();
-      
+      console.log((response as any)?.data);
       // Extract data from response object or use response directly if it's already an array
-      const receipts = (response as any)?.data || response;
-      setGoodsReceipts(Array.isArray(receipts) ? receipts : []);
+      const receipts = ((response as any)?.data || response || []).map((r: any) => ({
+        id: r.SoPN,
+        purchaseOrderId: r.MaPDH,
+        supplierId: r.PhieuDatHangNCC?.MaNCC,
+        supplierName: r.PhieuDatHangNCC?.NhaCungCap?.TenNCC,
+        receiptDate: r.NgayNhap,
+        receivedBy: r.NhanVien?.TenNV,
+        items: (r.CT_PhieuNhaps || []).map((item: any) => ({
+          purchaseOrderItemId: item.MaCTSP,
+          productId: item.MaCTSP,
+          productName: item.ChiTietSanPham?.SanPham?.TenSP || "",
+          selectedColor: item.ChiTietSanPham?.Mau?.MaHex ? `#${item.ChiTietSanPham.Mau.MaHex}` : "",
+          colorName: item.ChiTietSanPham?.Mau?.TenMau || "",
+          selectedSize: item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || "",
+          orderedQuantity: item.SoLuongDat || 0,
+          receivedQuantity: item.SoLuong,
+          unitPrice: parseFloat(item.DonGia),
+          condition: item.TinhTrang || "good",
+          notes: item.GhiChu,
+          totalReceivedValue: parseFloat(item.DonGia) * item.SoLuong,
+        })),
+        totalReceivedValue: (r.CT_PhieuNhaps || []).reduce(
+          (sum: number, item: any) => sum + parseFloat(item.DonGia) * item.SoLuong,
+          0
+        ),
+        status: r.TrangThai || "completed",
+      }));
+      console.log(receipts);
+      setGoodsReceipts(receipts);
       
       // Calculate stats
       const currentMonth = new Date().getMonth();
@@ -171,8 +210,8 @@ export const useGoodsReceiptData = (currentUserId: string) => {
     try {
       const poDetails = await getPurchaseOrderForReceipt(poId);
       if (poDetails) {
-        setSelectedPO(poDetails);
-        return poDetails;
+        setSelectedPO(poDetails.data);
+        return poDetails.data;
       }
     } catch (error) {
       toast({
@@ -215,17 +254,6 @@ export const useGoodsReceiptData = (currentUserId: string) => {
       const result = await createGoodsReceipt(goodsReceiptData);
 
       if (result) {
-        // Update inventory after successful creation
-        try {
-          await updateInventoryAfterReceipt(result.id);
-        } catch (error) {
-          toast({
-            title: "Cảnh báo",
-            description: "Phiếu nhập đã tạo nhưng không thể cập nhật tồn kho",
-            variant: "destructive",
-          });
-        }
-
         toast({
           title: "Thành công",
           description: "Phiếu nhập hàng đã được tạo thành công",
