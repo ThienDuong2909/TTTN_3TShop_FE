@@ -41,6 +41,13 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       route: "/admin/products",
     },
     {
+      name: "Loại sản phẩm",
+      id: "ctegories",
+      icon: Package,
+      permission: "view_categories",
+      route: "/admin/categories",
+    },
+    {
       name: "Đơn hàng",
       id: "orders",
       icon: ShoppingCart,
