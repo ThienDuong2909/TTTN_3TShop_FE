@@ -7,6 +7,7 @@ import {
   DialogTrigger,
 } from "../../../components/ui/dialog";
 import CreatePurchaseOrderForm from "./CreatePurchaseOrderForm";
+import EditPurchaseOrderForm from "./EditPurchaseOrderForm";
 import { POForm, Supplier, Product } from "../types";
 
 interface CreatePurchaseOrderDialogProps {
@@ -57,18 +58,27 @@ export default function CreatePurchaseOrderDialog({
             }
           </DialogDescription>
         </DialogHeader>
-        <CreatePurchaseOrderForm
-          poForm={poForm}
-          setPOForm={setPOForm}
-          suppliers={suppliers}
-          products={products}
-          onSubmit={onSubmit}
-          onCancel={handleCancel}
-          isLoading={isLoading}
-          isEditMode={isEditMode}
-          editingPO={editingPO}
-          isLoadingPODetails={isLoadingPODetails}
-        />
+        {isEditMode ? (
+          <EditPurchaseOrderForm
+            poForm={poForm}
+            setPOForm={setPOForm}
+            suppliers={suppliers}
+            products={products}
+            onSubmit={onSubmit}
+            onCancel={handleCancel}
+            isLoading={isLoading}
+          />
+        ) : (
+          <CreatePurchaseOrderForm
+            poForm={poForm}
+            setPOForm={setPOForm}
+            suppliers={suppliers}
+            products={products}
+            onSubmit={onSubmit}
+            onCancel={handleCancel}
+            isLoading={isLoading}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );

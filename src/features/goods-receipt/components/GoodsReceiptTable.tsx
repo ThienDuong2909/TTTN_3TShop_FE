@@ -55,20 +55,6 @@ export default function GoodsReceiptTable({
   loading, 
   onViewDetails 
 }: GoodsReceiptTableProps) {
-  const getStatusBadge = (status: string) => {
-    const statusMap = {
-      draft: { label: "Nháp", variant: "secondary" as const },
-      completed: { label: "Hoàn thành", variant: "default" as const },
-    };
-
-    const statusInfo = statusMap[status as keyof typeof statusMap];
-    return (
-      <Badge variant={statusInfo?.variant || "secondary"}>
-        {statusInfo?.label || status}
-      </Badge>
-    );
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -91,7 +77,6 @@ export default function GoodsReceiptTable({
                 <TableHead>Nhà cung cấp</TableHead>
                 <TableHead>Số lượng SP</TableHead>
                 <TableHead>Giá trị nhận</TableHead>
-                <TableHead>Trạng thái</TableHead>
                 <TableHead>Ngày nhập</TableHead>
                 <TableHead>Thao tác</TableHead>
               </TableRow>
@@ -117,7 +102,6 @@ export default function GoodsReceiptTable({
                     <TableCell className="font-medium">
                       {formatPrice(gr.totalReceivedValue)}
                     </TableCell>
-                    <TableCell>{getStatusBadge(gr.status)}</TableCell>
                     <TableCell>{formatDate(gr.receiptDate)}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">

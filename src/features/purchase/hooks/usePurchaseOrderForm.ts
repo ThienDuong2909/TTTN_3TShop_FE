@@ -49,25 +49,33 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
           supplierId: details.MaNCC ? details.MaNCC.toString() : po.supplierId.toString(),
           expectedDeliveryDate: details.NgayGiao || po.expectedDeliveryDate || "",
           notes: details.GhiChu || po.notes || "",
-          items: details.CT_PhieuDatHangNCCs ? details.CT_PhieuDatHangNCCs.map((item: any) => ({
-            MaSP: item.MaSP,
-            productName: item.SanPham?.TenSP || item.productName || `Sản phẩm ${item.MaSP}`,
-            MaMau: item.MaMau,
-            MaKichThuoc: item.MaKichThuoc,
-            colorName: item.MauSac?.TenMau || item.colorName || `Màu ${item.MaMau}`,
-            sizeName: item.KichThuoc?.TenKichThuoc || item.sizeName || `Size ${item.MaKichThuoc}`,
-            quantity: item.SoLuong,
-            unitPrice: item.DonGia,
-          })) : po.items.map(item => ({
-            MaSP: item.MaSP,
-            productName: item.productName,
-            MaMau: item.MaMau,
-            MaKichThuoc: item.MaKichThuoc,
-            colorName: item.colorName,
-            sizeName: item.sizeName,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-          })),
+          items: details.CT_PhieuDatHangNCCs ? details.CT_PhieuDatHangNCCs.map((item: any) => {
+            const ctsp = item.ChiTietSanPham || {};
+            const productName = ctsp.SanPham?.TenSP || ctsp.TenSP || item.SanPham?.TenSP || item.productName || `Sản phẩm ${ctsp.MaSP || item.MaSP || item.MaCTSP || ''}`;
+            const colorName = ctsp.Mau?.TenMau || item.Mau?.TenMau || item.colorName || '';
+            const sizeName = ctsp.KichThuoc?.TenKichThuoc || item.KichThuoc?.TenKichThuoc || item.sizeName || '';
+            console.log('Mapping item for edit form:', item);
+            console.log('Result:', {
+              MaSP: ctsp.MaSP || item.MaSP || item.MaCTSP || '',
+              productName,
+              MaMau: ctsp.MaMau || item.MaMau || '',
+              MaKichThuoc: ctsp.MaKichThuoc || item.MaKichThuoc || '',
+              colorName,
+              sizeName,
+              quantity: Number(item.SoLuong) || 0,
+              unitPrice: Number(item.DonGia) || 0,
+            });
+            return {
+              MaSP: ctsp.MaSP || item.MaSP || item.MaCTSP || '',
+              productName,
+              MaMau: ctsp.MaMau || item.MaMau || '',
+              MaKichThuoc: ctsp.MaKichThuoc || item.MaKichThuoc || '',
+              colorName,
+              sizeName,
+              quantity: Number(item.SoLuong) || 0,
+              unitPrice: Number(item.DonGia) || 0,
+            };
+          }) : po.items.map(item => ({ ...item })),
         });
         
         setIsEditMode(true);

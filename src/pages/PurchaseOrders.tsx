@@ -114,6 +114,12 @@ export default function PurchaseOrders() {
     navigateToGoodsReceipt(poId);
   };
 
+  // Thay vì chỉ setIsCreatePOOpen(true), hãy reset form trước khi mở
+  const handleOpenCreateDialog = () => {
+    resetForm();
+    setIsCreatePOOpen(true);
+  };
+
   // Get filtered purchase orders
   const filteredPOs = getFilteredPOs(purchaseOrders);
 
@@ -167,9 +173,12 @@ export default function PurchaseOrders() {
               
               <CreatePurchaseOrderDialog
                 open={isCreatePOOpen}
-                onOpenChange={setIsCreatePOOpen}
+                onOpenChange={(open) => {
+                  if (!open) resetForm();
+                  setIsCreatePOOpen(open);
+                }}
                 trigger={
-                  <Button className="bg-brand-600 hover:bg-brand-700">
+                  <Button className="bg-brand-600 hover:bg-brand-700" onClick={handleOpenCreateDialog}>
                     <Plus className="h-4 w-4 mr-2" />
                     Tạo phiếu đặt hàng
                   </Button>

@@ -77,7 +77,9 @@ const getStatusFromTrangThai = (maTrangThai: number): PurchaseOrder["status"] =>
     case 1: return "draft";
     case 2: return "sent";
     case 3: return "confirmed";
-    case 4: return "completed";
+    case 4: return "partially_received";
+    case 5: return "completed";
+    case 5: return "cancelled";
     default: return "draft";
   }
 };

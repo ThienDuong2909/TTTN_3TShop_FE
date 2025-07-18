@@ -99,25 +99,13 @@ export default function GoodsReceipt() {
             {/* Header */}
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="Tìm kiếm phiếu nhập hàng..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-64"
-                  />
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                    <SelectItem value="draft">Nháp</SelectItem>
-                    <SelectItem value="completed">Hoàn thành</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  placeholder="Tìm kiếm phiếu nhập hàng..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-64"
+                />
+                <Search className="h-4 w-4 text-muted-foreground" />
               </div>
               
               <div className="flex items-center gap-2">

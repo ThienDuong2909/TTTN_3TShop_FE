@@ -1,6 +1,5 @@
 import { Edit, Eye, Send, CheckCircle, Package, Loader2 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
-import { Badge } from "../../../components/ui/badge";
 import {
   Card,
   CardContent,
@@ -39,22 +38,22 @@ export default function PurchaseOrderTable({
 }: PurchaseOrderTableProps) {
   const getStatusBadge = (status: string) => {
     const statusMap = {
-      draft: { label: "Nháp", variant: "secondary" as const },
-      sent: { label: "Đã gửi", variant: "outline" as const },
-      confirmed: { label: "Đã xác nhận", variant: "default" as const },
+      draft: { label: "Nháp", className: "bg-gray-300 text-gray-900" },
+      sent: { label: "Đã gửi", className: "bg-blue-200 text-blue-900" },
+      confirmed: { label: "Đã xác nhận", className: "bg-indigo-500 text-white" },
       partially_received: {
         label: "Nhập một phần",
-        variant: "outline" as const,
+        className: "bg-yellow-300 text-yellow-900"
       },
-      completed: { label: "Hoàn thành", variant: "default" as const },
-      cancelled: { label: "Đã hủy", variant: "destructive" as const },
+      completed: { label: "Hoàn thành", className: "bg-green-600 text-white" },
+      cancelled: { label: "Đã hủy", className: "bg-red-500 text-white" },
     };
 
     const statusInfo = statusMap[status as keyof typeof statusMap];
     return (
-      <Badge variant={statusInfo?.variant || "secondary"}>
+      <span className={`px-2 py-1 rounded text-xs font-semibold ${statusInfo?.className || "bg-gray-200 text-gray-800"}`}>
         {statusInfo?.label || status}
-      </Badge>
+      </span>
     );
   };
 
