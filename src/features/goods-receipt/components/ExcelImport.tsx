@@ -19,19 +19,40 @@ interface GoodsReceiptItem {
 }
 
 interface PurchaseOrder {
-  id: string;
-  supplierId: string;
-  supplierName: string;
-  orderDate: string;
-  status: string;
-  totalAmount: number;
-  items: Array<{
+  id?: string;
+  MaPDH?: string;
+  supplierId?: string;
+  MaNCC?: number;
+  supplierName?: string;
+  NhaCungCap?: {
+    MaNCC: number;
+    TenNCC: string;
+    DiaChi?: string;
+    SDT?: string;
+    Email?: string;
+  };
+  orderDate?: string;
+  NgayDat?: string;
+  status?: string;
+  TrangThaiDatHangNCC?: {
+    MaTrangThai: number;
+    TenTrangThai: string;
+  };
+  totalAmount?: number;
+  items?: Array<{
     productId: string;
     productName: string;
     selectedColor?: string;
     selectedSize?: string;
     quantity: number;
     unitPrice: number;
+  }>;
+  CT_PhieuDatHangNCCs?: Array<{
+    MaCTSP: string;
+    TenSP: string;
+    SoLuong: number;
+    DonGia: number;
+    [key: string]: any;
   }>;
 }
 
@@ -167,28 +188,29 @@ export default function ExcelImport({
           normalizeKey(row, ["size", "Size", "Kích thước", "kichthuoc"]) || "";
 
         // Find matching item from PO
-        const poItem = (selectedPO?.items || []).find(
-          (item) =>
-            item.productId === productId.toString() ||
-            item.productName === productName
+        const poItems = selectedPO?.CT_PhieuDatHangNCCs || selectedPO?.items || [];
+        const poItem = poItems.find(
+          (item: any) =>
+            (item.MaCTSP || item.productId) === productId.toString() ||
+            (item.TenSP || item.productName) === productName
         );
 
-        return {
-          purchaseOrderItemId: `${selectedPO?.id || "unknown"}-${index + 1}`,
-          productId: productId.toString(),
-          productName: productName || poItem?.productName || "",
-          selectedColor: color || poItem?.selectedColor || "",
-          selectedSize: size || poItem?.selectedSize || "",
-          orderedQuantity: orderedQty || poItem?.quantity || 0,
-          receivedQuantity: receivedQty,
-          unitPrice: poItem?.unitPrice || 0,
-          condition: ["good", "damaged", "defective"].includes(
-            condition.toLowerCase()
-          )
-            ? (condition.toLowerCase() as "good" | "damaged" | "defective")
-            : "good",
-          notes: notes,
-        };
+                  return {
+            purchaseOrderItemId: `${selectedPO?.MaPDH || selectedPO?.id || "unknown"}-${index + 1}`,
+            productId: productId.toString(),
+            productName: productName || (poItem as any)?.TenSP || (poItem as any)?.productName || "",
+            selectedColor: color || (poItem as any)?.selectedColor || "",
+            selectedSize: size || (poItem as any)?.selectedSize || "",
+            orderedQuantity: orderedQty || (poItem as any)?.SoLuong || (poItem as any)?.quantity || 0,
+            receivedQuantity: receivedQty,
+            unitPrice: (poItem as any)?.DonGia || (poItem as any)?.unitPrice || 0,
+            condition: ["good", "damaged", "defective"].includes(
+              condition.toLowerCase()
+            )
+              ? (condition.toLowerCase() as "good" | "damaged" | "defective")
+              : "good",
+            notes: notes,
+          };
       });
 
     onDataProcessed(processedItems);

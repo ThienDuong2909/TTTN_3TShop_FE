@@ -16,19 +16,40 @@ interface GoodsReceiptItem {
 }
 
 interface PurchaseOrder {
-  id: string;
-  supplierId: string;
-  supplierName: string;
-  orderDate: string;
-  status: string;
-  totalAmount: number;
-  items: Array<{
+  id?: string;
+  MaPDH?: string;
+  supplierId?: string;
+  MaNCC?: number;
+  supplierName?: string;
+  NhaCungCap?: {
+    MaNCC: number;
+    TenNCC: string;
+    DiaChi?: string;
+    SDT?: string;
+    Email?: string;
+  };
+  orderDate?: string;
+  NgayDat?: string;
+  status?: string;
+  TrangThaiDatHangNCC?: {
+    MaTrangThai: number;
+    TenTrangThai: string;
+  };
+  totalAmount?: number;
+  items?: Array<{
     productId: string;
     productName: string;
     selectedColor?: string;
     selectedSize?: string;
     quantity: number;
     unitPrice: number;
+  }>;
+  CT_PhieuDatHangNCCs?: Array<{
+    MaCTSP: string;
+    TenSP: string;
+    SoLuong: number;
+    DonGia: number;
+    [key: string]: any;
   }>;
 }
 
@@ -57,20 +78,23 @@ export const useGoodsReceiptForm = (
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const initializeGRForm = (po: PurchaseOrder) => {
+  const initializeGRForm = (po: any) => {
+    const poId = po?.MaPDH || po?.id || "";
+    const poItems = po?.CT_PhieuDatHangNCCs || po?.items || [];
+    
     setGRForm({
-      purchaseOrderId: po?.id || "",
+      purchaseOrderId: poId,
       receivedBy: currentUserId,
       notes: "",
-      items: (po?.items || []).map((item, index) => ({
-        purchaseOrderItemId: `${po?.id || "unknown"}-${index + 1}`,
-        productId: item.productId,
-        productName: item.productName,
+      items: poItems.map((item: any, index: number) => ({
+        purchaseOrderItemId: `${poId}-${index + 1}`,
+        productId: item.MaCTSP || item.productId || "",
+        productName: item.TenSP || item.productName || "",
         selectedColor: item.selectedColor || "",
         selectedSize: item.selectedSize || "",
-        orderedQuantity: item.quantity,
-        receivedQuantity: item.quantity, // Default to ordered quantity
-        unitPrice: item.unitPrice,
+        orderedQuantity: item.SoLuong || item.quantity || 0,
+        receivedQuantity: item.SoLuong || item.quantity || 0, // Default to ordered quantity
+        unitPrice: item.DonGia || item.unitPrice || 0,
         condition: "good" as const,
         notes: "",
       })),
@@ -88,11 +112,11 @@ export const useGoodsReceiptForm = (
 
   // Filter goods receipts based on search and status
   const getFilteredGRs = (goodsReceipts: any[]) => {
-    return (goodsReceipts || []).filter((gr) => {
+    return (goodsReceipts || []).filter((gr: any) => {
       const matchesSearch =
-        gr.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        gr.purchaseOrderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        gr.supplierName.toLowerCase().includes(searchQuery.toLowerCase());
+        (gr.id || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (gr.MaPDH || gr.purchaseOrderId || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (gr.supplierName || gr.NhaCungCap?.TenNCC || "").toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === "all" || gr.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -109,7 +133,7 @@ export const useGoodsReceiptForm = (
   useEffect(() => {
     const poId = searchParams.get("po");
     if (poId && availablePOs.length > 0) {
-      const po = availablePOs.find((p) => p.id === poId);
+      const po = availablePOs.find((p: any) => (p.MaPDH || p.id) === poId);
       if (po) {
         setIsCreateGROpen(true);
         handlePOSelect(poId);

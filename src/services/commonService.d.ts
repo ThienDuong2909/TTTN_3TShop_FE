@@ -1,12 +1,14 @@
 // Purchase Order functions
 export function getPurchaseOrders(): Promise<any[]>;
 export function createPurchaseOrder(data: any): Promise<any>;
+export function updatePurchaseOrder(id: string, data: any): Promise<any>;
 export function getPurchaseOrderById(id: string): Promise<any>;
 export function updatePurchaseOrderStatus(id: string, statusId: number): Promise<any>;
 export function getSuppliers(): Promise<any[]>;
 export function getEmployees(): Promise<any[]>;
 export function getPurchaseOrderStatuses(): Promise<any[]>;
 export function getProductDetails(): Promise<any[]>;
+export function getProductsBySupplier(supplierId: string): Promise<any[]>;
 export function getProductColorsSizes(productId: string): Promise<any>;
 
 // Goods Receipt functions
@@ -25,12 +27,14 @@ export function getSizes(): Promise<any[]>;
 declare const commonService: {
   getPurchaseOrders(): Promise<any[]>;
   createPurchaseOrder(data: any): Promise<any>;
+  updatePurchaseOrder(id: string, data: any): Promise<any>;
   getPurchaseOrderById(id: string): Promise<any>;
   updatePurchaseOrderStatus(id: string, statusId: number): Promise<any>;
   getSuppliers(): Promise<any[]>;
   getEmployees(): Promise<any[]>;
   getPurchaseOrderStatuses(): Promise<any[]>;
   getProductDetails(): Promise<any[]>;
+  getProductsBySupplier(supplierId: string): Promise<any[]>;
   getProductColorsSizes(productId: string): Promise<any>;
   getGoodsReceipts(): Promise<any[]>;
   createGoodsReceipt(data: any): Promise<any>;

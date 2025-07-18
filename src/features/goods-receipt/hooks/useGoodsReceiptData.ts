@@ -36,19 +36,40 @@ interface GoodsReceipt {
 }
 
 interface PurchaseOrder {
-  id: string;
-  supplierId: string;
-  supplierName: string;
-  orderDate: string;
-  status: string;
-  totalAmount: number;
-  items: Array<{
+  id?: string;
+  MaPDH?: string;
+  supplierId?: string;
+  MaNCC?: number;
+  supplierName?: string;
+  NhaCungCap?: {
+    MaNCC: number;
+    TenNCC: string;
+    DiaChi?: string;
+    SDT?: string;
+    Email?: string;
+  };
+  orderDate?: string;
+  NgayDat?: string;
+  status?: string;
+  TrangThaiDatHangNCC?: {
+    MaTrangThai: number;
+    TenTrangThai: string;
+  };
+  totalAmount?: number;
+  items?: Array<{
     productId: string;
     productName: string;
     selectedColor?: string;
     selectedSize?: string;
     quantity: number;
     unitPrice: number;
+  }>;
+  CT_PhieuDatHangNCCs?: Array<{
+    MaCTSP: string;
+    TenSP: string;
+    SoLuong: number;
+    DonGia: number;
+    [key: string]: any;
   }>;
 }
 
@@ -64,8 +85,8 @@ export const useGoodsReceiptData = (currentUserId: string) => {
   
   // State
   const [goodsReceipts, setGoodsReceipts] = useState<GoodsReceipt[]>([]);
-  const [availablePOs, setAvailablePOs] = useState<PurchaseOrder[]>([]);
-  const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
+  const [availablePOs, setAvailablePOs] = useState<any[]>([]);
+  const [selectedPO, setSelectedPO] = useState<any | null>(null);
   const [selectedGR, setSelectedGR] = useState<GoodsReceipt | null>(null);
   
   const [loading, setLoading] = useState({
@@ -86,7 +107,10 @@ export const useGoodsReceiptData = (currentUserId: string) => {
     setLoading(prev => ({ ...prev, goodsReceipts: true }));
     
     try {
-      const receipts = await getGoodsReceipts();
+      const response = await getGoodsReceipts();
+      
+      // Extract data from response object or use response directly if it's already an array
+      const receipts = (response as any)?.data || response;
       setGoodsReceipts(Array.isArray(receipts) ? receipts : []);
       
       // Calculate stats
@@ -121,7 +145,11 @@ export const useGoodsReceiptData = (currentUserId: string) => {
     setLoading(prev => ({ ...prev, purchaseOrders: true }));
     
     try {
-      const orders = await getAvailablePurchaseOrders();
+      const response = await getAvailablePurchaseOrders();
+      console.log(response);
+      
+      // Extract data from response object
+      const orders = (response as any)?.data || []; 
       setAvailablePOs(Array.isArray(orders) ? orders : []);
       setStats(prev => ({
         ...prev,

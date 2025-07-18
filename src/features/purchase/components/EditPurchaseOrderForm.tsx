@@ -19,7 +19,7 @@ import { getProductColorsSizes, getProductsBySupplier } from "../../../services/
 import { POForm, Supplier, Product, PurchaseOrderItem, Color, Size } from "../types";
 import { useState, useEffect } from "react";
 
-interface CreatePurchaseOrderFormProps {
+interface EditPurchaseOrderFormProps {
   poForm: POForm;
   setPOForm: (form: POForm) => void;
   suppliers: Supplier[];
@@ -29,7 +29,7 @@ interface CreatePurchaseOrderFormProps {
   isLoading?: boolean;
 }
 
-export default function CreatePurchaseOrderForm({
+export default function EditPurchaseOrderForm({
   poForm,
   setPOForm,
   suppliers,
@@ -37,37 +37,25 @@ export default function CreatePurchaseOrderForm({
   onSubmit,
   onCancel,
   isLoading = false,
-}: CreatePurchaseOrderFormProps) {
+}: EditPurchaseOrderFormProps) {
   // State for colors and sizes for each item
   const [itemColorsSizes, setItemColorsSizes] = useState<{ [key: number]: { colors: Color[], sizes: Size[] } }>({});
-  
-  // State for filtered products (when supplier is selected first)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
-  
-  // Debug log for suppliers
-  console.log("CreatePurchaseOrderForm - suppliers:", suppliers);
-  console.log("CreatePurchaseOrderForm - poForm:", poForm);
-  console.log("CreatePurchaseOrderForm - filteredProducts:", filteredProducts);
-  console.log("CreatePurchaseOrderForm - loadingProducts:", loadingProducts);
-  
-  // Reset filtered products when supplier is cleared
+
   useEffect(() => {
     if (!poForm.supplierId) {
       setFilteredProducts([]);
     }
   }, [poForm.supplierId]);
-  
-  // Get selected product-color-size combinations
+
   const getSelectedCombinations = () => {
     return poForm.items
       .filter(item => item.MaSP && item.MaMau && item.MaKichThuoc)
       .map(item => `${item.MaSP}-${item.MaMau}-${item.MaKichThuoc}`);
   };
-  
-  // Check if a combination is already selected (excluding current index)
+
   const isCombinationSelected = (productId: string, colorId: number, sizeId: number, currentIndex: number) => {
-    const combination = `${productId}-${colorId}-${sizeId}`;
     return poForm.items.some((item, index) => 
       index !== currentIndex && 
       item.MaSP === productId && 
@@ -75,21 +63,15 @@ export default function CreatePurchaseOrderForm({
       item.MaKichThuoc === sizeId
     );
   };
-  
-  // Load products by supplier
+
   const loadProductsBySupplier = async (supplierId: string) => {
     if (!supplierId) {
       setFilteredProducts([]);
       return;
     }
-    
     setLoadingProducts(true);
     try {
-      console.log("Loading products for supplier:", supplierId);
       const response = await getProductsBySupplier(supplierId);
-      console.log("Products by supplier response:", response);
-      
-      // Handle different response formats
       let productData: any[] = [];
       if (Array.isArray(response)) {
         productData = response;
@@ -99,10 +81,6 @@ export default function CreatePurchaseOrderForm({
         const responseObj = response as any;
         productData = responseObj.products || responseObj.items || responseObj.result || [];
       }
-      
-      console.log("Product data length:", productData.length);
-      
-      // Transform products to match our interface
       let transformedProducts: Product[] = [];
       if (productData.length > 0) {
         transformedProducts = productData.map((product: any) => ({
@@ -113,113 +91,64 @@ export default function CreatePurchaseOrderForm({
           category: product.LoaiSP || product.category || "clothing",
         }));
       }
-      
-      console.log("Transformed products:", transformedProducts);
-      console.log("Setting filtered products to:", transformedProducts);
       setFilteredProducts(transformedProducts);
     } catch (error) {
-      console.error("Error loading products by supplier:", error);
       setFilteredProducts([]);
     } finally {
       setLoadingProducts(false);
     }
   };
-  
-  // Get available suppliers based on selected products
+
   const getAvailableSuppliers = () => {
     const selectedProductIds = poForm.items.map(item => item.MaSP).filter(id => id);
-    
     if (selectedProductIds.length === 0) {
-      return suppliers; // Show all suppliers if no products selected
+      return suppliers;
     }
-    
-    // Filter suppliers that have all selected products
-    // This is a simplified approach - in reality, you might need to query the backend
-    return suppliers.filter(supplier => {
-      // For now, we'll show all suppliers
-      // In a real app, you'd check if the supplier has the selected products
-      return true;
-    });
+    return suppliers.filter(supplier => true);
   };
-  
-  // Auto-fill supplier for product (Flow 2)
+
   const autoFillSupplierForProduct = async (productId: string) => {
     try {
-      console.log("Auto-filling supplier for product:", productId);
-      
-      // Try to find supplier from product data (if available)
       const selectedProduct = products.find(p => p.id.toString() === productId.toString());
-      console.log("Selected product for supplier lookup:", selectedProduct);
-      
-             // If product has supplier info, use it
-       if (selectedProduct && (selectedProduct as any).supplierId) {
-         const supplierId = (selectedProduct as any).supplierId;
-         console.log("Found supplier ID from product:", supplierId);
-         const newSupplierId = supplierId.toString();
-         setPOForm({ ...poForm, supplierId: newSupplierId });
-         // Load products for this supplier
-         loadProductsBySupplier(newSupplierId);
-         return;
-       }
-      
-      // Fallback: Find supplier by checking which supplier has this product
-      // Try each supplier until we find one that has this product
+      if (selectedProduct && (selectedProduct as any).supplierId) {
+        const supplierId = (selectedProduct as any).supplierId;
+        const newSupplierId = supplierId.toString();
+        setPOForm({ ...poForm, supplierId: newSupplierId });
+        loadProductsBySupplier(newSupplierId);
+        return;
+      }
       for (const supplier of suppliers) {
         try {
           const response = await getProductsBySupplier(supplier.id.toString());
           let supplierProducts: any[] = [];
-          
           if (Array.isArray(response)) {
             supplierProducts = response;
           } else if (response && Array.isArray((response as any).data)) {
             supplierProducts = (response as any).data;
           }
-          
-          // Check if this supplier has the selected product
           const hasProduct = supplierProducts.some(p => 
             (p.MaSP || p.id)?.toString() === productId.toString()
           );
-          
           if (hasProduct) {
-            console.log("Found supplier with this product:", supplier);
             const newSupplierId = supplier.id.toString();
             setPOForm({ ...poForm, supplierId: newSupplierId });
-            // Load all products for this supplier
             loadProductsBySupplier(newSupplierId);
             return;
           }
-        } catch (error) {
-          console.error("Error checking supplier products:", error);
-        }
+        } catch (error) {}
       }
-      
-      console.log("No supplier found for product:", productId);
-    } catch (error) {
-      console.error("Error auto-filling supplier:", error);
-    }
+    } catch (error) {}
   };
-  
-  // Load colors and sizes for a product
+
   const loadProductColorsSizes = async (index: number, productId: string) => {
-    console.log(`loadProductColorsSizes called with index: ${index}, productId: ${productId}`);
     if (!productId || productId === "") {
-      console.log("No productId provided, skipping API call");
       return;
     }
-    
     try {
-      console.log(`Loading colors/sizes for product ${productId} at index ${index}`);
-      console.log("getProductColorsSizes function:", getProductColorsSizes);
-      
       const response = await getProductColorsSizes(productId);
-      console.log("Colors/sizes response:", response);
-      
-      // Handle different API response formats
       let colors: Color[] = [];
       let sizes: Size[] = [];
       let dataArray: any[] = [];
-      
-      // Try different response formats
       if (Array.isArray(response)) {
         dataArray = response;
       } else if (response && response.success && Array.isArray(response.data)) {
@@ -227,20 +156,13 @@ export default function CreatePurchaseOrderForm({
       } else if (response && Array.isArray(response.data)) {
         dataArray = response.data;
       } else if (response && typeof response === 'object') {
-        // Try to find array in common properties
         const responseObj = response as any;
         dataArray = responseObj.products || responseObj.items || responseObj.result || responseObj.data || [];
       }
-      
-      console.log("Data array:", dataArray);
-      
       if (dataArray.length > 0) {
-        // Extract unique colors from the data
         const uniqueColors = new Map<number, Color>();
         const uniqueSizes = new Map<number, Size>();
-        
         dataArray.forEach((item: any) => {
-          // Extract color
           if (item.Mau) {
             uniqueColors.set(item.Mau.MaMau, {
               MaMau: item.Mau.MaMau,
@@ -248,8 +170,6 @@ export default function CreatePurchaseOrderForm({
               MaHex: item.Mau.MaHex ? `#${item.Mau.MaHex}` : undefined
             });
           }
-          
-          // Extract size
           if (item.KichThuoc) {
             uniqueSizes.set(item.KichThuoc.MaKichThuoc, {
               MaKichThuoc: item.KichThuoc.MaKichThuoc,
@@ -257,23 +177,14 @@ export default function CreatePurchaseOrderForm({
             });
           }
         });
-        
         colors = Array.from(uniqueColors.values());
         sizes = Array.from(uniqueSizes.values());
-        
-        console.log("Extracted colors:", colors);
-        console.log("Extracted sizes:", sizes);
       }
-      
       setItemColorsSizes(prev => ({
         ...prev,
         [index]: { colors, sizes }
       }));
-      
-      console.log(`Loaded ${colors.length} colors and ${sizes.length} sizes for index ${index}`);
     } catch (error) {
-      console.error(`Error loading colors/sizes for product ${productId}:`, error);
-      // Set empty arrays on error
       setItemColorsSizes(prev => ({
         ...prev,
         [index]: { colors: [], sizes: [] }
@@ -303,56 +214,31 @@ export default function CreatePurchaseOrderForm({
     field: keyof Omit<PurchaseOrderItem, "totalPrice">,
     value: any
   ) => {
-    console.log(`updatePOItem: index=${index}, field=${field}, value=${value}`);
-    
     const newItems = [...poForm.items];
     newItems[index] = { ...newItems[index], [field]: value };
-
-    // Auto-fill product name and price when product is selected
     if (field === "MaSP") {
-      console.log("Product selection - value:", value, "type:", typeof value);
-      console.log("Available products:", products);
-      console.log("Available filteredProducts:", filteredProducts);
-      
-      // Find product from either filtered or all products
       const allProducts = filteredProducts.length > 0 ? filteredProducts : products;
       const product = allProducts.find((p) => p.id.toString() === value.toString());
-      console.log("Found product:", product);
-      
       if (product) {
         newItems[index].productName = product.name;
-        newItems[index].unitPrice = Math.floor(product.price * 0.6); // Wholesale price
-        // Reset color and size when product changes
+        newItems[index].unitPrice = Math.floor(product.price * 0.6);
         newItems[index].MaMau = "";
         newItems[index].MaKichThuoc = "";
-        
-        // Clear existing colors/sizes for this index first
         setItemColorsSizes(prev => ({
           ...prev,
           [index]: { colors: [], sizes: [] }
         }));
-        
-        // Load colors and sizes for the new product immediately
-        console.log("About to call loadProductColorsSizes with:", index, value);
         loadProductColorsSizes(index, value);
-        
-        // Flow 2: Auto-fill supplier if not selected and product is from all products list
         if (!poForm.supplierId && filteredProducts.length === 0) {
-          console.log("Flow 2: Auto-filling supplier for product");
-          // Get supplier from product data or find supplier who has this product
           autoFillSupplierForProduct(value);
         }
       } else {
-        console.log("No product found, clearing colors/sizes");
-        // Clear colors/sizes if no product selected
         setItemColorsSizes(prev => ({
           ...prev,
           [index]: { colors: [], sizes: [] }
         }));
       }
     }
-
-    // Check if the selected combination is already used
     if (field === "MaMau" || field === "MaKichThuoc") {
       const currentItem = newItems[index];
       if (currentItem.MaSP && currentItem.MaMau && currentItem.MaKichThuoc) {
@@ -362,16 +248,11 @@ export default function CreatePurchaseOrderForm({
           currentItem.MaKichThuoc, 
           index
         );
-        
         if (isAlreadySelected) {
-          // Clear the field that was just changed to avoid duplicate
           newItems[index][field] = "";
-          console.log(`Combination already selected, clearing ${field}`);
         }
       }
     }
-
-    console.log("Updated items:", newItems);
     setPOForm({ ...poForm, items: newItems });
   };
 
@@ -380,12 +261,9 @@ export default function CreatePurchaseOrderForm({
       ...poForm,
       items: poForm.items.filter((_, i) => i !== index),
     });
-    
-    // Clean up colors/sizes state
     setItemColorsSizes(prev => {
       const newState = { ...prev };
       delete newState[index];
-      // Re-index remaining items
       const reindexed: { [key: number]: { colors: Color[], sizes: Size[] } } = {};
       Object.entries(newState).forEach(([key, value]) => {
         const keyNum = parseInt(key);
@@ -407,10 +285,6 @@ export default function CreatePurchaseOrderForm({
   };
 
   const handleSubmit = () => {
-    console.log("Form submit - poForm:", poForm);
-    console.log("Form submit - supplierId:", poForm.supplierId, "type:", typeof poForm.supplierId);
-    console.log("Form submit - suppliers:", suppliers);
-    
     if (!poForm.supplierId || poForm.items.length === 0) {
       alert("Vui lòng chọn nhà cung cấp và thêm ít nhất một sản phẩm");
       return;
@@ -420,29 +294,24 @@ export default function CreatePurchaseOrderForm({
 
   return (
     <div className="space-y-6 relative">
-      {/* Loading Overlay */}
-      {/* Removed isLoadingPODetails */}
-
-      {/* Basic Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
         <div>
           <Label htmlFor="supplier">Nhà cung cấp *</Label>
           <Select
             value={poForm.supplierId}
             onValueChange={(value) => {
-              console.log("Supplier selected:", value, "type:", typeof value);
               setPOForm({ ...poForm, supplierId: value });
-              // Load products for this supplier
               loadProductsBySupplier(value);
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Chọn nhà cung cấp" />
+              <SelectValue placeholder="Chọn nhà cung cấp">
+                {suppliers.find(s => s.id == poForm.supplierId)?.name || "Chọn nhà cung cấp"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {(() => {
                 const availableSuppliers = getAvailableSuppliers();
-                
                 return availableSuppliers && availableSuppliers.length > 0 ? (
                   availableSuppliers.map((supplier) => (
                     <SelectItem key={supplier.id} value={supplier.id.toString()}>
@@ -458,22 +327,19 @@ export default function CreatePurchaseOrderForm({
             </SelectContent>
           </Select>
         </div>
-
         <div>
           <Label htmlFor="deliveryDate">Ngày giao dự kiến</Label>
           <Input
             id="deliveryDate"
             type="date"
             className="w-full"
-            value={poForm.expectedDeliveryDate}
+            value={poForm.expectedDeliveryDate ? poForm.expectedDeliveryDate.slice(0, 10) : ""}
             onChange={(e) =>
               setPOForm({ ...poForm, expectedDeliveryDate: e.target.value })
             }
           />
         </div>
       </div>
-
-      {/* Items */}
       <div>
         <div className="flex justify-between items-center mb-4">
           <Label>Danh sách sản phẩm *</Label>
@@ -482,7 +348,6 @@ export default function CreatePurchaseOrderForm({
             Thêm sản phẩm
           </Button>
         </div>
-
         {poForm.items.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để bắt đầu.
@@ -490,7 +355,6 @@ export default function CreatePurchaseOrderForm({
         ) : (
           <div className="space-y-4">
             {poForm.items.map((item, index) => {
-              console.log(`Rendering item ${index}:`, item);
               return (
                 <Card key={index}>
                   <CardContent className="pt-4">
@@ -501,19 +365,16 @@ export default function CreatePurchaseOrderForm({
                         key={`product-${index}`}
                         value={item.MaSP?.toString() || ""}
                         onValueChange={(value) => {
-                          console.log(`Product selected: ${value} for index ${index}`);
                           updatePOItem(index, "MaSP", value);
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Chọn sản phẩm" />
+                          <SelectValue placeholder="Chọn sản phẩm">
+                            {filteredProducts.find(p => p.id == item.MaSP)?.name || products.find(p => p.id == item.MaSP)?.name || item.productName || "Chọn sản phẩm"}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {(() => {
-                            console.log("Supplier selected:", poForm.supplierId);
-                            console.log("Filtered products:", filteredProducts);
-                            console.log("All products:", products);
-                            
                             if (loadingProducts) {
                               return (
                                 <div className="px-2 py-1 text-sm text-muted-foreground">
@@ -521,22 +382,14 @@ export default function CreatePurchaseOrderForm({
                                 </div>
                               );
                             }
-                            
-                            // If supplier is selected, only show filtered products
                             if (poForm.supplierId) {
-                              console.log("Supplier selected, showing filtered products");
-                              console.log("FilteredProducts length:", filteredProducts.length);
-                              console.log("FilteredProducts array:", filteredProducts);
-                              
                               if (filteredProducts.length > 0) {
-                                console.log("Showing filtered products");
                                 return filteredProducts.map((product) => (
                                   <SelectItem key={product.id} value={product.id.toString()}>
                                     {product.name}
                                   </SelectItem>
                                 ));
                               } else {
-                                console.log("No filtered products, showing empty message");
                                 return (
                                   <div className="px-2 py-1 text-sm text-muted-foreground">
                                     Nhà cung cấp này không có sản phẩm nào
@@ -544,9 +397,6 @@ export default function CreatePurchaseOrderForm({
                                 );
                               }
                             }
-                            
-                            // If no supplier selected, show all products
-                            console.log("No supplier selected, showing all products");
                             return products && products.length > 0 ? (
                               products.map((product) => (
                                 <SelectItem key={product.id} value={product.id.toString()}>
@@ -562,7 +412,6 @@ export default function CreatePurchaseOrderForm({
                         </SelectContent>
                       </Select>
                     </div>
-
                     <div>
                       <Label>Màu sắc</Label>
                       <Select
@@ -573,59 +422,45 @@ export default function CreatePurchaseOrderForm({
                         }
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Chọn màu" />
+                          <SelectValue placeholder="Chọn màu">
+                            {itemColorsSizes[index]?.colors.find(c => c.MaMau == item.MaMau)?.TenMau || item.colorName || "Chọn màu"}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {(() => {
                             const colorsData = itemColorsSizes[index]?.colors || [];
-                            console.log(`Colors for index ${index}:`, colorsData);
-                            
-                            if (colorsData.length > 0) {
-                              const availableColors = colorsData.filter(color => {
-                                // If size is selected, check if this specific color+size combination is already used
-                                if (item.MaKichThuoc) {
-                                  return !isCombinationSelected(item.MaSP.toString(), color.MaMau, item.MaKichThuoc, index);
-                                }
-                                // If no size selected yet, check if this color has at least one available size
-                                const sizes = itemColorsSizes[index]?.sizes || [];
-                                return sizes.some(size => 
-                                  !isCombinationSelected(item.MaSP.toString(), color.MaMau, size.MaKichThuoc, index)
-                                );
-                              });
-                              
-                              console.log(`Available colors for index ${index}:`, availableColors);
-                              
-                              return availableColors.length > 0 ? (
-                                availableColors.map((color) => (
-                                  <SelectItem key={color.MaMau} value={color.MaMau.toString()}>
-                                    <div className="flex items-center gap-2">
-                                      {color.MaHex && (
-                                        <div 
-                                          className="w-4 h-4 rounded border border-gray-300"
-                                          style={{ backgroundColor: color.MaHex }}
-                                        />
-                                      )}
-                                      {color.TenMau}
-                                    </div>
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <div className="px-2 py-1 text-sm text-muted-foreground">
-                                  Tất cả màu đã được chọn
-                                </div>
+                            const availableColors = colorsData.filter(color => {
+                              if (item.MaKichThuoc) {
+                                return !isCombinationSelected(item.MaSP.toString(), color.MaMau, item.MaKichThuoc, index);
+                              }
+                              const sizes = itemColorsSizes[index]?.sizes || [];
+                              return sizes.some(size => 
+                                !isCombinationSelected(item.MaSP.toString(), color.MaMau, size.MaKichThuoc, index)
                               );
-                            } else {
-                              return (
-                                <div className="px-2 py-1 text-sm text-muted-foreground">
-                                  {item.MaSP ? "Không có màu nào" : "Chọn sản phẩm trước"}
-                                </div>
-                              );
-                            }
+                            });
+                            return availableColors.length > 0 ? (
+                              availableColors.map((color) => (
+                                <SelectItem key={color.MaMau} value={color.MaMau.toString()}>
+                                  <div className="flex items-center gap-2">
+                                    {color.MaHex && (
+                                      <div 
+                                        className="w-4 h-4 rounded border border-gray-300"
+                                        style={{ backgroundColor: color.MaHex }}
+                                      />
+                                    )}
+                                    {color.TenMau}
+                                  </div>
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <div className="px-2 py-1 text-sm text-muted-foreground">
+                                Tất cả màu đã được chọn
+                              </div>
+                            );
                           })()}
                         </SelectContent>
                       </Select>
                     </div>
-
                     <div>
                       <Label>Kích thước</Label>
                       <Select
@@ -636,51 +471,37 @@ export default function CreatePurchaseOrderForm({
                         }
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Chọn kích thước" />
+                          <SelectValue placeholder="Chọn kích thước">
+                            {itemColorsSizes[index]?.sizes.find(s => s.MaKichThuoc == item.MaKichThuoc)?.TenKichThuoc || item.sizeName || "Chọn kích thước"}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {(() => {
                             const sizesData = itemColorsSizes[index]?.sizes || [];
-                            console.log(`Sizes for index ${index}:`, sizesData);
-                            
-                            if (sizesData.length > 0) {
-                              const availableSizes = sizesData.filter(size => {
-                                // If color is selected, check if this specific color+size combination is already used
-                                if (item.MaMau) {
-                                  return !isCombinationSelected(item.MaSP.toString(), item.MaMau, size.MaKichThuoc, index);
-                                }
-                                // If no color selected yet, check if this size has at least one available color
-                                const colors = itemColorsSizes[index]?.colors || [];
-                                return colors.some(color => 
-                                  !isCombinationSelected(item.MaSP.toString(), color.MaMau, size.MaKichThuoc, index)
-                                );
-                              });
-                              
-                              console.log(`Available sizes for index ${index}:`, availableSizes);
-                              
-                              return availableSizes.length > 0 ? (
-                                availableSizes.map((size) => (
-                                  <SelectItem key={size.MaKichThuoc} value={size.MaKichThuoc.toString()}>
-                                    {size.TenKichThuoc}
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <div className="px-2 py-1 text-sm text-muted-foreground">
-                                  Tất cả kích thước đã được chọn
-                                </div>
+                            const availableSizes = sizesData.filter(size => {
+                              if (item.MaMau) {
+                                return !isCombinationSelected(item.MaSP.toString(), item.MaMau, size.MaKichThuoc, index);
+                              }
+                              const colors = itemColorsSizes[index]?.colors || [];
+                              return colors.some(color => 
+                                !isCombinationSelected(item.MaSP.toString(), color.MaMau, size.MaKichThuoc, index)
                               );
-                            } else {
-                              return (
-                                <div className="px-2 py-1 text-sm text-muted-foreground">
-                                  {item.MaSP ? "Không có kích thước nào" : "Chọn sản phẩm trước"}
-                                </div>
-                              );
-                            }
+                            });
+                            return availableSizes.length > 0 ? (
+                              availableSizes.map((size) => (
+                                <SelectItem key={size.MaKichThuoc} value={size.MaKichThuoc.toString()}>
+                                  {size.TenKichThuoc}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <div className="px-2 py-1 text-sm text-muted-foreground">
+                                Tất cả kích thước đã được chọn
+                              </div>
+                            );
                           })()}
                         </SelectContent>
                       </Select>
                     </div>
-
                     <div>
                       <Label>Số lượng</Label>
                       <Input
@@ -689,7 +510,6 @@ export default function CreatePurchaseOrderForm({
                         value={item.quantity || ""}
                         onChange={(e) => {
                           const value = e.target.value;
-                          // Allow empty string while typing
                           if (value === "") {
                             updatePOItem(index, "quantity", 1);
                           } else {
@@ -703,7 +523,6 @@ export default function CreatePurchaseOrderForm({
                         placeholder="Nhập số lượng"
                       />
                     </div>
-
                     <div>
                       <Label>Đơn giá</Label>
                       <Input
@@ -712,7 +531,6 @@ export default function CreatePurchaseOrderForm({
                         value={item.unitPrice === 0 ? "" : item.unitPrice || ""}
                         onChange={(e) => {
                           const value = e.target.value;
-                          // Allow empty string while typing
                           if (value === "") {
                             updatePOItem(index, "unitPrice", 0);
                           } else {
@@ -726,7 +544,6 @@ export default function CreatePurchaseOrderForm({
                         placeholder="Nhập đơn giá"
                       />
                     </div>
-
                     <div className="flex items-center gap-2">
                       <div className="text-sm font-medium">
                         {formatPrice(item.quantity * item.unitPrice)}
@@ -744,7 +561,6 @@ export default function CreatePurchaseOrderForm({
               </Card>
               );
             })}
-
             <div className="text-right">
               <div className="text-lg font-bold">
                 Tổng cộng: {formatPrice(calculateTotal())}
@@ -753,8 +569,6 @@ export default function CreatePurchaseOrderForm({
           </div>
         )}
       </div>
-
-      {/* Notes */}
       <div>
         <Label htmlFor="notes">Ghi chú</Label>
         <Textarea
@@ -765,8 +579,6 @@ export default function CreatePurchaseOrderForm({
           rows={3}
         />
       </div>
-
-      {/* Actions */}
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel} disabled={isLoading}>
           Hủy
@@ -778,8 +590,8 @@ export default function CreatePurchaseOrderForm({
         >
           <Save className="h-4 w-4 mr-2" />
           {isLoading 
-            ? "Đang tạo..." 
-            : "Tạo phiếu đặt hàng"
+            ? "Đang lưu..." 
+            : "Lưu chỉnh sửa"
           }
         </Button>
       </div>
