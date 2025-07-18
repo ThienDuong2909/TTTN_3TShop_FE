@@ -45,19 +45,40 @@ interface GoodsReceiptItem {
 }
 
 interface PurchaseOrder {
-  id: string;
-  supplierId: string;
-  supplierName: string;
-  orderDate: string;
-  status: string;
-  totalAmount: number;
-  items: Array<{
+  id?: string;
+  MaPDH?: string;
+  supplierId?: string;
+  MaNCC?: number;
+  supplierName?: string;
+  NhaCungCap?: {
+    MaNCC: number;
+    TenNCC: string;
+    DiaChi?: string;
+    SDT?: string;
+    Email?: string;
+  };
+  orderDate?: string;
+  NgayDat?: string;
+  status?: string;
+  TrangThaiDatHangNCC?: {
+    MaTrangThai: number;
+    TenTrangThai: string;
+  };
+  totalAmount?: number;
+  items?: Array<{
     productId: string;
     productName: string;
     selectedColor?: string;
     selectedSize?: string;
     quantity: number;
     unitPrice: number;
+  }>;
+  CT_PhieuDatHangNCCs?: Array<{
+    MaCTSP: string;
+    TenSP: string;
+    SoLuong: number;
+    DonGia: number;
+    [key: string]: any;
   }>;
 }
 
@@ -71,8 +92,8 @@ interface GRForm {
 interface CreateGoodsReceiptFormProps {
   grForm: GRForm;
   setGRForm: (form: GRForm) => void;
-  availablePOs: PurchaseOrder[];
-  selectedPO: PurchaseOrder | null;
+  availablePOs: any[];
+  selectedPO: any | null;
   onPOSelect: (poId: string) => void;
   onCreateGR: () => void;
   onCancel: () => void;
@@ -197,9 +218,9 @@ export default function CreateGoodsReceiptForm({
               <SelectValue placeholder="Chọn phiếu đặt hàng" />
             </SelectTrigger>
             <SelectContent>
-              {availablePOs.map((po) => (
-                <SelectItem key={po.id} value={po.id}>
-                  {po.id} - {po.supplierName}
+              {availablePOs.map((po: any) => (
+                <SelectItem key={po.MaPDH || po.id} value={po.MaPDH || po.id}>
+                  {po.MaPDH || po.id} - {po.NhaCungCap?.TenNCC || po.supplierName}
                 </SelectItem>
               ))}
             </SelectContent>

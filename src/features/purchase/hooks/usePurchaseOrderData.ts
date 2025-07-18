@@ -16,28 +16,43 @@ import {
   getSuppliers,
   getProductDetails,
 } from "../../../services/api";
+import { updatePurchaseOrder as updatePurchaseOrderAPI } from "../../../services/commonService";
 
 // Transform API data to match our interface
-const transformPurchaseOrderFromAPI = (apiPO: any): PurchaseOrder => ({
-  id: apiPO.MaPDH,
-  supplierId: apiPO.MaNCC,
-  supplierName: apiPO.TenNCC || apiPO.MaNCC,
-  items: (apiPO.details || []).map((item: any) => ({
-    MaSP: item.MaCTSP,
-    productName: item.TenSP || item.MaCTSP,
-    MaMau: item.MaMau || "",
-    MaKichThuoc: item.MaKichThuoc || "",
+const transformPurchaseOrderFromAPI = (apiPO: any): PurchaseOrder => {
+  console.log("Transforming purchase order:", apiPO);
+  
+  const items = (apiPO.CT_PhieuDatHangNCCs || []).map((item: any) => ({
+    MaSP: item.ChiTietSanPham?.MaSP || item.MaCTSP,
+    productName: item.ChiTietSanPham?.SanPham?.TenSP || item.MaCTSP,
+    MaMau: item.ChiTietSanPham?.MaMau || "",
+    MaKichThuoc: item.ChiTietSanPham?.MaKichThuoc || "",
+    colorName: item.ChiTietSanPham?.Mau?.TenMau || "",
+    sizeName: item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || "",
     quantity: item.SoLuong || 0,
-    unitPrice: item.DonGia || 0,
-    totalPrice: item.ThanhTien || (item.SoLuong * item.DonGia) || 0,
-  })),
-  status: getStatusFromTrangThai(apiPO.MaTrangThai),
-  totalAmount: apiPO.TongTien || 0,
-  orderDate: apiPO.NgayDat || new Date().toISOString(),
-  expectedDeliveryDate: apiPO.NgayGiaoHang || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-  notes: apiPO.GhiChu || "",
-  createdBy: apiPO.MaNV || "",
-});
+    unitPrice: parseFloat(item.DonGia) || 0,
+    totalPrice: (item.SoLuong || 0) * (parseFloat(item.DonGia) || 0),
+  }));
+  
+  // Calculate total amount from items
+  const totalAmount = items.reduce((sum: number, item: any) => sum + item.totalPrice, 0);
+  
+  const transformed = {
+    id: apiPO.MaPDH,
+    supplierId: apiPO.MaNCC,
+    supplierName: apiPO.NhaCungCap?.TenNCC || apiPO.MaNCC,
+    items,
+    status: getStatusFromTrangThai(apiPO.TrangThaiDatHangNCC?.MaTrangThai || apiPO.MaTrangThai),
+    totalAmount,
+    orderDate: apiPO.NgayDat || new Date().toISOString(),
+    expectedDeliveryDate: apiPO.NgayGiaoHang || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    notes: apiPO.GhiChu || "",
+    createdBy: apiPO.MaNV || "",
+  };
+  
+  console.log("Transformed purchase order:", transformed);
+  return transformed;
+};
 
 const transformSupplierFromAPI = (apiSupplier: any): Supplier => ({
   id: apiSupplier.MaNCC,
@@ -101,7 +116,20 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     
     try {
       const response = await getPurchaseOrders();
-      const orders = Array.isArray(response) ? response : [];
+      console.log("response", response);
+      
+      // Handle API response structure: {success, message, data}
+      let orders: any[] = [];
+      if (Array.isArray(response)) {
+        orders = response;
+      } else if (response && Array.isArray((response as any).data)) {
+        orders = (response as any).data;
+      } else if (response && typeof response === 'object') {
+        // Try to find array in common properties
+        const responseObj = response as any;
+        orders = responseObj.orders || responseObj.items || responseObj.result || [];
+      }
+      
       const transformedOrders = orders.map(transformPurchaseOrderFromAPI);
       setPurchaseOrders(transformedOrders);
       
@@ -237,8 +265,14 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       console.log("Creating purchase order with form data:", poForm);
       console.log("Current user ID:", currentUserId);
       console.log("Available suppliers:", suppliers);
+      console.log("Looking for supplier with ID:", poForm.supplierId, "type:", typeof poForm.supplierId);
       
-      const supplier = suppliers.find(s => s.id === poForm.supplierId);
+      const supplier = suppliers.find(s => {
+        console.log("Comparing supplier.id:", s.id, "type:", typeof s.id, "with poForm.supplierId:", poForm.supplierId, "type:", typeof poForm.supplierId);
+        return s.id.toString() === poForm.supplierId.toString();
+      });
+      
+      console.log("Found supplier:", supplier);
       if (!supplier) {
         throw new Error("Không tìm thấy nhà cung cấp");
       }
@@ -252,17 +286,29 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         MaNCC: poForm.supplierId,
         MaTrangThai: 1, // Draft status
         GhiChu: poForm.notes || "",
-        details: poForm.items.map(item => ({
-          MaCTSP: item.MaSP,
-          MaMau: item.MaMau,
-          MaKichThuoc: item.MaKichThuoc,
-          SoLuong: item.quantity,
-          DonGia: item.unitPrice,
-          ThanhTien: item.quantity * item.unitPrice,
-        })),
+        details: poForm.items.map(item => {
+          console.log("Mapping item:", item);
+          console.log("Item MaSP:", item.MaSP, "type:", typeof item.MaSP);
+          console.log("Item MaMau:", item.MaMau, "type:", typeof item.MaMau);
+          console.log("Item MaKichThuoc:", item.MaKichThuoc, "type:", typeof item.MaKichThuoc);
+          
+          const mappedItem = {
+            MaSP: item.MaSP,
+            MaMau: item.MaMau,
+            MaKichThuoc: item.MaKichThuoc,
+            SoLuong: item.quantity,
+            DonGia: item.unitPrice,
+            ThanhTien: item.quantity * item.unitPrice,
+          };
+          
+          console.log("Mapped item:", mappedItem);
+          return mappedItem;
+        }),
       };
 
-      console.log("Sending API data:", apiData);
+      console.log("Final API data before sending:", apiData);
+      console.log("API data details:", JSON.stringify(apiData, null, 2));
+      
       const token = localStorage.getItem("token");
       console.log("Token exists:", !!token);
       console.log("Token preview:", token ? `${token.substring(0, 20)}...` : "null");
@@ -308,6 +354,83 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       });
     } finally {
       setLoading(prev => ({ ...prev, creating: false }));
+    }
+    return false;
+  };
+
+  // Update purchase order
+  const updatePurchaseOrder = async (poId: string, poForm: POForm) => {
+    if (!poForm.supplierId || poForm.items.length === 0) {
+      toast({
+        title: "Thông tin không đầy đủ",
+        description: "Vui lòng chọn nhà cung cấp và thêm ít nhất một sản phẩm",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setLoading(prev => ({ ...prev, updating: true }));
+    
+    try {
+      console.log("Updating purchase order with ID:", poId);
+      console.log("Form data:", poForm);
+      
+      const supplier = suppliers.find(s => s.id.toString() === poForm.supplierId.toString());
+      if (!supplier) {
+        throw new Error("Không tìm thấy nhà cung cấp");
+      }
+
+      // Transform data for API
+      const apiData = {
+        NgayDat: new Date().toISOString().split('T')[0],
+        MaNV: 1,
+        MaNCC: poForm.supplierId,
+        MaTrangThai: 1, // Keep as draft
+        GhiChu: poForm.notes || "",
+        details: poForm.items.map(item => ({
+          MaSP: item.MaSP,
+          MaMau: item.MaMau,
+          MaKichThuoc: item.MaKichThuoc,
+          SoLuong: item.quantity,
+          DonGia: item.unitPrice,
+          ThanhTien: item.quantity * item.unitPrice,
+        })),
+      };
+
+      console.log("Update API data:", apiData);
+      
+      const result = await updatePurchaseOrderAPI(poId, apiData);
+      console.log("Update result:", result);
+      
+      toast({
+        title: "Thành công",
+        description: "Phiếu đặt hàng đã được cập nhật thành công",
+      });
+
+      // Reload data
+      await loadPurchaseOrders();
+      
+      return true;
+    } catch (error: any) {
+      console.error("Error updating purchase order:", error);
+      
+      let errorMessage = "Không thể cập nhật phiếu đặt hàng";
+      
+      if (error.response?.status === 401) {
+        errorMessage = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+      } else if (error.response?.status === 403) {
+        errorMessage = "Bạn không có quyền cập nhật phiếu đặt hàng.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      toast({
+        title: "Lỗi cập nhật phiếu đặt hàng",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, updating: false }));
     }
     return false;
   };
@@ -410,6 +533,7 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     loadSuppliers,
     loadProducts,
     createPurchaseOrder,
+    updatePurchaseOrder,
     sendPurchaseOrder,
     confirmPurchaseOrder,
     navigateToGoodsReceipt,

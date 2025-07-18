@@ -120,6 +120,7 @@ export const getProductColorsSizes = async (productId) => {
 export const getPurchaseOrders = async () => {
   try {
     const response = await api.get("/purchase-orders");
+    console.log("getPurchaseOrders response:", response.data);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -129,18 +130,32 @@ export const getPurchaseOrders = async () => {
 // Tạo đơn đặt hàng mới
 export const createPurchaseOrder = async (data) => {
   try {
+    console.log("=== API createPurchaseOrder ===");
+    console.log("Input data:", data);
+    
     const orderData = {
       MaPDH: data.MaPDH,
       NgayDat: formatDateForApi(data.NgayDat),
       MaNV: data.MaNV,
       MaNCC: data.MaNCC,
       MaTrangThai: data.MaTrangThai,
-      details: data.details.map(item => ({
-        MaCTSP: item.MaCTSP,
-        SoLuong: item.SoLuong,
-        DonGia: item.DonGia
-      }))
+      details: data.details.map(item => {
+        console.log("Processing item:", item);
+        const mappedItem = {
+          MaSP: item.MaSP,
+          MaMau: item.MaMau,
+          MaKichThuoc: item.MaKichThuoc,
+          SoLuong: item.SoLuong,
+          DonGia: item.DonGia,
+          ThanhTien: item.ThanhTien
+        };
+        console.log("Mapped item:", mappedItem);
+        return mappedItem;
+      })
     };
+    
+    console.log("Final orderData:", orderData);
+    console.log("Sending to backend:", JSON.stringify(orderData, null, 2));
     
     const response = await api.post("/purchase-orders", orderData);
     return response.data;
@@ -153,6 +168,45 @@ export const createPurchaseOrder = async (data) => {
 export const getPurchaseOrderById = async (id) => {
   try {
     const response = await api.get(`/purchase-orders/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Cập nhật phiếu đặt hàng
+export const updatePurchaseOrder = async (id, data) => {
+  try {
+    console.log("=== API updatePurchaseOrder ===");
+    console.log("ID:", id);
+    console.log("Input data:", data);
+    
+    const orderData = {
+      MaPDH: id,
+      NgayDat: formatDateForApi(data.NgayDat || new Date().toISOString().split('T')[0]),
+      MaNV: data.MaNV || 1,
+      MaNCC: data.MaNCC,
+      MaTrangThai: data.MaTrangThai || 1,
+      GhiChu: data.GhiChu || "",
+      details: data.details.map(item => {
+        console.log("Processing item:", item);
+        const mappedItem = {
+          MaSP: item.MaSP,
+          MaMau: item.MaMau,
+          MaKichThuoc: item.MaKichThuoc,
+          SoLuong: item.SoLuong,
+          DonGia: item.DonGia,
+          ThanhTien: item.ThanhTien
+        };
+        console.log("Mapped item:", mappedItem);
+        return mappedItem;
+      })
+    };
+    
+    console.log("Final orderData:", orderData);
+    console.log("Sending to backend:", JSON.stringify(orderData, null, 2));
+    
+    const response = await api.put(`/purchase-orders/${id}`, orderData);
     return response.data;
   } catch (error) {
     handleError(error);

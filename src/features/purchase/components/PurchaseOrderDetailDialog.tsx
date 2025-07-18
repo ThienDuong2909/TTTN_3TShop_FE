@@ -101,15 +101,13 @@ export default function PurchaseOrderDetailDialog({
                   <TableRow key={index}>
                     <TableCell>{item.productName}</TableCell>
                     <TableCell>
-                      {item.selectedColor && (
+                      {item.MaMau && (
                         <div className="flex items-center gap-2">
                           <div
                             className="w-4 h-4 rounded border"
-                            style={{
-                              backgroundColor: item.selectedColor,
-                            }}
+                            
                           />
-                          {item.selectedSize}
+                          {item.MaKichThuoc}
                         </div>
                       )}
                     </TableCell>

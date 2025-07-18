@@ -45,6 +45,7 @@ export default function PurchaseOrders() {
     stats,
     loading,
     createPurchaseOrder,
+    updatePurchaseOrder,
     sendPurchaseOrder,
     confirmPurchaseOrder,
     navigateToGoodsReceipt,
@@ -61,19 +62,31 @@ export default function PurchaseOrders() {
     setIsCreatePOOpen,
     isDetailOpen,
     setIsDetailOpen,
+    isEditMode,
+    editingPO,
+    isLoadingPODetails,
     filters,
     resetForm,
     updateFilter,
     getFilteredPOs,
     openCreateDialog,
     closeCreateDialog,
+    openEditDialog,
+    closeEditDialog,
     openDetailDialog,
     closeDetailDialog,
   } = usePurchaseOrderForm(state.user.id);
 
   // Handle actions
   const handleCreatePO = async () => {
-    const success = await createPurchaseOrder(poForm);
+    let success: boolean;
+    
+    if (isEditMode && editingPO) {
+      success = await updatePurchaseOrder(editingPO.id, poForm);
+    } else {
+      success = await createPurchaseOrder(poForm);
+    }
+    
     if (success) {
       closeCreateDialog();
     }
@@ -84,9 +97,9 @@ export default function PurchaseOrders() {
     openDetailDialog();
   };
 
-  const handleEdit = (po: any) => {
-    // TODO: Implement edit functionality
-    console.log("Edit PO:", po.id);
+  const handleEdit = async (po: any) => {
+    console.log("Edit PO:", po);
+    await openEditDialog(po);
   };
 
   const handleSend = async (poId: string) => {
@@ -166,7 +179,10 @@ export default function PurchaseOrders() {
                 suppliers={suppliers}
                 products={products}
                 onSubmit={handleCreatePO}
-                isLoading={loading.creating}
+                isLoading={loading.creating || loading.updating}
+                isEditMode={isEditMode}
+                editingPO={editingPO}
+                isLoadingPODetails={isLoadingPODetails}
               />
             </div>
           </div>

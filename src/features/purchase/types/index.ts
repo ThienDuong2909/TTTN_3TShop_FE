@@ -1,8 +1,10 @@
 export interface PurchaseOrderItem {
-  MaSP: string;
+  MaSP: string | number;
   productName: string;
   MaMau: number | "";
   MaKichThuoc: number | "";
+  colorName?: string;
+  sizeName?: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -10,7 +12,7 @@ export interface PurchaseOrderItem {
 
 export interface PurchaseOrder {
   id: string;
-  supplierId: string;
+  supplierId: string | number;
   supplierName: string;
   items: PurchaseOrderItem[];
   status: "draft" | "sent" | "confirmed" | "partially_received" | "completed" | "cancelled";
@@ -18,11 +20,11 @@ export interface PurchaseOrder {
   orderDate: string;
   expectedDeliveryDate?: string;
   notes?: string;
-  createdBy: string;
+  createdBy: string | number;
 }
 
 export interface Supplier {
-  id: string;
+  id: string | number;
   name: string;
   contactPerson?: string;
   phone?: string;
@@ -31,7 +33,7 @@ export interface Supplier {
 }
 
 export interface Product {
-  id: string;
+  id: string | number;
   name: string;
   price: number;
   description?: string;

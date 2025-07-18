@@ -72,102 +72,104 @@ export default function PurchaseOrderTable({
             <span className="ml-2">Đang tải dữ liệu...</span>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Mã phiếu</TableHead>
-                <TableHead>Nhà cung cấp</TableHead>
-                <TableHead>Số lượng SP</TableHead>
-                <TableHead>Tổng tiền</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead>Ngày tạo</TableHead>
-                <TableHead>Ngày giao dự kiến</TableHead>
-                <TableHead>Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {purchaseOrders.length === 0 ? (
+          <div className="overflow-x-auto">
+            <Table className="w-full">
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    Không có phiếu đặt hàng nào
-                  </TableCell>
+                  <TableHead className="whitespace-nowrap">Mã phiếu</TableHead>
+                  <TableHead className="whitespace-nowrap">Nhà cung cấp</TableHead>
+                  <TableHead className="whitespace-nowrap">Số lượng SP</TableHead>
+                  <TableHead className="whitespace-nowrap">Tổng tiền</TableHead>
+                  <TableHead className="whitespace-nowrap">Trạng thái</TableHead>
+                  <TableHead className="whitespace-nowrap">Ngày tạo</TableHead>
+                  <TableHead className="whitespace-nowrap">Ngày giao dự kiến</TableHead>
+                  <TableHead className="whitespace-nowrap">Thao tác</TableHead>
                 </TableRow>
-              ) : (
-                purchaseOrders.map((po) => (
-                  <TableRow key={po.id}>
-                    <TableCell className="font-medium">{po.id}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{po.supplierName}</div>
-                        <div className="text-sm text-muted-foreground">
-                          ID: {po.supplierId}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{po.items.length} sản phẩm</TableCell>
-                    <TableCell className="font-medium">
-                      {formatPrice(po.totalAmount)}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(po.status)}</TableCell>
-                    <TableCell>{formatDate(po.orderDate)}</TableCell>
-                    <TableCell>
-                      {po.expectedDeliveryDate
-                        ? formatDate(po.expectedDeliveryDate)
-                        : "Chưa xác định"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onViewDetails(po)}
-                        >
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                        {po.status === "draft" && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onEdit(po)}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onSend(po.id)}
-                            >
-                              <Send className="h-3 w-3" />
-                            </Button>
-                          </>
-                        )}
-                        {po.status === "sent" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onConfirm(po.id)}
-                          >
-                            <CheckCircle className="h-3 w-3" />
-                          </Button>
-                        )}
-                        {(po.status === "confirmed" ||
-                          po.status === "partially_received") && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onCreateReceipt(po.id)}
-                          >
-                            <Package className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {purchaseOrders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      Không có phiếu đặt hàng nào
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  purchaseOrders.map((po) => (
+                    <TableRow key={po.id}>
+                      <TableCell className="font-medium whitespace-nowrap">{po.id}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <div>
+                          <div className="font-medium">{po.supplierName}</div>
+                          <div className="text-sm text-muted-foreground">
+                            ID: {po.supplierId}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{po.items.length} sản phẩm</TableCell>
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {formatPrice(po.totalAmount)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{getStatusBadge(po.status)}</TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDate(po.orderDate)}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {po.expectedDeliveryDate
+                          ? formatDate(po.expectedDeliveryDate)
+                          : "Chưa xác định"}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onViewDetails(po)}
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          {po.status === "draft" && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onEdit(po)}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onSend(po.id)}
+                              >
+                                <Send className="h-3 w-3" />
+                              </Button>
+                            </>
+                          )}
+                          {po.status === "sent" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onConfirm(po.id)}
+                            >
+                              <CheckCircle className="h-3 w-3" />
+                            </Button>
+                          )}
+                          {(po.status === "confirmed" ||
+                            po.status === "partially_received") && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onCreateReceipt(po.id)}
+                            >
+                              <Package className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>

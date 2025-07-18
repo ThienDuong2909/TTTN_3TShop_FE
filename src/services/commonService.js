@@ -9,6 +9,7 @@ import {
   getProductColorsSizes,
   getPurchaseOrders,
   createPurchaseOrder,
+  updatePurchaseOrder,
   getPurchaseOrderById,
   updatePurchaseOrderStatus,
   getAvailablePurchaseOrders,
@@ -68,6 +69,9 @@ export { getProductsBySupplier };
 // Tạo phiếu đặt hàng mới
 export { createPurchaseOrder };
 
+// Cập nhật phiếu đặt hàng
+export { updatePurchaseOrder };
+
 // Lấy danh sách phiếu đặt hàng
 export { getPurchaseOrders };
 
@@ -124,6 +128,7 @@ export default {
   // Purchase Order
   getPurchaseOrders,
   createPurchaseOrder,
+  updatePurchaseOrder,
   getPurchaseOrderById,
   updatePurchaseOrderStatus,
   getAvailablePurchaseOrders,

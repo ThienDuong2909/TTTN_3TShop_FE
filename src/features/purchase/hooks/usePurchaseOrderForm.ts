@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { POForm, PurchaseOrder, PurchaseOrderFilters as PurchaseOrderFiltersType } from "../types";
+import { getPurchaseOrderById } from "../../../services/commonService";
 
 export const usePurchaseOrderForm = (currentUserId: string) => {
   const [poForm, setPOForm] = useState<POForm>({
@@ -11,6 +12,9 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
 
   const [isCreatePOOpen, setIsCreatePOOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingPO, setEditingPO] = useState<PurchaseOrder | null>(null);
+  const [isLoadingPODetails, setIsLoadingPODetails] = useState(false);
   
   const [filters, setFilters] = useState<PurchaseOrderFiltersType>({
     searchQuery: "",
@@ -24,6 +28,97 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
       notes: "",
       items: [],
     });
+    setIsEditMode(false);
+    setEditingPO(null);
+  };
+
+  // Populate form with existing PO data for editing
+  const populateFormForEdit = async (po: PurchaseOrder) => {
+    try {
+      console.log("Loading PO details for edit:", po.id);
+      setIsLoadingPODetails(true);
+      
+      // Gọi API lấy chi tiết phiếu đặt hàng
+      const poDetails = await getPurchaseOrderById(po.id);
+      console.log("PO details loaded:", poDetails);
+      
+      if (poDetails && poDetails.data) {
+        const details = poDetails.data;
+        
+        setPOForm({
+          supplierId: details.MaNCC ? details.MaNCC.toString() : po.supplierId.toString(),
+          expectedDeliveryDate: details.NgayGiao || po.expectedDeliveryDate || "",
+          notes: details.GhiChu || po.notes || "",
+          items: details.CT_PhieuDatHangNCCs ? details.CT_PhieuDatHangNCCs.map((item: any) => ({
+            MaSP: item.MaSP,
+            productName: item.SanPham?.TenSP || item.productName || `Sản phẩm ${item.MaSP}`,
+            MaMau: item.MaMau,
+            MaKichThuoc: item.MaKichThuoc,
+            colorName: item.MauSac?.TenMau || item.colorName || `Màu ${item.MaMau}`,
+            sizeName: item.KichThuoc?.TenKichThuoc || item.sizeName || `Size ${item.MaKichThuoc}`,
+            quantity: item.SoLuong,
+            unitPrice: item.DonGia,
+          })) : po.items.map(item => ({
+            MaSP: item.MaSP,
+            productName: item.productName,
+            MaMau: item.MaMau,
+            MaKichThuoc: item.MaKichThuoc,
+            colorName: item.colorName,
+            sizeName: item.sizeName,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+          })),
+        });
+        
+        setIsEditMode(true);
+        setEditingPO(po);
+        console.log("Form populated successfully");
+      } else {
+        console.error("No PO details found");
+        // Fallback to basic PO data if API fails
+        setPOForm({
+          supplierId: po.supplierId.toString(),
+          expectedDeliveryDate: po.expectedDeliveryDate || "",
+          notes: po.notes || "",
+          items: po.items.map(item => ({
+            MaSP: item.MaSP,
+            productName: item.productName,
+            MaMau: item.MaMau,
+            MaKichThuoc: item.MaKichThuoc,
+            colorName: item.colorName,
+            sizeName: item.sizeName,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+          })),
+        });
+        
+        setIsEditMode(true);
+        setEditingPO(po);
+      }
+    } catch (error) {
+      console.error("Error loading PO details:", error);
+      // Fallback to basic PO data if API fails
+      setPOForm({
+        supplierId: po.supplierId.toString(),
+        expectedDeliveryDate: po.expectedDeliveryDate || "",
+        notes: po.notes || "",
+        items: po.items.map(item => ({
+          MaSP: item.MaSP,
+          productName: item.productName,
+          MaMau: item.MaMau,
+          MaKichThuoc: item.MaKichThuoc,
+          colorName: item.colorName,
+          sizeName: item.sizeName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        })),
+      });
+      
+      setIsEditMode(true);
+      setEditingPO(po);
+    } finally {
+      setIsLoadingPODetails(false);
+    }
   };
 
   const updateFilter = (key: keyof PurchaseOrderFiltersType, value: string) => {
@@ -46,9 +141,21 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
 
   const openCreateDialog = () => {
     setIsCreatePOOpen(true);
+    setIsEditMode(false);
+    setEditingPO(null);
   };
 
   const closeCreateDialog = () => {
+    setIsCreatePOOpen(false);
+    resetForm();
+  };
+
+  const openEditDialog = async (po: PurchaseOrder) => {
+    setIsCreatePOOpen(true); // Open dialog first
+    await populateFormForEdit(po);
+  };
+
+  const closeEditDialog = () => {
     setIsCreatePOOpen(false);
     resetForm();
   };
@@ -69,14 +176,20 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
     setIsCreatePOOpen,
     isDetailOpen,
     setIsDetailOpen,
+    isEditMode,
+    editingPO,
+    isLoadingPODetails,
     filters,
     
     // Actions
     resetForm,
+    populateFormForEdit,
     updateFilter,
     getFilteredPOs,
     openCreateDialog,
     closeCreateDialog,
+    openEditDialog,
+    closeEditDialog,
     openDetailDialog,
     closeDetailDialog,
   };
