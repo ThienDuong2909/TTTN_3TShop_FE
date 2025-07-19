@@ -54,3 +54,4 @@ export interface CreateOrderPayload {
 export function createOrder(data: CreateOrderPayload): Promise<any>;
 
 export function checkStockAvailability(maCTSP: number): Promise<{ soLuongTon: number }>;
+export declare const clearCartApi: (maKH: number) => Promise<any>;

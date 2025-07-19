@@ -20,7 +20,7 @@ export default function Cart() {
     state,
     setCartFromBackend,
     setLoading,
-    clearCart,
+    clearCartFully ,
   } = useApp();
 
   useEffect(() => {
@@ -331,7 +331,7 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
           <div className="pt-4">
             <Button
               variant="outline"
-              onClick={clearCart}
+              onClick={clearCartFully}
               className="text-red-500 hover:text-red-700 hover:bg-red-50"
             >
               <Trash2 className="w-4 h-4 mr-2" />

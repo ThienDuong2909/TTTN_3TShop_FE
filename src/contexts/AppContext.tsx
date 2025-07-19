@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect } from "react";
 import { CartItem, User } from "../libs/data";
 import { Product } from "../components/ProductCard";
 import {removeFromCartApi} from '../services/api'
+import { clearCartApi } from "../services/api";
 interface AppState {
   cart: CartItem[];
   user: User | null;
@@ -152,6 +153,7 @@ interface AppContextType {
   getCartItemsCount: () => number;
   isInWishlist: (productId: number) => boolean;
   setCartFromBackend: (cart: CartItem[]) => void;
+  clearCartFully: () => Promise<void>;
 }
 
 
@@ -243,6 +245,17 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   dispatch({ type: "SET_CART_FROM_BACKEND", cart });
 };
 
+const clearCartFully = async () => {
+  if (!state.user) return;
+  try {
+    await clearCartApi(state.user.id);
+    dispatch({ type: "CLEAR_CART" });
+  } catch (error) {
+    console.error("Không thể xoá giỏ hàng:", error);
+    alert("Xoá tất cả sản phẩm trong giỏ hàng thất bại.");
+  }
+};
+
 
   const removeFromCart = async (
   productId: number,
@@ -318,6 +331,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     getCartTotal,
     getCartItemsCount,
     isInWishlist,
+    clearCartFully,
     
   };
 
