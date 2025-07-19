@@ -241,23 +241,8 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       console.log("Raw product data:", productData);
       
       if (productData.length > 0) {
-        // Log chi tiết sản phẩm đầu tiên để kiểm tra cấu trúc
-        console.log("=== PRODUCT STRUCTURE CHECK ===");
-        console.log("First product raw data:", productData[0]);
-        console.log("First product keys:", Object.keys(productData[0]));
-        
-        // Kiểm tra các trường có thể chứa thông tin nhà cung cấp
-        const firstProduct = productData[0];
-        console.log("Possible supplier fields:");
-        console.log("- MaNCC:", firstProduct.MaNCC);
-        console.log("- supplierId:", firstProduct.supplierId);
-        console.log("- MaNhaCungCap:", firstProduct.MaNhaCungCap);
-        console.log("- NhaCungCap:", firstProduct.NhaCungCap);
-        console.log("- NCC:", firstProduct.NCC);
-        console.log("- supplier_id:", firstProduct.supplier_id);
         
         const transformedProducts = productData.map(transformProductFromAPI);
-        console.log("Transformed products:", transformedProducts);
         setProducts(transformedProducts);
       } else {
         console.log("No products found or empty array");
@@ -290,10 +275,6 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     setLoading(prev => ({ ...prev, creating: true }));
     
     try {
-      console.log("Creating purchase order with form data:", poForm);
-      console.log("Current user ID:", currentUserId);
-      console.log("Available suppliers:", suppliers);
-      console.log("Looking for supplier with ID:", poForm.supplierId, "type:", typeof poForm.supplierId);
       
       const supplier = suppliers.find(s => {
         console.log("Comparing supplier.id:", s.id, "type:", typeof s.id, "with poForm.supplierId:", poForm.supplierId, "type:", typeof poForm.supplierId);
@@ -315,10 +296,6 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         MaTrangThai: 1, // Draft status
         GhiChu: poForm.notes || "",
         details: poForm.items.map(item => {
-          console.log("Mapping item:", item);
-          console.log("Item MaSP:", item.MaSP, "type:", typeof item.MaSP);
-          console.log("Item MaMau:", item.MaMau, "type:", typeof item.MaMau);
-          console.log("Item MaKichThuoc:", item.MaKichThuoc, "type:", typeof item.MaKichThuoc);
           
           const mappedItem = {
             MaSP: item.MaSP,
@@ -329,7 +306,6 @@ export const usePurchaseOrderData = (currentUserId: string) => {
             ThanhTien: item.quantity * item.unitPrice,
           };
           
-          console.log("Mapped item:", mappedItem);
           return mappedItem;
         }),
       };
