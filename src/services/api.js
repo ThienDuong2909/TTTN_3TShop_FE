@@ -469,3 +469,7 @@ export async function checkStockAvailability(maCTSP) {
   const response = await api.post("/san-pham/kiem-tra-ton-kho", { maCTSP });
   return response.data.data;
 }
+export const clearCartApi = async (maKH) => {
+  const response = await api.post("/gio-hang/xoa-tat-ca", { maKH });
+  return response.data.data;
+};
