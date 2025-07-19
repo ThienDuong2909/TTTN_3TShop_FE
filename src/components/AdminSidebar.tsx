@@ -112,7 +112,7 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       icon: UserCheck,
       permission: "manage_staff",
       adminOnly: true,
-      route: "/admin/staff",
+      route: "/admin/employees",
     },
     {
       name: "Bộ phận",
@@ -144,15 +144,15 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
   };
 
   return (
-    <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72 lg:flex-col">
-      <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-6 pb-4 shadow-sm">
+    <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-50 lg:flex-col">
+      <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-4 pb-4 shadow-sm">
         <div className="flex h-16 shrink-0 items-center">
           <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-gradient-to-r from-brand-500 to-brand-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">F</span>
+            <div className="h-7 w-7 bg-gradient-to-r from-brand-500 to-brand-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-base">F</span>
             </div>
             <div>
-              <span className="text-lg font-bold text-gray-900 dark:text-white">
+              <span className="text-base font-bold text-gray-900 dark:text-white">
                 Admin Panel
               </span>
               <div className="text-xs text-muted-foreground">
@@ -173,14 +173,14 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
                     <li key={item.name}>
                       <button
                         onClick={() => handleItemClick(item)}
-                        className={`group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold w-full text-left ${
+                        className={`group flex gap-x-2 rounded-md p-2 text-sm leading-6 font-medium w-full text-left ${
                           isActive
                             ? "bg-brand-50 text-brand-600 dark:bg-brand-900/50 dark:text-brand-400"
                             : "text-gray-700 hover:text-brand-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-brand-400 dark:hover:bg-gray-700"
                         }`}
                       >
                         <item.icon
-                          className={`h-6 w-6 shrink-0 ${
+                          className={`h-5 w-5 shrink-0 ${
                             isActive
                               ? "text-brand-600 dark:text-brand-400"
                               : "text-gray-400 group-hover:text-brand-600 dark:group-hover:text-brand-400"
@@ -197,17 +197,17 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
         </nav>
 
         {/* User Info */}
-        <div className="flex items-center gap-x-4 px-2 py-3 text-sm font-semibold leading-6 text-gray-900 dark:text-white border-t">
-          <Avatar className="h-8 w-8">
+        <div className="flex items-center gap-x-3 px-2 py-3 text-sm font-medium leading-6 text-gray-900 dark:text-white border-t">
+          <Avatar className="h-7 w-7">
             <AvatarImage src={state.user?.avatar} />
             <AvatarFallback>
               {state.user?.name.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <span className="sr-only">Thông tin người dùng</span>
-          <div className="flex-1">
-            <div className="font-medium">{state.user?.name}</div>
-            <div className="text-xs text-muted-foreground">
+          <div className="flex-1 min-w-0">
+            <div className="font-medium truncate">{state.user?.name}</div>
+            <div className="text-xs text-muted-foreground truncate">
               {state.user?.email}
             </div>
           </div>

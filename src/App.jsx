@@ -34,7 +34,7 @@ import Suppliers from './pages/Suppliers';
 import Invoices from './pages/Invoices';
 import Discounts from './pages/Discounts';
 import Reviews from './pages/Reviews';
-import Staff from './pages/Staff';
+import Employees from './pages/EmployeeManagement';
 import Departments from './pages/Departments';
 import Colors from './pages/ColorManagement';
 import AdminLayout from './layouts/AdminLayout';
@@ -142,10 +142,10 @@ function App() {
               </AdminLayout>
             </ProtectedRoute>
           } />
-          <Route path="/admin/staff" element={
+          <Route path="/admin/employees" element={
             <ProtectedRoute requireAdmin>
               <AdminLayout>
-                <Staff />
+                <Employees />
               </AdminLayout>
             </ProtectedRoute>
           } />
