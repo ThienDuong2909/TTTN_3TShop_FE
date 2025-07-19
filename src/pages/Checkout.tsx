@@ -1,6 +1,7 @@
+// Checkout with success modal
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShoppingBag, CreditCard } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -8,6 +9,7 @@ import { Separator } from "../components/ui/separator";
 import { Badge } from "../components/ui/badge";
 import { useApp } from "../contexts/AppContext";
 import { createOrder as apiCreateOrder } from "../services/api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
 
 declare global {
   interface Window {
@@ -21,6 +23,7 @@ export default function Checkout() {
   const [name, setName] = useState(state.user?.name || "");
   const [address, setAddress] = useState(state.user?.address || "");
   const [errors, setErrors] = useState<{ name?: string; address?: string }>({});
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const paypalContainerRef = useRef<HTMLDivElement>(null);
 
   const subtotal = getCartTotal();
@@ -36,9 +39,7 @@ export default function Checkout() {
   useEffect(() => {
     if (!window.paypal || state.cart.length === 0 || !paypalContainerRef.current) return;
 
-    if (paypalContainerRef.current) {
-      paypalContainerRef.current.innerHTML = "";
-    }
+    paypalContainerRef.current.innerHTML = "";
 
     window.paypal
       .Buttons({
@@ -80,7 +81,7 @@ export default function Checkout() {
         disableFunding: ["card", "credit", "sepa", "sofort", "giropay", "eps", "bancontact", "ideal", "mybank", "p24", "venmo", "blik"],
       })
       .render(paypalContainerRef.current);
-  }, [total, name, address]); // Thêm name, address vào dependency để re-render khi thay đổi
+  }, [total, name, address]);
 
   const validate = () => {
     const newErrors: typeof errors = {};
@@ -101,16 +102,11 @@ export default function Checkout() {
           dsSanPham: state.cart.map((item) => ({
             maCTSP: item.product.id,
             soLuong: item.quantity,
-            // MaHex: item.selectedColor,
-            // TenKichThuoc: item.selectedSize,
           })),
         };
-        console.log("payload", payload);
-
         await apiCreateOrder(payload);
         clearCart();
-        alert("Đặt hàng thành công!");
-        navigate("/");
+        setShowSuccessModal(true);
       } catch (err) {
         alert("Lỗi khi gửi đơn hàng về server.");
         console.error(err);
@@ -125,7 +121,7 @@ export default function Checkout() {
     }).format(price);
   };
 
-  if (state.cart.length === 0) {
+  if (state.cart.length === 0&& !showSuccessModal) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
         <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -244,6 +240,22 @@ export default function Checkout() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={showSuccessModal}>
+        <DialogContent className="text-center">
+          <DialogHeader>
+            <DialogTitle className="text-green-600 text-xl font-bold">
+              Đặt hàng thành công!
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-600 mt-2">
+            Vui lòng chờ nhân viên xét duyệt đơn hàng của bạn.
+          </p>
+          <DialogFooter className="mt-6">
+            <Button onClick={() => navigate("/")}>Tiếp tục mua sắm</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
