@@ -33,6 +33,10 @@ import { Textarea } from "../components/ui/textarea";
 import { ProductCard } from "../components/ProductCard";
 import { useApp } from "../contexts/AppContext";
 import { getProductById, products, categories } from "../libs/data";
+import { getProductDetail } from "../services/api";
+import { mapProductDetailFromApi } from "../utils/productMapper";
+import type { Product } from "../components/ProductCard";
+import {addToCartApi} from '../services/api'
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -46,7 +50,25 @@ export default function ProductDetail() {
   const [reviewText, setReviewText] = useState("");
   const [userRating, setUserRating] = useState(5);
 
-  const product = getProductById(parseInt(id || "0"));
+const [product, setProduct] = useState<Product | null>(null);
+
+useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        if (!id) return;
+
+        const raw = await getProductDetail(Number(id)); // Ép kiểu rõ ràng
+        const mapped = mapProductDetailFromApi(raw);
+        console.log(mapped)
+        setProduct(mapped);
+      } catch (err) {
+        console.error("Lỗi khi lấy chi tiết sản phẩm:", err);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
 
   // Mock additional images for carousel
   const productImages = product
@@ -132,14 +154,29 @@ export default function ProductDetail() {
     }).format(price);
   };
 
-  const handleAddToCart = () => {
-    if (!selectedSize && product.sizes && product.sizes.length > 0) {
-      alert("Vui lòng chọn kích thước");
-      return;
-    }
-    addToCart(product, quantity, selectedColor, selectedSize);
-    // Show success message or redirect to cart
-  };
+  const handleAddToCart = async () => {
+  if (!selectedSize) {
+    alert("Vui lòng chọn kích thước");
+    return;
+  }
+
+  try {
+    await addToCartApi({
+      maKH: Number(state.user.id),
+      maSP: product.id,
+      soLuong: quantity,
+      maHex: selectedColor,
+      tenKichThuoc: selectedSize,
+    });
+
+    alert("Đã thêm vào giỏ hàng!");
+    // Optionally update local context/cart state if cần
+  } catch (error) {
+    alert("Thêm sản phẩm vào giỏ hàng thất bại");
+    console.error(error);
+  }
+};
+
 
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();

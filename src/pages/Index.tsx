@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useApp } from "../contexts/AppContext";
 import { categories, getFeaturedProducts } from "../libs/data";
+import { getAllProducts } from "../services/api";
+import { mapSanPhamFromApi } from "../utils/productMapper.ts";
 import {
   ChevronRight,
   Star,
@@ -21,7 +23,22 @@ import { ProductCard, Product } from "../components/ProductCard";
 
 export default function Index() {
   const { toggleWishlist, isInWishlist, addToCart } = useApp();
-  const featuredProducts = getFeaturedProducts();
+const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const productsFromApi = await getAllProducts();
+        const mappedProducts = productsFromApi.map(mapSanPhamFromApi);
+        setFeaturedProducts(mappedProducts);
+      } catch (error) {
+        console.error("Lỗi khi lấy sản phẩm:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const displayCategories = categories.map((cat) => ({
     id: cat.id,
