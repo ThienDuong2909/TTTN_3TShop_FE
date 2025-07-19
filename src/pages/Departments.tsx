@@ -6,6 +6,7 @@ import { toast, Toaster } from "sonner";
 
 const Departments = () => {
   const [departments, setDepartments] = useState<any[]>([]);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState<any | null>(
     null,
@@ -218,7 +219,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       key: "isActive",
       title: "Trạng thái",
       dataIndex: "isActive",
-      render: (value, record) => (
+      render: (value) => (
         <>
           <span className={`px-2 py-1 text-xs font-semibold rounded-full transition-colors ${
             value === true ? "bg-green-100 text-green-800" : value === false ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-500"
@@ -260,16 +261,42 @@ const handleSubmit = async (e: React.FormEvent) => {
     },
   ];
   
+  // Bộ lọc trạng thái
+  const filteredDepartments = departments.filter(dep => {
+    if (filterStatus === 'all') return true;
+    if (filterStatus === 'active') return dep.isActive === true;
+    if (filterStatus === 'inactive') return dep.isActive === false;
+    return true;
+  });
+
   return (
     <>
-      <DataTable
-        title="Quản lý bộ phận"
-        columns={columns}
-        data={departments}
-        onAdd={handleAdd}
-        addButtonText="Thêm bộ phận"
-        searchPlaceholder="Tìm kiếm bộ phận..."
-      />
+      <div className="flex items-center mb-4 gap-2 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+        <span className="font-medium text-gray-700 mr-2 text-sm">Lọc theo trạng thái:</span>
+        <button
+          className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'all' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
+          onClick={() => setFilterStatus('all')}
+        >Tất cả</button>
+        <button
+          className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'active' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
+          onClick={() => setFilterStatus('active')}
+        >Hoạt động</button>
+        <button
+          className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'inactive' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
+          onClick={() => setFilterStatus('inactive')}
+        >Ngừng hoạt động</button>
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+        <DataTable
+          title="Quản lý bộ phận"
+          columns={columns}
+          data={filteredDepartments}
+          onAdd={handleAdd}
+          addButtonText="Thêm bộ phận"
+          searchPlaceholder="Tìm kiếm bộ phận..."
+        />
+      </div>
 
       <Toaster position="top-center" richColors />
 

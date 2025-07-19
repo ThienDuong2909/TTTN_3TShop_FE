@@ -36,6 +36,7 @@ import Discounts from './pages/Discounts';
 import Reviews from './pages/Reviews';
 import Staff from './pages/Staff';
 import Departments from './pages/Departments';
+import Colors from './pages/ColorManagement';
 import AdminLayout from './layouts/AdminLayout';
 
 // Wrapper component for main layout
@@ -152,6 +153,13 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AdminLayout>
                 <Departments />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/colors" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <Colors />
               </AdminLayout>
             </ProtectedRoute>
           } />
