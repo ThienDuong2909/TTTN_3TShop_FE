@@ -52,3 +52,5 @@ export interface CreateOrderPayload {
 }
 
 export function createOrder(data: CreateOrderPayload): Promise<any>;
+
+export function checkStockAvailability(maCTSP: number): Promise<{ soLuongTon: number }>;

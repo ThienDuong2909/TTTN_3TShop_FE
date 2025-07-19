@@ -462,3 +462,10 @@ export const createOrder = async (payload) => {
   const response = await api.post("/gio-hang/dat-hang", payload);
   return response.data;
 };
+
+// services/api.js
+
+export async function checkStockAvailability(maCTSP) {
+  const response = await api.post("/san-pham/kiem-tra-ton-kho", { maCTSP });
+  return response.data.data;
+}

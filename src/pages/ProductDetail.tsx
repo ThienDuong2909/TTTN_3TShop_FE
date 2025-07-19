@@ -49,8 +49,10 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [reviewText, setReviewText] = useState("");
   const [userRating, setUserRating] = useState(5);
+  
 
 const [product, setProduct] = useState<Product | null>(null);
+const stock = product?.stockMap?.[`${selectedColor}_${selectedSize}`] || 0;
 
 useEffect(() => {
     const fetchProduct = async () => {
@@ -120,14 +122,40 @@ useEffect(() => {
     .filter((p) => p.id !== product?.id && p.category === product?.category)
     .slice(0, 4);
 
+  // useEffect(() => {
+  //   if (product?.colors && product.colors.length > 0) {
+  //     setSelectedColor(product.colors[0]);
+  //   }
+  //   if (product?.sizes && product.sizes.length > 0) {
+  //     setSelectedSize(product.sizes[0]);
+  //   }
+  // }, [product]);
   useEffect(() => {
-    if (product?.colors && product.colors.length > 0) {
-      setSelectedColor(product.colors[0]);
+  if (product?.colors && product.colors.length > 0) {
+    setSelectedColor(product.colors[0]);
+  }
+}, [product]);
+useEffect(() => {
+  if (product?.sizeMap && selectedColor && product.sizeMap[selectedColor]) {
+    const sizes = product.sizeMap[selectedColor];
+    if (sizes.length > 0) {
+      setSelectedSize(sizes[0]);
+      setQuantity(1); // 👈 reset lại khi chọn màu mới
     }
-    if (product?.sizes && product.sizes.length > 0) {
-      setSelectedSize(product.sizes[0]);
-    }
-  }, [product]);
+  }
+}, [selectedColor]);
+
+const increaseQuantity = () => {
+    setQuantity((prev) => Math.min(prev + 1, stock));
+  };
+
+  const decreaseQuantity = () => {
+    setQuantity((prev) => Math.max(1, prev - 1));
+  };
+
+useEffect(() => {
+  setQuantity(1); // 👈 reset lại khi chọn size
+}, [selectedSize]);
 
   if (!product) {
     return (
@@ -169,7 +197,8 @@ useEffect(() => {
       tenKichThuoc: selectedSize,
     });
 
-    alert("Đã thêm vào giỏ hàng!");
+    addToCart(product, quantity, selectedColor, selectedSize);
+    // alert("Đã thêm vào giỏ hàng!");
     // Optionally update local context/cart state if cần
   } catch (error) {
     alert("Thêm sản phẩm vào giỏ hàng thất bại");
@@ -397,34 +426,42 @@ useEffect(() => {
             )}
 
             {/* Sizes */}
-            {product.sizes && product.sizes.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Kích thước: {selectedSize}
-                </label>
-                <div className="flex gap-2">
-                  {product.sizes.map((size) => (
-                    <Button
-                      key={size}
-                      variant={selectedSize === size ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedSize(size)}
-                    >
-                      {size}
-                    </Button>
-                  ))}
+            {product.sizeMap &&
+              product.sizeMap[selectedColor] &&
+              product.sizeMap[selectedColor].length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Kích thước: {selectedSize}
+                  </label>
+                  <div className="flex gap-2">
+                    {product.sizeMap[selectedColor].map((size) => (
+                      <Button
+                        key={size}
+                        variant={selectedSize === size ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedSize(size)}
+                      >
+                        {size}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-              </div>
             )}
+
 
             {/* Quantity */}
             <div>
               <label className="block text-sm font-medium mb-2">Số lượng</label>
+              {selectedColor && selectedSize && (
+                <p className="text-sm text-gray-500 mb-1">
+                  Tồn kho: {stock}
+                </p>
+              )}
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  onClick={decreaseQuantity}
                   disabled={quantity <= 1}
                 >
                   <Minus className="w-4 h-4" />
@@ -433,19 +470,30 @@ useEffect(() => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setQuantity(quantity + 1)}
+                  onClick={increaseQuantity}
+                  disabled={quantity >= stock || stock === 0}
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
+              {stock === 0 && (
+                <p className="text-sm text-red-500 mt-2">
+                  Sản phẩm với màu sắc và kích thước đã chọn hiện đang hết hàng.
+                </p>
+              )}
             </div>
           </div>
+          
+
+
+
 
           {/* Action Buttons */}
           <div className="space-y-3">
             <Button
               className="w-full bg-brand-600 hover:bg-brand-700"
               size="lg"
+              disabled={stock === 0}
               onClick={handleAddToCart}
             >
               <ShoppingCart className="w-5 h-5 mr-2" />

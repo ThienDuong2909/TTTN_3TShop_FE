@@ -12,7 +12,7 @@ import { Input } from "../components/ui/input";
 import { Separator } from "../components/ui/separator";
 import { Badge } from "../components/ui/badge";
 import { useApp } from "../contexts/AppContext";
-import {getCartItemsApi} from '../services/api'
+import {getCartItemsApi, checkStockAvailability} from '../services/api'
 import type { Product } from "../components/ProductCard";
 import type { CartItem } from "../libs/data";
 export default function Cart() {
@@ -95,12 +95,40 @@ export default function Cart() {
       currency: "VND",
     }).format(price);
   };
+const [stockErrors, setStockErrors] = useState<{ [key: string]: string }>({});
+const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
 
-  const handleQuantityChange = (productId: number, newQuantity: number) => {
-    if (newQuantity >= 1) {
-      updateCartQuantity(productId, newQuantity);
+  const handleQuantityChange = async (maCTSP: number, newQuantity: number) => {
+  if (newQuantity < 1) return;
+
+  try {
+    const result = await checkStockAvailability(maCTSP);
+    const availableStock = result.soLuongTon;
+    const key = `${maCTSP}`;
+
+    if (newQuantity > availableStock) {
+      setStockErrors((prev) => ({
+        ...prev,
+        [key]: `Chỉ còn ${availableStock} sản phẩm trong kho`,
+      }));
+      setStockLimits((prev) => ({ ...prev, [key]: availableStock }));
+      return;
     }
-  };
+
+    // Nếu số lượng <= tồn kho thì xóa lỗi và cập nhật
+    setStockErrors((prev) => {
+      const updated = { ...prev };
+      delete updated[key];
+      return updated;
+    });
+    setStockLimits((prev) => ({ ...prev, [key]: availableStock }));
+
+    updateCartQuantity(maCTSP, newQuantity);
+  } catch (error) {
+    console.error("Lỗi kiểm tra kho:", error);
+    alert("Không thể kiểm tra tồn kho.");
+  }
+};
 
   const applyCoupon = () => {
     // Mock coupon validation
@@ -222,12 +250,12 @@ export default function Cart() {
                         variant="ghost"
                         size="sm"
                         onClick={() =>
-  removeFromCart(
-    item.product.id,
-    item.selectedColor,
-    item.selectedSize
-  )
-}
+                          removeFromCart(
+                            item.product.id,
+                            item.selectedColor,
+                            item.selectedSize
+                          )
+                        }
 
                         className="text-red-500 hover:text-red-700 hover:bg-red-50"
                       >
@@ -270,16 +298,22 @@ export default function Cart() {
                           variant="outline"
                           size="sm"
                           onClick={() =>
-                            handleQuantityChange(
-                              item.product.id,
-                              item.quantity + 1,
-                            )
+                            handleQuantityChange(item.product.id, item.quantity + 1)
+                          }
+                          disabled={
+                            stockLimits[item.product.id] !== undefined &&
+                            item.quantity >= stockLimits[item.product.id]
                           }
                         >
                           <Plus className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
+                    {stockErrors[item.product.id] && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {stockErrors[item.product.id]}
+                        </p>
+                      )}
 
                     {/* Subtotal */}
                     <div className="text-right">

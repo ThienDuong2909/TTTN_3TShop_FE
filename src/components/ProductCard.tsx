@@ -19,6 +19,8 @@ export interface Product {
   category?: string;
   colors?: string[];
   sizes?: string[];
+  sizeMap?: Record<string, string[]>;
+  stockMap?: Record<string, number>; 
 }
 
 interface ProductCardProps {
