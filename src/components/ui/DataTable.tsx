@@ -75,7 +75,6 @@ export const DataTable: React.FC<DataTableProps> = ({
     if (column.render) {
       return column.render(
         record[column.dataIndex || column.key],
-        record,
         index,
       );
     }

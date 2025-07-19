@@ -122,6 +122,14 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       adminOnly: true,
       route: "/admin/departments",
     },
+    {
+      name: "Màu sắc",
+      id: "colors",
+      icon: Building2,
+      permission: "manage_departments",
+      adminOnly: true,
+      route: "/admin/colors",
+    },
   ];
 
   const filteredNavigation = navigation.filter((item) => {
