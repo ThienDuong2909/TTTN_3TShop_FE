@@ -24,6 +24,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "../../../components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 
 interface GoodsReceiptItem {
   purchaseOrderItemId: string;
@@ -66,11 +67,39 @@ export default function GoodsReceiptTable({
 }: GoodsReceiptTableProps) {
   const [openDetail, setOpenDetail] = useState(false);
   const [selectedGR, setSelectedGR] = useState<GoodsReceipt | null>(null);
+  const navigate = useNavigate();
 
   const handleViewDetails = (gr: GoodsReceipt) => {
     setSelectedGR(gr);
     setOpenDetail(true);
   };
+
+  const handleViewPODetails = (purchaseOrderId: string) => {
+    // Chuyển sang trang Purchase Orders với tham số để mở dialog chi tiết
+    navigate(`/admin/purchase-orders?view=${purchaseOrderId}`);
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusMap = {
+      draft: { label: "Nháp", className: "bg-gray-300 text-gray-900" },
+      sent: { label: "Đã gửi", className: "bg-blue-200 text-blue-900" },
+      confirmed: { label: "Đã xác nhận", className: "bg-indigo-500 text-white" },
+      partially_received: {
+        label: "Nhập một phần",
+        className: "bg-yellow-200 text-yellow-900"
+      },
+      completed: { label: "Hoàn thành", className: "bg-green-500 text-white" },
+      cancelled: { label: "Đã hủy", className: "bg-red-500 text-white" },
+    };
+
+    const statusInfo = statusMap[status as keyof typeof statusMap];
+    return (
+      <span className={`px-2 py-1 rounded text-xs font-semibold ${statusInfo?.className || "bg-gray-200 text-gray-800"}`}>
+        {statusInfo?.label || status}
+      </span>
+    );
+  };
+
   console.log(goodsReceipts);
   return (
     <Card>
@@ -110,12 +139,18 @@ export default function GoodsReceiptTable({
                   <TableRow key={gr.id}>
                     <TableCell className="font-medium">{gr.id}</TableCell>
                     <TableCell>
-                      <Button variant="link" className="p-0 h-auto">
+                      <Button 
+                        variant="link" 
+                        className="p-0 h-auto"
+                        onClick={() => handleViewPODetails(gr.purchaseOrderId)}
+                      >
                         {gr.purchaseOrderId}
                       </Button>
                     </TableCell>
                     <TableCell>{gr.supplierName}</TableCell>
-                    <TableCell>{(gr.items || []).length} sản phẩm</TableCell>
+                    <TableCell>
+                      {gr.items.reduce((acc, item) => acc + item.receivedQuantity, 0)} sản phẩm
+                    </TableCell>
                     <TableCell className="font-medium">
                       {formatPrice(gr.totalReceivedValue)}
                     </TableCell>
@@ -141,6 +176,7 @@ export default function GoodsReceiptTable({
           </Table>
         )}
       </CardContent>
+      
       {/* Dialog chi tiết phiếu nhập */}
       <Dialog open={openDetail} onOpenChange={setOpenDetail}>
         <DialogContent className="max-w-3xl">

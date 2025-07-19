@@ -46,6 +46,7 @@ export default function GoodsReceipt() {
     createGoodsReceiptRecord,
     refreshData,
     setSelectedGR,
+    setSelectedPO,
   } = useGoodsReceiptData(state.user.id);
 
   const {
@@ -59,6 +60,10 @@ export default function GoodsReceipt() {
     setStatusFilter,
     getFilteredGRs,
     resetForm,
+    excelData,
+    setExcelData,
+    excelError,
+    setExcelError,
   } = useGoodsReceiptForm(
     state.user.id,
     availablePOs,
@@ -84,6 +89,17 @@ export default function GoodsReceipt() {
   const handleViewDetails = (gr: any) => {
     setSelectedGR(gr);
     // You can add a view details modal here
+  };
+
+  // Handle dialog open/close
+  const handleDialogOpenChange = (open: boolean) => {
+    if (open) {
+      // Reset form when opening dialog
+      resetForm();
+      // Reset selectedPO when opening dialog
+      setSelectedPO(null);
+    }
+    setIsCreateGROpen(open);
   };
 
   // Get filtered goods receipts
@@ -123,7 +139,7 @@ export default function GoodsReceipt() {
                 
                 <CreateGoodsReceiptDialog
                   open={isCreateGROpen}
-                  onOpenChange={setIsCreateGROpen}
+                  onOpenChange={handleDialogOpenChange}
                   trigger={
                     <Button className="bg-brand-600 hover:bg-brand-700">
                       <Plus className="h-4 w-4 mr-2" />
@@ -139,6 +155,10 @@ export default function GoodsReceipt() {
                   loading={loading}
                   currentUserName={state.user.name || ""}
                   currentUserId={state.user.id}
+                  excelData={excelData}
+                  setExcelData={setExcelData}
+                  excelError={excelError}
+                  setExcelError={setExcelError}
                 />
               </div>
             </div>
