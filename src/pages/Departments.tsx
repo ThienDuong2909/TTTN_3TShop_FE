@@ -34,7 +34,7 @@ const Departments = () => {
         setDepartments(result.data.map((item: any) => ({
           id: item.MaBoPhan,
           name: item.TenBoPhan,
-          staffCount: item.SoNhanVien !== undefined ? item.SoNhanVien : '--',
+          staffCount: item.SoLuongNhanVien !== undefined ? item.SoLuongNhanVien : 0,
           createdAt: item.NgayTao !== undefined ? item.NgayTao : '--',
           isActive: item.TrangThai !== undefined ? item.TrangThai : '--',
         })));
@@ -101,7 +101,7 @@ const confirmToggle = async () => {
         setDepartments(resultList.data.map((item: any) => ({
           id: item.MaBoPhan,
           name: item.TenBoPhan,
-          staffCount: item.SoNhanVien !== undefined ? item.SoNhanVien : '--',
+          staffCount: item.SoLuongNhanVien !== undefined ? item.SoLuongNhanVien : 0,
           createdAt: item.NgayTao !== undefined ? item.NgayTao : '--',
           isActive: item.TrangThai !== undefined ? item.TrangThai : '--',
         })));
@@ -164,6 +164,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             setDepartments(resultList.data.map((item: any) => ({
               id: item.MaBoPhan,
               name: item.TenBoPhan,
+              staffCount: item.SoLuongNhanVien !== undefined ? item.SoLuongNhanVien : 0,
               createdAt: item.NgayTao !== undefined ? item.NgayTao : '--',
               isActive: item.TrangThai !== undefined ? item.TrangThai : '--',
             })));
@@ -204,7 +205,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       sortable: true,
       render: (value) => (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-          {typeof value === "number" ? value : "--"} người
+          {typeof value === "number" ? value : 0} người
         </span>
       ),
     },
@@ -271,22 +272,6 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   return (
     <>
-      <div className="flex items-center mb-4 gap-2 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <span className="font-medium text-gray-700 mr-2 text-sm">Lọc theo trạng thái:</span>
-        <button
-          className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'all' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
-          onClick={() => setFilterStatus('all')}
-        >Tất cả</button>
-        <button
-          className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'active' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
-          onClick={() => setFilterStatus('active')}
-        >Hoạt động</button>
-        <button
-          className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'inactive' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
-          onClick={() => setFilterStatus('inactive')}
-        >Ngừng hoạt động</button>
-      </div>
-
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
         <DataTable
           title="Quản lý bộ phận"
@@ -295,6 +280,23 @@ const handleSubmit = async (e: React.FormEvent) => {
           onAdd={handleAdd}
           addButtonText="Thêm bộ phận"
           searchPlaceholder="Tìm kiếm bộ phận..."
+          filterComponent={
+            <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+              <span className="font-medium text-gray-700 mr-2 text-sm">Lọc theo trạng thái:</span>
+              <button
+                className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'all' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
+                onClick={() => setFilterStatus('all')}
+              >Tất cả</button>
+              <button
+                className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'active' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
+                onClick={() => setFilterStatus('active')}
+              >Hoạt động</button>
+              <button
+                className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'inactive' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
+                onClick={() => setFilterStatus('inactive')}
+              >Ngừng hoạt động</button>
+            </div>
+          }
         />
       </div>
 
