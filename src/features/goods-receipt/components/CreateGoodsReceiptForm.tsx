@@ -106,6 +106,10 @@ interface CreateGoodsReceiptFormProps {
   };
   currentUserName: string;
   currentUserId: string;
+  excelData: any[];
+  setExcelData: (data: any[]) => void;
+  excelError: string;
+  setExcelError: (error: string) => void;
 }
 
 import { getStatusFromTrangThai } from "../hooks/useGoodsReceiptData";
@@ -121,10 +125,13 @@ export default function CreateGoodsReceiptForm({
   loading,
   currentUserName,
   currentUserId,
+  excelData,
+  setExcelData,
+  excelError,
+  setExcelError,
 }: CreateGoodsReceiptFormProps) {
   const [inputMethod, setInputMethod] = useState<"manual" | "excel">("manual");
-  const [excelData, setExcelData] = useState<any[]>([]);
-  const [excelError, setExcelError] = useState<string>("");
+  const [hasExcelData, setHasExcelData] = useState(false);
 
   // Validate form
   const [touched, setTouched] = useState<{[key: string]: boolean}>({});
@@ -204,6 +211,7 @@ export default function CreateGoodsReceiptForm({
       ...grForm,
       items: items,
     });
+    setHasExcelData(true);
   };
 
   const resetForm = () => {
@@ -216,6 +224,7 @@ export default function CreateGoodsReceiptForm({
     setExcelData([]);
     setExcelError("");
     setInputMethod("manual");
+    setHasExcelData(false);
   };
 
   const handleCancel = () => {
@@ -239,12 +248,16 @@ export default function CreateGoodsReceiptForm({
           colorName: ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
           selectedSize: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ct.KichThuoc?.TenKichThuoc || "",
           orderedQuantity: ct.SoLuong,
-          receivedQuantity: ct.SoLuong, // mặc định nhận đủ
+          receivedQuantity: 0, // Để trống để người dùng nhập
           unitPrice: parseFloat(ct.DonGia),
           condition: "good",
           notes: "",
         }))
       });
+      // Reset Excel data khi chọn PO mới
+      setExcelData([]);
+      setExcelError("");
+      setHasExcelData(false);
     }
     onPOSelect(poId);
   };
@@ -324,9 +337,31 @@ export default function CreateGoodsReceiptForm({
         <Label>Phương thức nhập dữ liệu *</Label>
         <Tabs
           value={inputMethod}
-          onValueChange={(value: string) =>
-            setInputMethod(value as "manual" | "excel")
-          }
+          onValueChange={(value: string) => {
+            setInputMethod(value as "manual" | "excel");
+            // Nếu chuyển từ Excel sang Manual và chưa có dữ liệu Excel, reset items
+            if (value === "manual" && !hasExcelData && selectedPO) {
+              const po = availablePOs.find(po => po.MaPDH === selectedPO.MaPDH || po.id === selectedPO.id);
+              if (po) {
+                setGRForm({
+                  ...grForm,
+                  items: (po.CT_PhieuDatHangNCCs || []).map((ct: any) => ({
+                    purchaseOrderItemId: ct.MaCTSP,
+                    productId: ct.MaCTSP,
+                    productName: ct.ChiTietSanPham?.SanPham?.TenSP || ct.TenSP || "",
+                    selectedColor: ct.ChiTietSanPham?.Mau?.MaHex ? `#${ct.ChiTietSanPham.Mau.MaHex}` : (ct.Mau?.MaHex ? `#${ct.Mau.MaHex}` : ""),
+                    colorName: ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
+                    selectedSize: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ct.KichThuoc?.TenKichThuoc || "",
+                    orderedQuantity: ct.SoLuong,
+                    receivedQuantity: 0,
+                    unitPrice: parseFloat(ct.DonGia),
+                    condition: "good",
+                    notes: "",
+                  }))
+                });
+              }
+            }
+          }}
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="manual" className="flex items-center gap-2">
@@ -438,7 +473,7 @@ export default function CreateGoodsReceiptForm({
               />
 
               {/* Preview Excel Data */}
-              {(grForm.items || []).length > 0 && (
+              {hasExcelData && excelData.length > 0 && !excelError && (grForm.items || []).length > 0 && (
                 <div>
                   <Label>Xem trước dữ liệu từ Excel</Label>
                   <Card>
@@ -467,7 +502,7 @@ export default function CreateGoodsReceiptForm({
                                     className="w-4 h-4 rounded border"
                                     style={{ backgroundColor: item.selectedColor }}
                                   />
-                                  {item.selectedColor}
+                                  <span>{item.colorName || item.selectedColor}</span>
                                 </div>
                               )}
                             </TableCell>

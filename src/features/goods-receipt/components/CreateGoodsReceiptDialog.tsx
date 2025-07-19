@@ -62,6 +62,10 @@ interface CreateGoodsReceiptDialogProps {
   };
   currentUserName: string;
   currentUserId: string;
+  excelData: any[];
+  setExcelData: (data: any[]) => void;
+  excelError: string;
+  setExcelError: (error: string) => void;
 }
 
 export default function CreateGoodsReceiptDialog({
@@ -77,6 +81,10 @@ export default function CreateGoodsReceiptDialog({
   loading,
   currentUserName,
   currentUserId,
+  excelData,
+  setExcelData,
+  excelError,
+  setExcelError,
 }: CreateGoodsReceiptDialogProps) {
   const handleCancel = () => {
     onOpenChange(false);
@@ -104,6 +112,10 @@ export default function CreateGoodsReceiptDialog({
           loading={loading}
           currentUserName={currentUserName}
           currentUserId={currentUserId}
+          excelData={excelData}
+          setExcelData={setExcelData}
+          excelError={excelError}
+          setExcelError={setExcelError}
         />
       </DialogContent>
     </Dialog>

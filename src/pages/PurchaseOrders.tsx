@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Search, RefreshCw } from "lucide-react";
 import AdminHeader from "../components/AdminHeader";
 import { Button } from "../components/ui/button";
@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { useApp } from "../contexts/AppContext";
+import { useEffect } from "react";
 
 // Import components and hooks
 import {
@@ -25,6 +26,7 @@ import {
 export default function PurchaseOrders() {
   const { state } = useApp();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // Check permissions
   if (
@@ -119,6 +121,20 @@ export default function PurchaseOrders() {
     resetForm();
     setIsCreatePOOpen(true);
   };
+
+  // Xử lý tham số URL để tự động mở dialog chi tiết
+  useEffect(() => {
+    const viewPOId = searchParams.get("view");
+    if (viewPOId && purchaseOrders.length > 0) {
+      const po = purchaseOrders.find((p: any) => p.id === viewPOId);
+      if (po) {
+        setSelectedPO(po);
+        openDetailDialog();
+        // Xóa tham số URL sau khi đã xử lý
+        navigate("/admin/purchase-orders", { replace: true });
+      }
+    }
+  }, [searchParams, purchaseOrders, setSelectedPO, openDetailDialog, navigate]);
 
   // Get filtered purchase orders
   const filteredPOs = getFilteredPOs(purchaseOrders);

@@ -104,7 +104,9 @@ export default function PurchaseOrderTable({
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">{po.items.length} sản phẩm</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {po.items.reduce((acc, item) => acc + item.quantity, 0)} sản phẩm
+                      </TableCell>
                       <TableCell className="font-medium whitespace-nowrap">
                         {formatPrice(po.totalAmount)}
                       </TableCell>

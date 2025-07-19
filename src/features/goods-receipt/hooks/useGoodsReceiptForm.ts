@@ -77,6 +77,10 @@ export const useGoodsReceiptForm = (
   const [isCreateGROpen, setIsCreateGROpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  
+  // Excel import states
+  const [excelData, setExcelData] = useState<any[]>([]);
+  const [excelError, setExcelError] = useState("");
 
   const initializeGRForm = (po: any) => {
     const poId = po?.MaPDH || po?.id || "";
@@ -108,6 +112,9 @@ export const useGoodsReceiptForm = (
       notes: "",
       items: [],
     });
+    // Reset Excel data as well
+    setExcelData([]);
+    setExcelError("");
   };
 
   // Filter goods receipts based on search and status
@@ -151,6 +158,12 @@ export const useGoodsReceiptForm = (
     setSearchQuery,
     statusFilter,
     setStatusFilter,
+    
+    // Excel import state
+    excelData,
+    setExcelData,
+    excelError,
+    setExcelError,
     
     // Actions
     initializeGRForm,
