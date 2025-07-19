@@ -434,7 +434,7 @@ export default function CreatePurchaseOrderForm({
         <div>
           <Label htmlFor="supplier">Nhà cung cấp *</Label>
           <Select
-            key={`supplier-${poForm.supplierId || 'empty'}-${Date.now()}`} // Force re-render when supplierId changes
+            key={`supplier-${poForm.supplierId || 'empty'}`} // Remove Date.now() to prevent constant re-renders
             value={poForm.supplierId}
             onValueChange={(value) => {
               console.log("=== SUPPLIER SELECT CHANGED ===");
@@ -507,7 +507,7 @@ export default function CreatePurchaseOrderForm({
                     <div>
                       <Label>Sản phẩm</Label>
                       <Select
-                        key={`product-${index}-${item.MaSP || 'empty'}-${poForm.supplierId || 'no-supplier'}`}
+                        key={`product-${index}-${item.MaSP || 'empty'}`}
                         value={item.MaSP?.toString() || ""}
                         onValueChange={(value) => {
                           updatePOItem(index, "MaSP", value);
@@ -521,34 +521,18 @@ export default function CreatePurchaseOrderForm({
                         </SelectTrigger>
                         <SelectContent>
                           {(() => {
-                            // Always show all products to prevent reset
-                            // If supplier is selected, prioritize products from that supplier
+                            // If supplier is selected, show filtered products + currently selected product
                             if (poForm.supplierId) {
                               const selectedProduct = products.find(p => p.id.toString() === item.MaSP?.toString());
-                              const supplierProducts = products.filter((product: any) => {
-                                const productSupplierId = product.MaNCC?.toString();
-                                const selectedSupplierId = poForm.supplierId.toString();
-                                return productSupplierId === selectedSupplierId;
-                              });
+                              const productsToShow = [...filteredProducts];
                               
-                              // Show supplier products first, then all other products
-                              const allProducts = [...supplierProducts];
-                              
-                              // Add currently selected product if not in supplier products
-                              if (selectedProduct && !supplierProducts.find(p => p.id === selectedProduct.id)) {
-                                allProducts.unshift(selectedProduct); // Put at the top
+                              // Add currently selected product if it's not in filtered products
+                              if (selectedProduct && !filteredProducts.find(p => p.id === selectedProduct.id)) {
+                                productsToShow.push(selectedProduct);
                               }
                               
-                              // Add other products that are not in supplier products
-                              products.forEach(product => {
-                                if (!supplierProducts.find(p => p.id === product.id) && 
-                                    !allProducts.find(p => p.id === product.id)) {
-                                  allProducts.push(product);
-                                }
-                              });
-                              
-                              if (allProducts.length > 0) {
-                                return allProducts.map((product: any) => (
+                              if (productsToShow.length > 0) {
+                                return productsToShow.map((product: any) => (
                                   <SelectItem key={product.id} value={product.id.toString()}>
                                     {product.name}
                                   </SelectItem>
@@ -556,7 +540,7 @@ export default function CreatePurchaseOrderForm({
                               } else {
                                 return (
                                   <div className="px-2 py-1 text-sm text-muted-foreground">
-                                    Không có sản phẩm nào
+                                    Nhà cung cấp này không có sản phẩm nào
                                   </div>
                                 );
                               }
