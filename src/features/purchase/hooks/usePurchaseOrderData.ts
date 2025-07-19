@@ -14,9 +14,14 @@ import {
   createPurchaseOrder as createPurchaseOrderAPI,
   updatePurchaseOrderStatus,
   getSuppliers,
-  getProductDetails,
 } from "../../../services/api";
 import { updatePurchaseOrder as updatePurchaseOrderAPI } from "../../../services/commonService";
+
+// Wrapper function for getProducts
+const getProductsWrapper = async () => {
+  const api = await import("../../../services/api");
+  return (api as any).getProducts();
+};
 
 // Transform API data to match our interface
 const transformPurchaseOrderFromAPI = (apiPO: any): PurchaseOrder => {
@@ -69,6 +74,8 @@ const transformProductFromAPI = (apiProduct: any): Product => ({
   price: apiProduct.DonGia || 0,
   description: apiProduct.MoTa || "",
   category: apiProduct.LoaiSP || "clothing",
+  // Giữ lại MaNCC để filter theo nhà cung cấp
+  MaNCC: apiProduct.MaNCC,
 });
 
 // Helper function to map status
@@ -214,8 +221,10 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     setLoading(prev => ({ ...prev, products: true }));
     
     try {
-      console.log("Calling getProductDetails API...");
-      const response = await getProductDetails();
+      console.log("Calling getProducts API...");
+      const response = await getProductsWrapper();
+
+      console.log("response", response);
       
       // Try to handle different response formats
       let productData: any[] = [];
@@ -226,11 +235,13 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       } else if (response && typeof response === 'object') {
         // If response is an object, try to find array in common properties
         const responseObj = response as any;
-        productData = responseObj.products || responseObj.items || responseObj.result || responseObj.productDetails || [];
+        productData = responseObj.products || responseObj.items || responseObj.result || [];
       }
       
+      console.log("Raw product data:", productData);
       
       if (productData.length > 0) {
+        
         const transformedProducts = productData.map(transformProductFromAPI);
         setProducts(transformedProducts);
       } else {
@@ -264,10 +275,6 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     setLoading(prev => ({ ...prev, creating: true }));
     
     try {
-      console.log("Creating purchase order with form data:", poForm);
-      console.log("Current user ID:", currentUserId);
-      console.log("Available suppliers:", suppliers);
-      console.log("Looking for supplier with ID:", poForm.supplierId, "type:", typeof poForm.supplierId);
       
       const supplier = suppliers.find(s => {
         console.log("Comparing supplier.id:", s.id, "type:", typeof s.id, "with poForm.supplierId:", poForm.supplierId, "type:", typeof poForm.supplierId);
@@ -289,10 +296,6 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         MaTrangThai: 1, // Draft status
         GhiChu: poForm.notes || "",
         details: poForm.items.map(item => {
-          console.log("Mapping item:", item);
-          console.log("Item MaSP:", item.MaSP, "type:", typeof item.MaSP);
-          console.log("Item MaMau:", item.MaMau, "type:", typeof item.MaMau);
-          console.log("Item MaKichThuoc:", item.MaKichThuoc, "type:", typeof item.MaKichThuoc);
           
           const mappedItem = {
             MaSP: item.MaSP,
@@ -303,7 +306,6 @@ export const usePurchaseOrderData = (currentUserId: string) => {
             ThanhTien: item.quantity * item.unitPrice,
           };
           
-          console.log("Mapped item:", mappedItem);
           return mappedItem;
         }),
       };
