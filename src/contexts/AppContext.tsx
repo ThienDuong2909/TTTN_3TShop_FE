@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import { CartItem, User } from "../libs/data";
 import { Product } from "../components/ProductCard";
-
+import {removeFromCartApi} from '../services/api'
 interface AppState {
   cart: CartItem[];
   user: User | null;
@@ -19,7 +19,12 @@ type AppAction =
       color?: string;
       size?: string;
     }
-  | { type: "REMOVE_FROM_CART"; productId: number }
+  | {
+    type: "REMOVE_FROM_CART";
+    productId: number;
+    color?: string;
+    size?: string;
+  }
   | { type: "UPDATE_CART_QUANTITY"; productId: number; quantity: number }
   | { type: "CLEAR_CART" }
   | { type: "TOGGLE_WISHLIST"; productId: number }
@@ -27,7 +32,9 @@ type AppAction =
   | { type: "SET_LOADING"; isLoading: boolean }
   | { type: "SET_SEARCH_QUERY"; query: string }
   | { type: "SET_INITIALIZED"; isInitialized: boolean }
-  | { type: "LOAD_PERSISTED_STATE"; state: Partial<AppState> };
+  | { type: "LOAD_PERSISTED_STATE"; state: Partial<AppState> }
+  | { type: "SET_CART_FROM_BACKEND"; cart: CartItem[] };
+  
 
 const initialState: AppState = {
   cart: [],
@@ -63,12 +70,23 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
 
       return { ...state, cart: [...state.cart, newItem] };
     }
+    case "SET_CART_FROM_BACKEND":
+      return { ...state, cart: action.cart };
+
 
     case "REMOVE_FROM_CART":
-      return {
-        ...state,
-        cart: state.cart.filter((item) => item.product.id !== action.productId),
-      };
+  return {
+    ...state,
+    cart: state.cart.filter(
+      (item) =>
+        !(
+          item.product.id === action.productId &&
+          item.selectedColor === action.color &&
+          item.selectedSize === action.size
+        )
+    ),
+  };
+
 
     case "UPDATE_CART_QUANTITY":
       return {
@@ -123,7 +141,7 @@ interface AppContextType {
     color?: string,
     size?: string,
   ) => void;
-  removeFromCart: (productId: number) => void;
+  removeFromCart: (productId: number, color:string, size: string) => void;
   updateCartQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
   toggleWishlist: (productId: number) => void;
@@ -133,7 +151,9 @@ interface AppContextType {
   getCartTotal: () => number;
   getCartItemsCount: () => number;
   isInWishlist: (productId: number) => boolean;
+  setCartFromBackend: (cart: CartItem[]) => void;
 }
+
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -216,12 +236,35 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     color?: string,
     size?: string,
   ) => {
+   
     dispatch({ type: "ADD_TO_CART", product, quantity, color, size });
   };
+  const setCartFromBackend = (cart: CartItem[]) => {
+  dispatch({ type: "SET_CART_FROM_BACKEND", cart });
+};
 
-  const removeFromCart = (productId: number) => {
-    dispatch({ type: "REMOVE_FROM_CART", productId });
-  };
+
+  const removeFromCart = async (
+  productId: number,
+  color?: string,
+  size?: string
+) => {
+  if (!state.user) return;
+
+  try {
+    await removeFromCartApi(state.user.id, productId, color, size);
+    dispatch({
+      type: "REMOVE_FROM_CART",
+      productId,
+      color,
+      size,
+    });
+  } catch (error) {
+    console.error("Không thể xoá sản phẩm:", error);
+    alert("Xoá sản phẩm khỏi giỏ hàng thất bại.");
+  }
+};
+
 
   const updateCartQuantity = (productId: number, quantity: number) => {
     dispatch({ type: "UPDATE_CART_QUANTITY", productId, quantity });
@@ -264,6 +307,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const value: AppContextType = {
     state,
     addToCart,
+    setCartFromBackend,
     removeFromCart,
     updateCartQuantity,
     clearCart,
@@ -274,6 +318,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     getCartTotal,
     getCartItemsCount,
     isInWishlist,
+    
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

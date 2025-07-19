@@ -83,7 +83,7 @@ export default function Login() {
         };
       } else {
         mockUser = {
-          id: "CUST001",
+          id: "1",
           email: email,
           name: email.split("@")[0],
           role: "customer" as const,

@@ -6,7 +6,8 @@ import api from "./fetch";
 
 // Xử lý lỗi đơn giản
 const handleError = (error) => {
-  const message = error.response?.data?.message || error.message || "Có lỗi xảy ra";
+  const message =
+    error.response?.data?.message || error.message || "Có lỗi xảy ra";
   console.error("API Error:", message);
   throw new Error(message);
 };
@@ -14,7 +15,7 @@ const handleError = (error) => {
 // Format date cho API
 const formatDateForApi = (date) => {
   if (!date) return null;
-  return new Date(date).toISOString().split('T')[0];
+  return new Date(date).toISOString().split("T")[0];
 };
 
 // ===================
@@ -132,14 +133,14 @@ export const createPurchaseOrder = async (data) => {
   try {
     console.log("=== API createPurchaseOrder ===");
     console.log("Input data:", data);
-    
+
     const orderData = {
       MaPDH: data.MaPDH,
       NgayDat: formatDateForApi(data.NgayDat),
       MaNV: data.MaNV,
       MaNCC: data.MaNCC,
       MaTrangThai: data.MaTrangThai,
-      details: data.details.map(item => {
+      details: data.details.map((item) => {
         console.log("Processing item:", item);
         const mappedItem = {
           MaSP: item.MaSP,
@@ -147,16 +148,16 @@ export const createPurchaseOrder = async (data) => {
           MaKichThuoc: item.MaKichThuoc,
           SoLuong: item.SoLuong,
           DonGia: item.DonGia,
-          ThanhTien: item.ThanhTien
+          ThanhTien: item.ThanhTien,
         };
         console.log("Mapped item:", mappedItem);
         return mappedItem;
-      })
+      }),
     };
-    
+
     console.log("Final orderData:", orderData);
     console.log("Sending to backend:", JSON.stringify(orderData, null, 2));
-    
+
     const response = await api.post("/purchase-orders", orderData);
     return response.data;
   } catch (error) {
@@ -180,15 +181,17 @@ export const updatePurchaseOrder = async (id, data) => {
     console.log("=== API updatePurchaseOrder ===");
     console.log("ID:", id);
     console.log("Input data:", data);
-    
+
     const orderData = {
       MaPDH: id,
-      NgayDat: formatDateForApi(data.NgayDat || new Date().toISOString().split('T')[0]),
+      NgayDat: formatDateForApi(
+        data.NgayDat || new Date().toISOString().split("T")[0]
+      ),
       MaNV: data.MaNV || 1,
       MaNCC: data.MaNCC,
       MaTrangThai: data.MaTrangThai || 1,
       GhiChu: data.GhiChu || "",
-      details: data.details.map(item => {
+      details: data.details.map((item) => {
         console.log("Processing item:", item);
         const mappedItem = {
           MaSP: item.MaSP,
@@ -196,16 +199,16 @@ export const updatePurchaseOrder = async (id, data) => {
           MaKichThuoc: item.MaKichThuoc,
           SoLuong: item.SoLuong,
           DonGia: item.DonGia,
-          ThanhTien: item.ThanhTien
+          ThanhTien: item.ThanhTien,
         };
         console.log("Mapped item:", mappedItem);
         return mappedItem;
-      })
+      }),
     };
-    
+
     console.log("Final orderData:", orderData);
     console.log("Sending to backend:", JSON.stringify(orderData, null, 2));
-    
+
     const response = await api.put(`/purchase-orders/${id}`, orderData);
     return response.data;
   } catch (error) {
@@ -216,8 +219,8 @@ export const updatePurchaseOrder = async (id, data) => {
 // Cập nhật trạng thái đơn đặt hàng
 export const updatePurchaseOrderStatus = async (id, statusId) => {
   try {
-    const response = await api.put(`/purchase-orders/${id}/status`, { 
-      MaTrangThai: statusId 
+    const response = await api.put(`/purchase-orders/${id}/status`, {
+      MaTrangThai: statusId,
     });
     return response.data;
   } catch (error) {
@@ -267,15 +270,15 @@ export const createGoodsReceipt = async (data) => {
       NgayNhap: formatDateForApi(data.NgayNhap),
       MaPDH: data.MaPDH,
       MaNV: data.MaNV,
-      details: data.details.map(item => ({
+      details: data.details.map((item) => ({
         MaCTSP: item.MaCTSP,
         SoLuong: item.SoLuong,
         DonGia: item.DonGia,
         TinhTrang: item.TinhTrang || "good",
-        GhiChu: item.GhiChu || ""
-      }))
+        GhiChu: item.GhiChu || "",
+      })),
     };
-    
+
     const response = await api.post("/goods-receipts", receiptData);
     return response.data;
   } catch (error) {
@@ -296,7 +299,9 @@ export const getGoodsReceiptById = async (id) => {
 // Cập nhật tồn kho sau khi nhập hàng
 export const updateInventoryAfterReceipt = async (receiptId) => {
   try {
-    const response = await api.put(`/goods-receipts/${receiptId}/update-inventory`);
+    const response = await api.put(
+      `/goods-receipts/${receiptId}/update-inventory`
+    );
     return response.data;
   } catch (error) {
     handleError(error);
@@ -406,4 +411,54 @@ export const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString("vi-VN");
 };
 
-export { formatDateForApi }; 
+export { formatDateForApi };
+
+//Product-api
+export const getAllProducts = async () => {
+  try {
+    const response = await api.get("/san-pham");
+    return response.data.data;
+  } catch (error) {
+    console.error("Lỗi khi gọi API sản phẩm:", error);
+    throw error;
+  }
+};
+export const getProductDetail = async (id) => {
+  try {
+    const response = await api.get(`/san-pham/${id}`);
+    return response.data.data;
+  } catch (error) {
+    console.error("Lỗi lấy chi tiết sản phẩm:", error);
+    throw error;
+  }
+};
+
+export const addToCartApi = async (data) => {
+  try {
+    const response = await api.post("/gio-hang/them", data);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const getCartItemsApi = async (maKH) => {
+  const response = await api.get(`/gio-hang/${maKH}`);
+  return response.data.data; // dữ liệu giỏ hàng
+};
+
+export const removeFromCartApi = async (maKH, maSP, maHex, tenKichThuoc) => {
+  try {
+    const response = await api.delete("/gio-hang/xoa", {
+      data: { maKH, maSP, maHex, tenKichThuoc },
+    });
+    return response.data.data; // trả lại cart cập nhật nếu cần
+  } catch (error) {
+    console.error("Lỗi xoá sản phẩm khỏi giỏ hàng:", error);
+    throw error;
+  }
+};
+
+export const createOrder = async (payload) => {
+  const response = await api.post("/gio-hang/dat-hang", payload);
+  return response.data;
+};

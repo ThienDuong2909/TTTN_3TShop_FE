@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft } from "lucide-react";
 import { Button } from "../components/ui/button";
@@ -12,9 +12,76 @@ import { Input } from "../components/ui/input";
 import { Separator } from "../components/ui/separator";
 import { Badge } from "../components/ui/badge";
 import { useApp } from "../contexts/AppContext";
-
+import {getCartItemsApi} from '../services/api'
+import type { Product } from "../components/ProductCard";
+import type { CartItem } from "../libs/data";
 export default function Cart() {
-  const { state, updateCartQuantity, removeFromCart, clearCart, getCartTotal } =
+  const {
+    state,
+    setCartFromBackend,
+    setLoading,
+    clearCart,
+  } = useApp();
+
+  useEffect(() => {
+  const fetchCart = async () => {
+    try {
+      if (!state.user) return;
+
+      setLoading(true);
+
+      const res = await getCartItemsApi(state.user.id);
+
+      const groupedMap = new Map<string, CartItem>();
+
+      for (const item of res.items) {
+        const productId = item.maCTSP;
+        const color = item.mau.hex;
+        const size = item.kichThuoc.ten;
+        const soLuong = item.soLuong;
+        const key = `${productId}-${color}-${size}`;
+
+        if (!groupedMap.has(key)) {
+          groupedMap.set(key, {
+            product: {
+              id: productId,
+              name: item.sanPham.tenSP,
+              price: Number(item.donGia),
+              originalPrice: undefined,
+              image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=600&fit=crop",
+              rating: 4.5,
+              reviews: 100,
+              discount: 0,
+              isNew: false,
+              isBestSeller: false,
+              category: "",
+              colors: [],
+              sizes: [],
+            },
+            quantity: item.soLuong,
+            selectedColor: color,
+            selectedSize: size,
+          });
+        } else {
+          const existing = groupedMap.get(key)!;
+          existing.quantity += item.soLuong;
+        }
+      }
+
+      // ✅ Set chính xác giỏ hàng từ backend
+      setCartFromBackend(Array.from(groupedMap.values()));
+    } catch (err) {
+      console.error("Lỗi khi lấy giỏ hàng:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchCart();
+}, [state.user]);
+
+
+  const {  updateCartQuantity, removeFromCart, getCartTotal } =
     useApp();
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -154,7 +221,14 @@ export default function Cart() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeFromCart(item.product.id)}
+                        onClick={() =>
+  removeFromCart(
+    item.product.id,
+    item.selectedColor,
+    item.selectedSize
+  )
+}
+
                         className="text-red-500 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4" />
