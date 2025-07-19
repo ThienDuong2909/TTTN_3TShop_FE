@@ -38,6 +38,7 @@ export interface Product {
   price: number;
   description?: string;
   category?: string;
+  MaNCC?: string | number; // Mã nhà cung cấp
 }
 
 export interface Color {

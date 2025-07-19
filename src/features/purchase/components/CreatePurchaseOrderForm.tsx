@@ -42,9 +42,11 @@ export default function CreatePurchaseOrderForm({
   // State for colors and sizes for each item
   const [itemColorsSizes, setItemColorsSizes] = useState<{ [key: number]: { colors: Color[], sizes: Size[] } }>({});
   
-  // State for filtered products (when supplier is selected first)
+  // State for loading colors/sizes for each item
+  const [loadingColorsSizes, setLoadingColorsSizes] = useState<{ [key: number]: boolean }>({});
+  
+  // State for filtered products (filtered from all products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
   
   // Validate form
   const [touched, setTouched] = useState<{[key: string]: boolean}>({});
@@ -55,18 +57,39 @@ export default function CreatePurchaseOrderForm({
     return !value;
   };
   
-  // Debug log for suppliers
-  console.log("CreatePurchaseOrderForm - suppliers:", suppliers);
-  console.log("CreatePurchaseOrderForm - poForm:", poForm);
-  console.log("CreatePurchaseOrderForm - filteredProducts:", filteredProducts);
-  console.log("CreatePurchaseOrderForm - loadingProducts:", loadingProducts);
+  // Debug logs
+  console.log("=== DEBUG ===");
+  console.log("Suppliers count:", suppliers.length);
+  console.log("Products count:", products.length);
+  console.log("Selected supplierId:", poForm.supplierId);
+  console.log("Filtered products count:", filteredProducts.length);
+  if (products.length > 0) {
+    console.log("Sample product:", products[0]);
+    console.log("Sample product keys:", Object.keys(products[0]));
+  }
   
-  // Reset filtered products when supplier is cleared
+  // Filter products by supplier when supplier changes
   useEffect(() => {
-    if (!poForm.supplierId) {
+    console.log("=== FILTER EFFECT ===");
+    console.log("Current supplierId:", poForm.supplierId);
+    console.log("Products to filter:", products.length);
+    
+    if (poForm.supplierId) {
+      const supplierProducts = products.filter((product: any) => {
+        // Sử dụng MaNCC thay vì supplierId
+        const productSupplierId = product.MaNCC?.toString();
+        const selectedSupplierId = poForm.supplierId.toString();
+        const matches = productSupplierId === selectedSupplierId;
+        console.log(`Product ${product.id}: MaNCC=${productSupplierId}, selected=${selectedSupplierId}, matches=${matches}`);
+        return matches;
+      });
+      console.log("Filtered products result:", supplierProducts.length);
+      setFilteredProducts(supplierProducts);
+    } else {
+      console.log("No supplier selected, clearing filtered products");
       setFilteredProducts([]);
     }
-  }, [poForm.supplierId]);
+  }, [poForm.supplierId, products]);
   
   // Get selected product-color-size combinations
   const getSelectedCombinations = () => {
@@ -86,53 +109,12 @@ export default function CreatePurchaseOrderForm({
     );
   };
   
-  // Load products by supplier
-  const loadProductsBySupplier = async (supplierId: string) => {
-    if (!supplierId) {
-      setFilteredProducts([]);
-      return;
-    }
-    
-    setLoadingProducts(true);
-    try {
-      console.log("Loading products for supplier:", supplierId);
-      const response = await getProductsBySupplier(supplierId);
-      console.log("Products by supplier response:", response);
-      
-      // Handle different response formats
-      let productData: any[] = [];
-      if (Array.isArray(response)) {
-        productData = response;
-      } else if (response && Array.isArray((response as any).data)) {
-        productData = (response as any).data;
-      } else if (response && typeof response === 'object') {
-        const responseObj = response as any;
-        productData = responseObj.products || responseObj.items || responseObj.result || [];
-      }
-      
-      console.log("Product data length:", productData.length);
-      
-      // Transform products to match our interface
-      let transformedProducts: Product[] = [];
-      if (productData.length > 0) {
-        transformedProducts = productData.map((product: any) => ({
-          id: product.MaSP || product.id,
-          name: product.TenSP || product.name,
-          price: product.DonGia || product.price || 0,
-          description: product.MoTa || product.description || "",
-          category: product.LoaiSP || product.category || "clothing",
-        }));
-      }
-      
-      console.log("Transformed products:", transformedProducts);
-      console.log("Setting filtered products to:", transformedProducts);
-      setFilteredProducts(transformedProducts);
-    } catch (error) {
-      console.error("Error loading products by supplier:", error);
-      setFilteredProducts([]);
-    } finally {
-      setLoadingProducts(false);
-    }
+  // Get products by supplier (filtered from all products)
+  const getProductsBySupplier = (supplierId: string) => {
+    if (!supplierId) return [];
+    return products.filter((product: any) => 
+      product.MaNCC?.toString() === supplierId.toString()
+    );
   };
   
   // Get available suppliers based on selected products
@@ -145,7 +127,7 @@ export default function CreatePurchaseOrderForm({
     
     // Filter suppliers that have all selected products
     // This is a simplified approach - in reality, you might need to query the backend
-    return suppliers.filter(supplier => {
+    return suppliers.filter((supplier: any) => {
       // For now, we'll show all suppliers
       // In a real app, you'd check if the supplier has the selected products
       return true;
@@ -153,54 +135,29 @@ export default function CreatePurchaseOrderForm({
   };
   
   // Auto-fill supplier for product (Flow 2)
-  const autoFillSupplierForProduct = async (productId: string) => {
+  const autoFillSupplierForProduct = (productId: string) => {
     try {
-      console.log("Auto-filling supplier for product:", productId);
+      console.log("=== AUTO-FILL SUPPLIER ===");
+      console.log("Product ID to find supplier:", productId);
       
-      // Try to find supplier from product data (if available)
+      // Find supplier from product data - search in all products, not just filtered
       const selectedProduct = products.find(p => p.id.toString() === productId.toString());
-      console.log("Selected product for supplier lookup:", selectedProduct);
+      console.log("Found product:", selectedProduct);
       
-             // If product has supplier info, use it
-       if (selectedProduct && (selectedProduct as any).supplierId) {
-         const supplierId = (selectedProduct as any).supplierId;
-         console.log("Found supplier ID from product:", supplierId);
-         const newSupplierId = supplierId.toString();
-         setPOForm({ ...poForm, supplierId: newSupplierId });
-         // Load products for this supplier
-         loadProductsBySupplier(newSupplierId);
-         return;
-       }
-      
-      // Fallback: Find supplier by checking which supplier has this product
-      // Try each supplier until we find one that has this product
-      for (const supplier of suppliers) {
-        try {
-          const response = await getProductsBySupplier(supplier.id.toString());
-          let supplierProducts: any[] = [];
-          
-          if (Array.isArray(response)) {
-            supplierProducts = response;
-          } else if (response && Array.isArray((response as any).data)) {
-            supplierProducts = (response as any).data;
-          }
-          
-          // Check if this supplier has the selected product
-          const hasProduct = supplierProducts.some(p => 
-            (p.MaSP || p.id)?.toString() === productId.toString()
-          );
-          
-          if (hasProduct) {
-            console.log("Found supplier with this product:", supplier);
-            const newSupplierId = supplier.id.toString();
-            setPOForm({ ...poForm, supplierId: newSupplierId });
-            // Load all products for this supplier
-            loadProductsBySupplier(newSupplierId);
-            return;
-          }
-        } catch (error) {
-          console.error("Error checking supplier products:", error);
+      // If product has supplier info, use it (MaNCC)
+      if (selectedProduct && (selectedProduct as any).MaNCC) {
+        const supplierId = (selectedProduct as any).MaNCC;
+        console.log("Setting supplierId to:", supplierId);
+        
+        // Check if this supplier exists in our suppliers list
+        const supplierExists = suppliers.some(s => s.id.toString() === supplierId.toString());
+        if (supplierExists) {
+          setPOForm({ ...poForm, supplierId: supplierId.toString() });
+          console.log("Supplier auto-filled successfully");
+        } else {
+          console.log("Supplier not found in suppliers list:", supplierId);
         }
+        return;
       }
       
       console.log("No supplier found for product:", productId);
@@ -211,18 +168,29 @@ export default function CreatePurchaseOrderForm({
   
   // Load colors and sizes for a product
   const loadProductColorsSizes = async (index: number, productId: string) => {
-    console.log(`loadProductColorsSizes called with index: ${index}, productId: ${productId}`);
+    console.log(`=== LOAD COLORS/SIZES ===`);
+    console.log(`Index: ${index}, ProductId: ${productId}`);
     if (!productId || productId === "") {
       console.log("No productId provided, skipping API call");
       return;
     }
     
+    // Set loading state
+    setLoadingColorsSizes(prev => ({ ...prev, [index]: true }));
+    
     try {
-      console.log(`Loading colors/sizes for product ${productId} at index ${index}`);
-      console.log("getProductColorsSizes function:", getProductColorsSizes);
-      
+      console.log(`Calling API: /products/${productId}/colors-sizes`);
       const response = await getProductColorsSizes(productId);
-      console.log("Colors/sizes response:", response);
+      console.log("=== API RESPONSE DETAILS ===");
+      console.log("Raw response:", response);
+      console.log("Response type:", typeof response);
+      console.log("Is array:", Array.isArray(response));
+      console.log("Response keys:", response ? Object.keys(response) : "null");
+      if (response && typeof response === 'object') {
+        console.log("Response.data:", (response as any).data);
+        console.log("Response.success:", (response as any).success);
+        console.log("Response.message:", (response as any).message);
+      }
       
       // Handle different API response formats
       let colors: Color[] = [];
@@ -242,16 +210,20 @@ export default function CreatePurchaseOrderForm({
         dataArray = responseObj.products || responseObj.items || responseObj.result || responseObj.data || [];
       }
       
-      console.log("Data array:", dataArray);
+      console.log("Data array length:", dataArray.length);
+      console.log("Data array sample:", dataArray[0]);
       
       if (dataArray.length > 0) {
         // Extract unique colors from the data
         const uniqueColors = new Map<number, Color>();
         const uniqueSizes = new Map<number, Size>();
         
-        dataArray.forEach((item: any) => {
+        dataArray.forEach((item: any, idx: number) => {
+          console.log(`Processing item ${idx}:`, item);
+          
           // Extract color
           if (item.Mau) {
+            console.log(`Found color:`, item.Mau);
             uniqueColors.set(item.Mau.MaMau, {
               MaMau: item.Mau.MaMau,
               TenMau: item.Mau.TenMau,
@@ -261,6 +233,7 @@ export default function CreatePurchaseOrderForm({
           
           // Extract size
           if (item.KichThuoc) {
+            console.log(`Found size:`, item.KichThuoc);
             uniqueSizes.set(item.KichThuoc.MaKichThuoc, {
               MaKichThuoc: item.KichThuoc.MaKichThuoc,
               TenKichThuoc: item.KichThuoc.TenKichThuoc
@@ -271,8 +244,31 @@ export default function CreatePurchaseOrderForm({
         colors = Array.from(uniqueColors.values());
         sizes = Array.from(uniqueSizes.values());
         
-        console.log("Extracted colors:", colors);
-        console.log("Extracted sizes:", sizes);
+        console.log("Final extracted colors:", colors);
+        console.log("Final extracted sizes:", sizes);
+      } else {
+        console.log("No data found in array");
+        // Fallback: try to get colors and sizes from product details if available
+        const selectedProduct = products.find(p => p.id.toString() === productId.toString());
+        if (selectedProduct) {
+          console.log("Trying fallback: getting colors/sizes from product details");
+          // Try to extract colors and sizes from product details if available
+          if ((selectedProduct as any).colors && Array.isArray((selectedProduct as any).colors)) {
+            colors = (selectedProduct as any).colors.map((color: any, idx: number) => ({
+              MaMau: idx + 1,
+              TenMau: color,
+              MaHex: color
+            }));
+          }
+          if ((selectedProduct as any).sizes && Array.isArray((selectedProduct as any).sizes)) {
+            sizes = (selectedProduct as any).sizes.map((size: any, idx: number) => ({
+              MaKichThuoc: idx + 1,
+              TenKichThuoc: size
+            }));
+          }
+          console.log("Fallback colors:", colors);
+          console.log("Fallback sizes:", sizes);
+        }
       }
       
       setItemColorsSizes(prev => ({
@@ -288,6 +284,9 @@ export default function CreatePurchaseOrderForm({
         ...prev,
         [index]: { colors: [], sizes: [] }
       }));
+    } finally {
+      // Clear loading state
+      setLoadingColorsSizes(prev => ({ ...prev, [index]: false }));
     }
   };
 
@@ -320,14 +319,13 @@ export default function CreatePurchaseOrderForm({
 
     // Auto-fill product name and price when product is selected
     if (field === "MaSP") {
-      console.log("Product selection - value:", value, "type:", typeof value);
-      console.log("Available products:", products);
-      console.log("Available filteredProducts:", filteredProducts);
-      
-      // Find product from either filtered or all products
-      const allProducts = filteredProducts.length > 0 ? filteredProducts : products;
-      const product = allProducts.find((p) => p.id.toString() === value.toString());
-      console.log("Found product:", product);
+              console.log("=== PRODUCT SELECTION ===");
+        console.log("Selected product ID:", value);
+        
+        // Find product from either filtered products or all products
+        const allProducts = filteredProducts.length > 0 ? filteredProducts : products;
+        const product = allProducts.find((p: any) => p.id.toString() === value.toString());
+        console.log("Found product:", product);
       
       if (product) {
         newItems[index].productName = product.name;
@@ -342,15 +340,34 @@ export default function CreatePurchaseOrderForm({
           [index]: { colors: [], sizes: [] }
         }));
         
-        // Load colors and sizes for the new product immediately
-        console.log("About to call loadProductColorsSizes with:", index, value);
-        loadProductColorsSizes(index, value);
+        // Clear loading state for this index
+        setLoadingColorsSizes(prev => ({
+          ...prev,
+          [index]: false
+        }));
         
-        // Flow 2: Auto-fill supplier if not selected and product is from all products list
-        if (!poForm.supplierId && filteredProducts.length === 0) {
-          console.log("Flow 2: Auto-filling supplier for product");
-          // Get supplier from product data or find supplier who has this product
+        // Load colors and sizes for the new product immediately
+        console.log("=== ABOUT TO LOAD COLORS/SIZES ===");
+        console.log("Index:", index, "ProductId:", value);
+        console.log("Calling loadProductColorsSizes...");
+        loadProductColorsSizes(index, value);
+        console.log("loadProductColorsSizes called");
+        
+        // Flow 2: Auto-fill supplier if not selected
+        if (!poForm.supplierId) {
+          console.log("=== FLOW 2 ===");
           autoFillSupplierForProduct(value);
+        } else {
+          // If supplier is already selected, verify it matches the product's supplier
+          const productSupplierId = (product as any).MaNCC?.toString();
+          const currentSupplierId = poForm.supplierId.toString();
+          if (productSupplierId && productSupplierId !== currentSupplierId) {
+            console.log("=== SUPPLIER MISMATCH ===");
+            console.log("Product supplier:", productSupplierId);
+            console.log("Current supplier:", currentSupplierId);
+            // Optionally show a warning or auto-update
+            console.log("Warning: Product supplier doesn't match selected supplier");
+          }
         }
       } else {
         console.log("No product found, clearing colors/sizes");
@@ -358,6 +375,12 @@ export default function CreatePurchaseOrderForm({
         setItemColorsSizes(prev => ({
           ...prev,
           [index]: { colors: [], sizes: [] }
+        }));
+        
+        // Clear loading state
+        setLoadingColorsSizes(prev => ({
+          ...prev,
+          [index]: false
         }));
       }
     }
@@ -407,6 +430,23 @@ export default function CreatePurchaseOrderForm({
       });
       return reindexed;
     });
+    
+    // Clean up loading state
+    setLoadingColorsSizes(prev => {
+      const newState = { ...prev };
+      delete newState[index];
+      // Re-index remaining items
+      const reindexed: { [key: number]: boolean } = {};
+      Object.entries(newState).forEach(([key, value]) => {
+        const keyNum = parseInt(key);
+        if (keyNum > index) {
+          reindexed[keyNum - 1] = value;
+        } else {
+          reindexed[keyNum] = value;
+        }
+      });
+      return reindexed;
+    });
   };
 
   const calculateTotal = () => {
@@ -440,10 +480,10 @@ export default function CreatePurchaseOrderForm({
           <Select
             value={poForm.supplierId}
             onValueChange={(value) => {
-              console.log("Supplier selected:", value, "type:", typeof value);
+              console.log("=== SUPPLIER SELECTION ===");
+              console.log("Selected supplier ID:", value);
               setPOForm({ ...poForm, supplierId: value });
-              // Load products for this supplier
-              loadProductsBySupplier(value);
+              // Products will be filtered automatically by useEffect
             }}
           >
             <SelectTrigger
@@ -525,41 +565,29 @@ export default function CreatePurchaseOrderForm({
                           <SelectValue placeholder="Chọn sản phẩm" />
                         </SelectTrigger>
                         <SelectContent>
-                          {(() => {
-                            console.log("Supplier selected:", poForm.supplierId);
-                            console.log("Filtered products:", filteredProducts);
-                            console.log("All products:", products);
-                            
-                            if (loadingProducts) {
-                              return (
-                                <div className="px-2 py-1 text-sm text-muted-foreground">
-                                  Đang tải sản phẩm...
-                                </div>
-                              );
-                            }
-                            
-                            // If supplier is selected, only show filtered products
-                            if (poForm.supplierId) {
-                              console.log("Supplier selected, showing filtered products");
-                              console.log("FilteredProducts length:", filteredProducts.length);
-                              console.log("FilteredProducts array:", filteredProducts);
+                                                      {(() => {
+                              console.log("=== RENDER PRODUCTS ===");
+                              console.log("Supplier selected:", poForm.supplierId);
+                              console.log("Filtered products count:", filteredProducts.length);
                               
-                              if (filteredProducts.length > 0) {
-                                console.log("Showing filtered products");
-                                return filteredProducts.map((product) => (
-                                  <SelectItem key={product.id} value={product.id.toString()}>
-                                    {product.name}
-                                  </SelectItem>
-                                ));
-                              } else {
-                                console.log("No filtered products, showing empty message");
-                                return (
-                                  <div className="px-2 py-1 text-sm text-muted-foreground">
-                                    Nhà cung cấp này không có sản phẩm nào
-                                  </div>
-                                );
+                              // If supplier is selected, only show filtered products
+                              if (poForm.supplierId) {
+                                if (filteredProducts.length > 0) {
+                                  console.log("Rendering filtered products");
+                                  return filteredProducts.map((product: any) => (
+                                    <SelectItem key={product.id} value={product.id.toString()}>
+                                      {product.name}
+                                    </SelectItem>
+                                  ));
+                                } else {
+                                  console.log("No products for this supplier");
+                                  return (
+                                    <div className="px-2 py-1 text-sm text-muted-foreground">
+                                      Nhà cung cấp này không có sản phẩm nào
+                                    </div>
+                                  );
+                                }
                               }
-                            }
                             
                             // If no supplier selected, show all products
                             console.log("No supplier selected, showing all products");
@@ -636,7 +664,9 @@ export default function CreatePurchaseOrderForm({
                             } else {
                               return (
                                 <div className="px-2 py-1 text-sm text-muted-foreground">
-                                  {item.MaSP ? "Không có màu nào" : "Chọn sản phẩm trước"}
+                                  {item.MaSP ? 
+                                    (loadingColorsSizes[index] ? "Đang tải màu sắc..." : "Không có màu nào") 
+                                    : "Chọn sản phẩm trước"}
                                 </div>
                               );
                             }
@@ -694,7 +724,9 @@ export default function CreatePurchaseOrderForm({
                             } else {
                               return (
                                 <div className="px-2 py-1 text-sm text-muted-foreground">
-                                  {item.MaSP ? "Không có kích thước nào" : "Chọn sản phẩm trước"}
+                                  {item.MaSP ? 
+                                    (loadingColorsSizes[index] ? "Đang tải kích thước..." : "Không có kích thước nào") 
+                                    : "Chọn sản phẩm trước"}
                                 </div>
                               );
                             }

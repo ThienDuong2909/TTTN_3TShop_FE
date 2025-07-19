@@ -14,9 +14,14 @@ import {
   createPurchaseOrder as createPurchaseOrderAPI,
   updatePurchaseOrderStatus,
   getSuppliers,
-  getProductDetails,
 } from "../../../services/api";
 import { updatePurchaseOrder as updatePurchaseOrderAPI } from "../../../services/commonService";
+
+// Wrapper function for getProducts
+const getProductsWrapper = async () => {
+  const api = await import("../../../services/api");
+  return (api as any).getProducts();
+};
 
 // Transform API data to match our interface
 const transformPurchaseOrderFromAPI = (apiPO: any): PurchaseOrder => {
@@ -69,6 +74,8 @@ const transformProductFromAPI = (apiProduct: any): Product => ({
   price: apiProduct.DonGia || 0,
   description: apiProduct.MoTa || "",
   category: apiProduct.LoaiSP || "clothing",
+  // Giữ lại MaNCC để filter theo nhà cung cấp
+  MaNCC: apiProduct.MaNCC,
 });
 
 // Helper function to map status
@@ -214,8 +221,10 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     setLoading(prev => ({ ...prev, products: true }));
     
     try {
-      console.log("Calling getProductDetails API...");
-      const response = await getProductDetails();
+      console.log("Calling getProducts API...");
+      const response = await getProductsWrapper();
+
+      console.log("response", response);
       
       // Try to handle different response formats
       let productData: any[] = [];
@@ -226,12 +235,29 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       } else if (response && typeof response === 'object') {
         // If response is an object, try to find array in common properties
         const responseObj = response as any;
-        productData = responseObj.products || responseObj.items || responseObj.result || responseObj.productDetails || [];
+        productData = responseObj.products || responseObj.items || responseObj.result || [];
       }
       
+      console.log("Raw product data:", productData);
       
       if (productData.length > 0) {
+        // Log chi tiết sản phẩm đầu tiên để kiểm tra cấu trúc
+        console.log("=== PRODUCT STRUCTURE CHECK ===");
+        console.log("First product raw data:", productData[0]);
+        console.log("First product keys:", Object.keys(productData[0]));
+        
+        // Kiểm tra các trường có thể chứa thông tin nhà cung cấp
+        const firstProduct = productData[0];
+        console.log("Possible supplier fields:");
+        console.log("- MaNCC:", firstProduct.MaNCC);
+        console.log("- supplierId:", firstProduct.supplierId);
+        console.log("- MaNhaCungCap:", firstProduct.MaNhaCungCap);
+        console.log("- NhaCungCap:", firstProduct.NhaCungCap);
+        console.log("- NCC:", firstProduct.NCC);
+        console.log("- supplier_id:", firstProduct.supplier_id);
+        
         const transformedProducts = productData.map(transformProductFromAPI);
+        console.log("Transformed products:", transformedProducts);
         setProducts(transformedProducts);
       } else {
         console.log("No products found or empty array");
