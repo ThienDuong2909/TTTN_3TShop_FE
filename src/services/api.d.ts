@@ -55,3 +55,7 @@ export function createOrder(data: CreateOrderPayload): Promise<any>;
 
 export function checkStockAvailability(maCTSP: number): Promise<{ soLuongTon: number }>;
 export declare const clearCartApi: (maKH: number) => Promise<any>;
+
+// Auth functions
+export function login(credentials: { email: string; password: string }): Promise<any>;
+export function register(userData: { Email: string; Password: string; TenKH: string }): Promise<any>;

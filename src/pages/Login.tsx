@@ -13,6 +13,8 @@ import {
 } from "../components/ui/card";
 import { Checkbox } from "../components/ui/checkbox";
 import { useApp } from "../contexts/AppContext";
+import * as api from "../services/api";
+import { toast } from "sonner";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -46,6 +48,25 @@ export default function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
+  function mapUserFromApi(res: any) {
+    // Extract role from response
+    let role = res.data?.role || res.data?.user?.TaiKhoan?.VaiTro?.TenVaiTro;
+    if (role === "Admin") role = "admin";
+    else if (role === "NhanVien") role = "staff";
+    else if (role === "KhachHang") role = "customer";
+
+    // Extract user info
+    const apiUser = res.data?.user;
+    return {
+      id: apiUser?.MaKH || apiUser?.id || apiUser?.MaTK || apiUser?.TaiKhoan?.MaTK,
+      email: apiUser?.TaiKhoan?.Email || apiUser?.Email || apiUser?.TenKH,
+      name: apiUser?.TenKH || apiUser?.TaiKhoan?.Email || apiUser?.Email,
+      role,
+      avatar: apiUser?.avatar || undefined,
+      // Add more fields if needed
+    };
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -56,45 +77,25 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // Mock login - in real app, this would be an API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Mock successful login - check for staff/admin emails
-      let mockUser;
-
-      if (email === "admin@fashionhub.vn") {
-        mockUser = {
-          id: "ADMIN001",
-          email: email,
-          name: "Quản Trị Viên",
-          role: "admin" as const,
-          permissions: ["all"],
-          avatar: `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face`,
-        };
-      } else if (email === "nhanvien@fashionhub.vn") {
-        mockUser = {
-          id: "STAFF001",
-          email: email,
-          name: "Nguyễn Văn Nhân Viên",
-          role: "staff" as const,
-          department: "DEPT001",
-          permissions: ["view_orders", "manage_orders", "view_products"],
-          avatar: `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face`,
-        };
+      // Call real API
+      const res = await api.login({ email, password });
+      console.log("API LOGIN RESPONSE", res);
+      if (res?.success && res.data?.token && res.data?.user) {
+        // Save token
+        localStorage.setItem("token", res.data.token);
+        // Set user context
+        const userObj = mapUserFromApi(res);
+        console.log("USER AFTER MAP", userObj);
+        setUser(userObj);
+        toast.success("Đăng nhập thành công!");
+        navigate("/");
       } else {
-        mockUser = {
-          id: "1",
-          email: email,
-          name: email.split("@")[0],
-          role: "customer" as const,
-          avatar: `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face`,
-        };
+        toast.error(res?.error || res?.message || "Đăng nhập thất bại");
+        setErrors({ email: res?.error || res?.message || "Đăng nhập thất bại" });
       }
-
-      setUser(mockUser);
-      navigate("/");
-    } catch (error) {
-      setErrors({ email: "Email hoặc mật khẩu không đúng" });
+    } catch (error: any) {
+      toast.error(error.message || "Đăng nhập thất bại");
+      setErrors({ email: error.message || "Đăng nhập thất bại" });
     } finally {
       setIsLoading(false);
     }
@@ -103,16 +104,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <Link to="/" className="inline-flex items-center space-x-2">
-            <div className="h-10 w-10 bg-gradient-to-r from-brand-500 to-brand-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">F</span>
-            </div>
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">
-              FashionHub
-            </span>
-          </Link>
-        </div>
+        {/* Removed logo and FashionHub text for a cleaner login form */}
 
         <Card>
           <CardHeader className="space-y-1">
@@ -212,7 +204,7 @@ export default function Login() {
                 </div>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-3">
+              <div className="mt-6">
                 <Button variant="outline" className="w-full">
                   <svg
                     className="w-4 h-4 mr-2"
@@ -225,16 +217,6 @@ export default function Login() {
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                   </svg>
                   Google
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <svg
-                    className="w-4 h-4 mr-2"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                  Facebook
                 </Button>
               </div>
             </div>

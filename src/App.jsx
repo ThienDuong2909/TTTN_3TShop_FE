@@ -167,8 +167,8 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<MainLayout><Index /></MainLayout>} />
           <Route path="/home" element={<MainLayout><Home /></MainLayout>} />
-          <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
-          <Route path="/register" element={<MainLayout><Register /></MainLayout>} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/products" element={<MainLayout><ProductListing /></MainLayout>} />
           <Route path="/product/:id" element={<MainLayout><ProductDetail /></MainLayout>} />
           
