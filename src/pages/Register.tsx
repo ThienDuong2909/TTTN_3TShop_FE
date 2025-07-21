@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -12,14 +12,14 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { Checkbox } from "../components/ui/checkbox";
-import { useApp } from "../contexts/AppContext";
+import * as api from "../services/api";
+import { toast } from "sonner";
 
 export default function Register() {
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    password: "",
+    TenKH: "",
+    Email: "",
+    Password: "",
     confirmPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -28,39 +28,32 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { setUser } = useApp();
   const navigate = useNavigate();
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name) {
-      newErrors.name = "Họ tên là bắt buộc";
-    } else if (formData.name.length < 2) {
-      newErrors.name = "Họ tên phải có ít nhất 2 ký tự";
+    if (!formData.TenKH) {
+      newErrors.TenKH = "Họ tên là bắt buộc";
+    } else if (formData.TenKH.length < 2) {
+      newErrors.TenKH = "Họ tên phải có ít nhất 2 ký tự";
     }
 
-    if (!formData.email) {
-      newErrors.email = "Email là bắt buộc";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email không hợp lệ";
+    if (!formData.Email) {
+      newErrors.Email = "Email là bắt buộc";
+    } else if (!/\S+@\S+\.\S+/.test(formData.Email)) {
+      newErrors.Email = "Email không hợp lệ";
     }
 
-    if (!formData.phone) {
-      newErrors.phone = "Số điện thoại là bắt buộc";
-    } else if (!/^[0-9]{10,11}$/.test(formData.phone)) {
-      newErrors.phone = "Số điện thoại không hợp lệ";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Mật khẩu là bắt buộc";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+    if (!formData.Password) {
+      newErrors.Password = "Mật khẩu là bắt buộc";
+    } else if (formData.Password.length < 6) {
+      newErrors.Password = "Mật khẩu phải có ít nhất 6 ký tự";
     }
 
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Xác nhận mật khẩu là bắt buộc";
-    } else if (formData.password !== formData.confirmPassword) {
+    } else if (formData.Password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Mật khẩu không khớp";
     }
 
@@ -74,7 +67,6 @@ export default function Register() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
@@ -82,31 +74,25 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setIsLoading(true);
-
     try {
-      // Mock registration - in real app, this would be an API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Mock successful registration
-      const mockUser = {
-        id: "1",
-        email: formData.email,
-        name: formData.name,
-        phone: formData.phone,
-        role: "customer" as const,
-        avatar: `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face`,
-      };
-
-      setUser(mockUser);
-      navigate("/");
-    } catch (error) {
-      setErrors({ email: "Email đã được sử dụng" });
+      // Gọi API thật
+      const res = await api.register({
+        Email: formData.Email,
+        Password: formData.Password,
+        TenKH: formData.TenKH,
+      });
+      if (res?.success) {
+        toast.success("Đăng ký thành công! Hãy đăng nhập.");
+        navigate("/login");
+      } else {
+        toast.error(res?.error || "Đăng ký thất bại");
+        setErrors({ Email: res?.error || "Đăng ký thất bại" });
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Đăng ký thất bại");
+      setErrors({ Email: error.message || "Đăng ký thất bại" });
     } finally {
       setIsLoading(false);
     }
@@ -115,16 +101,7 @@ export default function Register() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <Link to="/" className="inline-flex items-center space-x-2">
-            <div className="h-10 w-10 bg-gradient-to-r from-brand-500 to-brand-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">F</span>
-            </div>
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">
-              FashionHub
-            </span>
-          </Link>
-        </div>
+        {/* Removed logo and FashionHub text for a cleaner registration form */}
 
         <Card>
           <CardHeader className="space-y-1">
@@ -136,72 +113,52 @@ export default function Register() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Họ và tên</Label>
+                <Label htmlFor="TenKH">Họ và tên</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    id="name"
+                    id="TenKH"
                     type="text"
                     placeholder="Nhập họ và tên"
                     className="pl-10"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    value={formData.TenKH}
+                    onChange={(e) => handleInputChange("TenKH", e.target.value)}
                   />
                 </div>
-                {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name}</p>
+                {errors.TenKH && (
+                  <p className="text-sm text-red-500">{errors.TenKH}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="Email">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    id="email"
+                    id="Email"
                     type="email"
                     placeholder="Nhập email của bạn"
                     className="pl-10"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    value={formData.Email}
+                    onChange={(e) => handleInputChange("Email", e.target.value)}
                   />
                 </div>
-                {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email}</p>
+                {errors.Email && (
+                  <p className="text-sm text-red-500">{errors.Email}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Số điện thoại</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="Nhập số điện thoại"
-                    className="pl-10"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                  />
-                </div>
-                {errors.phone && (
-                  <p className="text-sm text-red-500">{errors.phone}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Mật khẩu</Label>
+                <Label htmlFor="Password">Mật khẩu</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    id="password"
+                    id="Password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Nhập mật khẩu"
                     className="pl-10 pr-10"
-                    value={formData.password}
-                    onChange={(e) =>
-                      handleInputChange("password", e.target.value)
-                    }
+                    value={formData.Password}
+                    onChange={(e) => handleInputChange("Password", e.target.value)}
                   />
                   <button
                     type="button"
@@ -215,8 +172,8 @@ export default function Register() {
                     )}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="text-sm text-red-500">{errors.password}</p>
+                {errors.Password && (
+                  <p className="text-sm text-red-500">{errors.Password}</p>
                 )}
               </div>
 
@@ -230,9 +187,7 @@ export default function Register() {
                     placeholder="Nhập lại mật khẩu"
                     className="pl-10 pr-10"
                     value={formData.confirmPassword}
-                    onChange={(e) =>
-                      handleInputChange("confirmPassword", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                   />
                   <button
                     type="button"
@@ -307,7 +262,7 @@ export default function Register() {
                 </div>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-3">
+              <div className="mt-6">
                 <Button variant="outline" className="w-full">
                   <svg
                     className="w-4 h-4 mr-2"
@@ -320,16 +275,6 @@ export default function Register() {
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                   </svg>
                   Google
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <svg
-                    className="w-4 h-4 mr-2"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                  Facebook
                 </Button>
               </div>
             </div>
