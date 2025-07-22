@@ -6,19 +6,32 @@ import { Toaster } from "sonner";
 type Category = {
   MaLoaiSP: number;
   TenLoai: string;
-  hinhanh?: string;
+  NgayTao: string;
+  HinhMinhHoa?: string;
 };
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { Search } from "lucide-react";
+import { Edit2, Search, Trash2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
 import { toast } from "sonner";
 
+// Helper function to format date
+ const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
 export default function CategoriesManagement() {
   const [categories, setCategories] = useState<Category[]>([]);
+  
   // Fetch categories from API
   useEffect(() => {
     const fetchCategories = async () => {
@@ -40,25 +53,26 @@ export default function CategoriesManagement() {
     };
     fetchCategories();
   }, []);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
     TenLoai: "",
-    hinhanh: "",
+    HinhMinhHoa: "",
   });
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
   const handleAdd = () => {
     setEditingCategory(null);
-    setFormData({ TenLoai: "", hinhanh: "" });
+    setFormData({ TenLoai: "", HinhMinhHoa: "" });
     setIsModalOpen(true);
   };
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
-    setFormData({ TenLoai: category.TenLoai, hinhanh: category.hinhanh || "" });
+    setFormData({ TenLoai: category.TenLoai, HinhMinhHoa: category.HinhMinhHoa || "" });
     setIsModalOpen(true);
   };
 
@@ -96,13 +110,13 @@ export default function CategoriesManagement() {
         const res = await fetch(`http://localhost:8080/api/category/${editingCategory.MaLoaiSP}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ TenLoai: formData.TenLoai, hinhanh: formData.hinhanh }),
+          body: JSON.stringify({ TenLoai: formData.TenLoai, HinhMinhHoa: formData.HinhMinhHoa }),
         });
         if (res.ok) {
           toast.success("Cập nhật thành công!");
           setCategories((prev) =>
             prev.map((c) =>
-              c.MaLoaiSP === editingCategory.MaLoaiSP ? { ...c, TenLoai: formData.TenLoai } : c
+              c.MaLoaiSP === editingCategory.MaLoaiSP ? { ...c, TenLoai: formData.TenLoai, HinhMinhHoa: formData.HinhMinhHoa } : c
             )
           );
         } else {
@@ -117,7 +131,7 @@ export default function CategoriesManagement() {
         const res = await fetch("http://localhost:8080/api/category", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ TenLoai: formData.TenLoai, hinhanh: formData.hinhanh }),
+          body: JSON.stringify({ TenLoai: formData.TenLoai, HinhMinhHoa: formData.HinhMinhHoa }),
         });
         if (res.ok) {
           const data = await res.json();
@@ -136,9 +150,6 @@ export default function CategoriesManagement() {
     setIsModalOpen(false);
     setEditingCategory(null);
   };
-
-  // Get all parent categories for dropdown
-
 
   // Filtered categories by search
   const filteredCategories = categories.filter((cat) =>
@@ -180,9 +191,9 @@ export default function CategoriesManagement() {
               <TableRow key={cat.MaLoaiSP} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
                 <TableCell>
                   <div className="flex items-center justify-center">
-                    {cat.hinhanh ? (
+                    {cat.HinhMinhHoa ? (
                       <img
-                        src={cat.hinhanh}
+                        src={cat.HinhMinhHoa}
                         alt={cat.TenLoai}
                         className="w-12 h-12 object-cover rounded border"
                         onError={e => (e.currentTarget.src = '/default-category.png')}
@@ -200,28 +211,24 @@ export default function CategoriesManagement() {
                   <div className="font-semibold text-gray-900 dark:text-white text-base">{cat.TenLoai}</div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-gray-700 text-sm">--</span>
+                  <span className="text-gray-700 text-sm">{formatDate(cat.NgayTao)}</span>
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex items-center justify-center gap-2">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                    onClick={() => handleEdit(cat)}
-                    className="hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/30"
-                    title="Sửa"
+                    <button
+                      onClick={() => handleEdit(cat)}
+                      className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200 hover:shadow-md"
+                      title="Sửa danh mục"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 00-4-4l-8 8v3zm0 0v3a2 2 0 002 2h3" /></svg>
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                    onClick={() => handleDelete(cat)}
-                    className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30"
-                    title="Xóa"
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(cat)}
+                      className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-200 hover:shadow-md"
+                      title="Xóa danh mục"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </Button>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -248,19 +255,19 @@ export default function CategoriesManagement() {
                 />
               </div>
               <div>
-                <Label htmlFor="hinhanh">Đường dẫn hình ảnh</Label>
+                <Label htmlFor="HinhMinhHoa">Đường dẫn hình minh họa</Label>
                 <Input
-                  id="hinhanh"
+                  id="HinhMinhHoa"
                   placeholder="https://..."
-                  value={formData.hinhanh}
-                  onChange={(e) => setFormData({ ...formData, hinhanh: e.target.value })}
+                  value={formData.HinhMinhHoa}
+                  onChange={(e) => setFormData({ ...formData, HinhMinhHoa: e.target.value })}
                   className="mt-2"
                 />
-                {formData.hinhanh && (
+                {formData.HinhMinhHoa && (
                   <div className="mt-3 flex flex-col items-start gap-2">
                     <span className="text-xs text-gray-500">Xem trước:</span>
                     <img
-                      src={formData.hinhanh}
+                      src={formData.HinhMinhHoa}
                       alt="Preview"
                       className="w-32 h-32 object-cover rounded border"
                       onError={e => (e.currentTarget.style.display = 'none')}
