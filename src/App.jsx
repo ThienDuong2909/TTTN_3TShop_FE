@@ -1,4 +1,4 @@
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 
 import { AppProvider } from './contexts/AppContext';
@@ -25,6 +25,8 @@ import Checkout from './pages/Checkout';
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
 import ProductManagement from './pages/ProductManagement';
+import ProductAdd from './pages/ProductAdd';
+import AdminProductDetail from './pages/AdminProductDetail';
 import CategoriesManagement from './pages/CategoriesManagement';
 import PurchaseOrders from './pages/PurchaseOrders';
 import GoodsReceipt from './pages/GoodsReceipt';
@@ -76,6 +78,20 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AdminLayout>
                 <ProductManagement />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/add-product" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <ProductAdd />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/products/:id" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <AdminProductDetail />
               </AdminLayout>
             </ProtectedRoute>
           } />
@@ -198,7 +214,9 @@ function App() {
           {/* 404 */}
           <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
         </Routes>
-        <Toaster />
+        <Toaster 
+          position="top-center"
+          richColors/>
       </AppProvider>
     </ThemeProvider>
   );
