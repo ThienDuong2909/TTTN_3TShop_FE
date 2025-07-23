@@ -3,13 +3,7 @@ import { Plus, Search, RefreshCw } from "lucide-react";
 import AdminHeader from "../components/AdminHeader";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
+
 import { useApp } from "../contexts/AppContext";
 
 // Import components and hooks
@@ -56,8 +50,6 @@ export default function GoodsReceipt() {
     setIsCreateGROpen,
     searchQuery,
     setSearchQuery,
-    statusFilter,
-    setStatusFilter,
     getFilteredGRs,
     resetForm,
     excelData,

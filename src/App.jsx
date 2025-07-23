@@ -1,4 +1,3 @@
-import { Toaster } from 'react-hot-toast';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 
 import { AppProvider } from './contexts/AppContext';
@@ -6,8 +5,8 @@ import { ThemeProvider } from './components/ThemeProvider';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
-import { Home, Settings, Package, FileText, Truck, LogOut } from 'lucide-react';
-import { useApp } from './contexts/AppContext';
+import { Home } from 'lucide-react';
+import { Toaster } from './components/ui/toaster';
 
 // Public Pages
 import Index from './pages/Index';
