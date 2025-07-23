@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle, AlertTriangle, Edit, FileSpreadsheet, Save, Loader2 } from "lucide-react";
+import { Edit, FileSpreadsheet, Save, Loader2 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
 import { Card, CardContent } from "../../../components/ui/card";
@@ -29,7 +29,6 @@ import {
 } from "../../../components/ui/tabs";
 import { formatPrice, formatDate } from "../../../services/api";
 import ExcelImport from "./ExcelImport";
-import { data } from "react-router-dom";
 import clsx from "clsx";
 
 interface GoodsReceiptItem {
@@ -45,44 +44,6 @@ interface GoodsReceiptItem {
   notes?: string;
   totalReceivedValue: number;
   colorName?: string; // thêm dòng này
-}
-
-interface PurchaseOrder {
-  id?: string;
-  MaPDH?: string;
-  supplierId?: string;
-  MaNCC?: number;
-  supplierName?: string;
-  NhaCungCap?: {
-    MaNCC: number;
-    TenNCC: string;
-    DiaChi?: string;
-    SDT?: string;
-    Email?: string;
-  };
-  orderDate?: string;
-  NgayDat?: string;
-  status?: string;
-  TrangThaiDatHangNCC?: {
-    MaTrangThai: number;
-    TenTrangThai: string;
-  };
-  totalAmount?: number;
-  items?: Array<{
-    productId: string;
-    productName: string;
-    selectedColor?: string;
-    selectedSize?: string;
-    quantity: number;
-    unitPrice: number;
-  }>;
-  CT_PhieuDatHangNCCs?: Array<{
-    MaCTSP: string;
-    TenSP: string;
-    SoLuong: number;
-    DonGia: number;
-    [key: string]: any;
-  }>;
 }
 
 interface GRForm {
@@ -142,31 +103,31 @@ export default function CreateGoodsReceiptForm({
     return !value;
   };
 
-  const getConditionBadge = (condition: string) => {
-    const conditionMap = {
-      good: { label: "Tốt", variant: "default" as const, icon: CheckCircle },
-      damaged: {
-        label: "Hư hỏng",
-        variant: "destructive" as const,
-        icon: AlertTriangle,
-      },
-      defective: {
-        label: "Lỗi",
-        variant: "destructive" as const,
-        icon: AlertTriangle,
-      },
-    };
+  // const getConditionBadge = (condition: string) => {
+  //   const conditionMap = {
+  //     good: { label: "Tốt", variant: "default" as const, icon: CheckCircle },
+  //     damaged: {
+  //       label: "Hư hỏng",
+  //       variant: "destructive" as const,
+  //       icon: AlertTriangle,
+  //     },
+  //     defective: {
+  //       label: "Lỗi",
+  //       variant: "destructive" as const,
+  //       icon: AlertTriangle,
+  //     },
+  //   };
 
-    const conditionInfo = conditionMap[condition as keyof typeof conditionMap];
-    const Icon = conditionInfo?.icon || CheckCircle;
+  //   const conditionInfo = conditionMap[condition as keyof typeof conditionMap];
+  //   const Icon = conditionInfo?.icon || CheckCircle;
 
-    return (
-      <Badge variant={conditionInfo?.variant || "secondary"}>
-        <Icon className="w-3 h-3 mr-1" />
-        {conditionInfo?.label || condition}
-      </Badge>
-    );
-  };
+  //   return (
+  //     <Badge variant={conditionInfo?.variant || "secondary"}>
+  //       <Icon className="w-3 h-3 mr-1" />
+  //       {conditionInfo?.label || condition}
+  //     </Badge>
+  //   );
+  // };
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
