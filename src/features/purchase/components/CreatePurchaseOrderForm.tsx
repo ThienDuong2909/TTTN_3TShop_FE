@@ -28,6 +28,7 @@ interface CreatePurchaseOrderFormProps {
   onSubmit: () => void;
   onCancel: () => void;
   isLoading?: boolean;
+  loadProducts: (supplierId: string) => void;
 }
 
 export default function CreatePurchaseOrderForm({
@@ -38,6 +39,7 @@ export default function CreatePurchaseOrderForm({
   onSubmit,
   onCancel,
   isLoading = false,
+  loadProducts,
 }: CreatePurchaseOrderFormProps) {
   // State for colors and sizes for each item
   const [itemColorsSizes, setItemColorsSizes] = useState<{ [key: number]: { colors: Color[], sizes: Size[] } }>({});
@@ -112,50 +114,6 @@ export default function CreatePurchaseOrderForm({
     return suppliers.filter(() => {
       return true;
     });
-  };
-  
-  // Auto-fill supplier for product (Flow 2)
-  const autoFillSupplierForProduct = (productId: string) => {
-    console.log("=== AUTO FILL SUPPLIER DEBUG ===");
-    console.log("Product ID:", productId);
-    console.log("All products:", products);
-    
-    try {
-      // Find supplier from product data
-      const selectedProduct = products.find(p => p.id.toString() === productId.toString());
-      console.log("Selected product:", selectedProduct);
-      
-      if (selectedProduct && (selectedProduct as any).MaNCC) {
-        const supplierId = (selectedProduct as any).MaNCC;
-        console.log("Found supplier ID from product:", supplierId);
-        
-        // Check if this supplier exists in our suppliers list
-        const supplierExists = suppliers.some(s => {
-          const supplierIdStr = s.id.toString();
-          const productSupplierIdStr = supplierId.toString();
-          const exists = supplierIdStr === productSupplierIdStr;
-          console.log(`Comparing: ${supplierIdStr} === ${productSupplierIdStr} = ${exists}`);
-          return exists;
-        });
-        
-        console.log("Supplier exists in list:", supplierExists);
-        
-        if (supplierExists) {
-          console.log("Setting supplierId to:", supplierId.toString());
-          setTimeout(() => {
-            setPOForm({ ...poForm, supplierId: supplierId.toString() });
-          }, 0);
-        } else {
-          console.log("Supplier not found in suppliers list");
-        }
-      } else {
-        console.log("No MaNCC field found in product or product not found");
-        console.log("Product MaNCC:", selectedProduct ? (selectedProduct as any).MaNCC : "Product not found");
-      }
-    } catch (error) {
-      console.error("Error auto-filling supplier:", error);
-    }
-    console.log("=== END AUTO FILL DEBUG ===");
   };
   
   // Load colors and sizes for a product
@@ -283,61 +241,32 @@ export default function CreatePurchaseOrderForm({
 
     // Auto-fill product name and price when product is selected
     if (field === "MaSP") {
-      
       // Always search in all products first to ensure we can find the product
       const product = products.find((p: any) => p.id.toString() === value.toString());
-      
       if (product) {
         newItems[index].productName = product.name;
         newItems[index].unitPrice = Math.floor(product.price * 0.6); // Wholesale price
         // Reset color and size when product changes
         newItems[index].MaMau = "";
         newItems[index].MaKichThuoc = "";
-        
         // Clear existing colors/sizes for this index first
         setItemColorsSizes(prev => ({
           ...prev,
           [index]: { colors: [], sizes: [] }
         }));
-        
         // Clear loading state for this index
         setLoadingColorsSizes(prev => ({
           ...prev,
           [index]: false
         }));
-        
         // Load colors and sizes for the new product immediately
         loadProductColorsSizes(index, value);
-        
-        // Flow 2: Auto-fill supplier if not selected
-        if (!poForm.supplierId) {
-          console.log("=== FLOW 2 TRIGGERED ===");
-          console.log("No supplier selected, calling autoFillSupplierForProduct");
-          autoFillSupplierForProduct(value);
-        } else {
-          console.log("=== SUPPLIER ALREADY SELECTED ===");
-          console.log("Current supplierId:", poForm.supplierId);
-          // If supplier is already selected, verify it matches the product's supplier
-          const productSupplierId = (product as any).MaNCC?.toString();
-          const currentSupplierId = poForm.supplierId.toString();
-          console.log("Product supplierId:", productSupplierId);
-          console.log("Current supplierId:", currentSupplierId);
-          if (productSupplierId && productSupplierId !== currentSupplierId) {
-            console.log("Supplier mismatch, updating supplier");
-            // Auto-update supplier to match product
-            const supplierExists = suppliers.some(s => s.id.toString() === productSupplierId);
-            if (supplierExists) {
-              setPOForm({ ...poForm, supplierId: productSupplierId });
-            }
-          }
-        }
       } else {
         // Clear colors/sizes if no product selected
         setItemColorsSizes(prev => ({
           ...prev,
           [index]: { colors: [], sizes: [] }
         }));
-        
         // Clear loading state
         setLoadingColorsSizes(prev => ({
           ...prev,
@@ -434,13 +363,13 @@ export default function CreatePurchaseOrderForm({
         <div>
           <Label htmlFor="supplier">Nhà cung cấp *</Label>
           <Select
-            key={`supplier-${poForm.supplierId || 'empty'}`} // Remove Date.now() to prevent constant re-renders
+            key={`supplier-${poForm.supplierId || 'empty'}`}
             value={poForm.supplierId}
             onValueChange={(value) => {
-              console.log("=== SUPPLIER SELECT CHANGED ===");
-              console.log("New value:", value);
               setPOForm({ ...poForm, supplierId: value });
-              // Products will be filtered automatically by useEffect
+              if (value) {
+                loadProducts(value);
+              }
             }}
           >
             <SelectTrigger

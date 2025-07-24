@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useToast } from "../../../components/ui/use-toast";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import {
   PurchaseOrder,
@@ -14,14 +14,9 @@ import {
   createPurchaseOrder as createPurchaseOrderAPI,
   updatePurchaseOrderStatus,
   getSuppliers,
+  getProductsBySupplier,
 } from "../../../services/api";
 import { updatePurchaseOrder as updatePurchaseOrderAPI } from "../../../services/commonService";
-
-// Wrapper function for getProducts
-const getProductsWrapper = async () => {
-  const api = await import("../../../services/api");
-  return (api as any).getProducts();
-};
 
 // Transform API data to match our interface
 const transformPurchaseOrderFromAPI = (apiPO: any): PurchaseOrder => {
@@ -92,7 +87,6 @@ const getStatusFromTrangThai = (maTrangThai: number): PurchaseOrder["status"] =>
 };
 
 export const usePurchaseOrderData = (currentUserId: string) => {
-  const { toast } = useToast();
   const navigate = useNavigate();
   
   // State
@@ -163,10 +157,8 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       });
     } catch (error: any) {
       console.error("Error loading purchase orders:", error);
-      toast({
-        title: "Lỗi tải dữ liệu",
-        description: "Không thể tải danh sách phiếu đặt hàng",
-        variant: "destructive",
+      toast.error("Lỗi tải dữ liệu", {
+        description: "Không thể tải danh sách phiếu đặt hàng"
       });
     } finally {
       setLoading(prev => ({ ...prev, purchaseOrders: false }));
@@ -205,56 +197,42 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     } catch (error: any) {
       console.error("Error loading suppliers:", error);
       setSuppliers([]);
-      toast({
-        title: "Lỗi tải nhà cung cấp",
-        description: "Không thể tải danh sách nhà cung cấp",
-        variant: "destructive",
+      toast.error("Lỗi tải nhà cung cấp", {
+        description: "Không thể tải danh sách nhà cung cấp"
       });
     } finally {
       setLoading(prev => ({ ...prev, suppliers: false }));
     }
   };
 
-  // Load products
-  const loadProducts = async () => {
-    console.log("loadProducts called");
+  // Load products by supplier
+  const loadProducts = async (supplierId?: string | number) => {
+    if (!supplierId) {
+      setProducts([]);
+      return;
+    }
     setLoading(prev => ({ ...prev, products: true }));
-    
     try {
-      console.log("Calling getProducts API...");
-      const response = await getProductsWrapper();
-
-      console.log("response", response);
-      
-      // Try to handle different response formats
+      const response = await getProductsBySupplier(supplierId);
       let productData: any[] = [];
       if (Array.isArray(response)) {
         productData = response;
       } else if (response && Array.isArray((response as any).data)) {
         productData = (response as any).data;
       } else if (response && typeof response === 'object') {
-        // If response is an object, try to find array in common properties
         const responseObj = response as any;
         productData = responseObj.products || responseObj.items || responseObj.result || [];
       }
-      
-      console.log("Raw product data:", productData);
-      
       if (productData.length > 0) {
-        
         const transformedProducts = productData.map(transformProductFromAPI);
         setProducts(transformedProducts);
       } else {
-        console.log("No products found or empty array");
         setProducts([]);
       }
     } catch (error: any) {
-      console.error("Error loading products:", error);
       setProducts([]);
-      toast({
-        title: "Lỗi tải sản phẩm",
-        description: "Không thể tải danh sách sản phẩm",
-        variant: "destructive",
+      toast.error("Lỗi tải sản phẩm", {
+        description: "Không thể tải danh sách sản phẩm"
       });
     } finally {
       setLoading(prev => ({ ...prev, products: false }));
@@ -264,10 +242,8 @@ export const usePurchaseOrderData = (currentUserId: string) => {
   // Create purchase order
   const createPurchaseOrder = async (poForm: POForm) => {
     if (!poForm.supplierId || poForm.items.length === 0) {
-      toast({
-        title: "Thông tin không đầy đủ",
-        description: "Vui lòng chọn nhà cung cấp và thêm ít nhất một sản phẩm",
-        variant: "destructive",
+      toast.error("Thông tin không đầy đủ", {
+        description: "Vui lòng chọn nhà cung cấp và thêm ít nhất một sản phẩm"
       });
       return false;
     }
@@ -323,9 +299,8 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       console.log("=== API CALL SUCCESS ===");
       console.log("Result:", result);
       
-      toast({
-        title: "Thành công",
-        description: "Phiếu đặt hàng đã được tạo thành công",
+      toast.success("Thành công", {
+        description: "Phiếu đặt hàng đã được tạo thành công"
       });
 
       // Reload data
@@ -349,12 +324,14 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         errorMessage = "Bạn không có quyền tạo phiếu đặt hàng.";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
+      } else if (error && error.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
       }
       
-      toast({
-        title: "Lỗi tạo phiếu đặt hàng",
-        description: errorMessage,
-        variant: "destructive",
+      toast.error("Lỗi tạo phiếu đặt hàng", {
+        description: errorMessage
       });
     } finally {
       setLoading(prev => ({ ...prev, creating: false }));
@@ -365,10 +342,8 @@ export const usePurchaseOrderData = (currentUserId: string) => {
   // Update purchase order
   const updatePurchaseOrder = async (poId: string, poForm: POForm) => {
     if (!poForm.supplierId || poForm.items.length === 0) {
-      toast({
-        title: "Thông tin không đầy đủ",
-        description: "Vui lòng chọn nhà cung cấp và thêm ít nhất một sản phẩm",
-        variant: "destructive",
+      toast.error("Thông tin không đầy đủ", {
+        description: "Vui lòng chọn nhà cung cấp và thêm ít nhất một sản phẩm"
       });
       return false;
     }
@@ -406,9 +381,8 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       const result = await updatePurchaseOrderAPI(poId, apiData);
       console.log("Update result:", result);
       
-      toast({
-        title: "Thành công",
-        description: "Phiếu đặt hàng đã được cập nhật thành công",
+      toast.success("Thành công", {
+        description: "Phiếu đặt hàng đã được cập nhật thành công"
       });
 
       // Reload data
@@ -417,21 +391,20 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       return true;
     } catch (error: any) {
       console.error("Error updating purchase order:", error);
-      
       let errorMessage = "Không thể cập nhật phiếu đặt hàng";
-      
       if (error.response?.status === 401) {
         errorMessage = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
       } else if (error.response?.status === 403) {
         errorMessage = "Bạn không có quyền cập nhật phiếu đặt hàng.";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
+      } else if (error && error.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
       }
-      
-      toast({
-        title: "Lỗi cập nhật phiếu đặt hàng",
-        description: errorMessage,
-        variant: "destructive",
+      toast.error("Lỗi cập nhật phiếu đặt hàng", {
+        description: errorMessage
       });
     } finally {
       setLoading(prev => ({ ...prev, updating: false }));
@@ -445,19 +418,22 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     
     try {
       await updatePurchaseOrderStatus(poId, 2); // Status 2 = sent
-      
-      toast({
-        title: "Đã gửi phiếu đặt hàng",
-        description: "Phiếu đặt hàng đã được gửi cho nhà cung cấp",
+      toast.success("Đã gửi phiếu đặt hàng", {
+        description: "Phiếu đặt hàng đã được gửi cho nhà cung cấp"
       });
-      
       await loadPurchaseOrders();
     } catch (error: any) {
       console.error("Error sending purchase order:", error);
-      toast({
-        title: "Lỗi gửi phiếu đặt hàng",
-        description: "Không thể gửi phiếu đặt hàng",
-        variant: "destructive",
+      let errorMessage = "Không thể gửi phiếu đặt hàng";
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error && error.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      toast.error("Lỗi gửi phiếu đặt hàng", {
+        description: errorMessage
       });
     } finally {
       setLoading(prev => ({ ...prev, updating: false }));
@@ -470,19 +446,22 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     
     try {
       await updatePurchaseOrderStatus(poId, 3); // Status 3 = confirmed
-      
-      toast({
-        title: "Đã xác nhận phiếu đặt hàng",
-        description: "Phiếu đặt hàng đã được xác nhận",
+      toast.success("Đã xác nhận phiếu đặt hàng", {
+        description: "Phiếu đặt hàng đã được xác nhận"
       });
-      
       await loadPurchaseOrders();
     } catch (error: any) {
       console.error("Error confirming purchase order:", error);
-      toast({
-        title: "Lỗi xác nhận phiếu đặt hàng",
-        description: "Không thể xác nhận phiếu đặt hàng",
-        variant: "destructive",
+      let errorMessage = "Không thể xác nhận phiếu đặt hàng";
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error && error.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      toast.error("Lỗi xác nhận phiếu đặt hàng", {
+        description: errorMessage
       });
     } finally {
       setLoading(prev => ({ ...prev, updating: false }));
@@ -505,9 +484,8 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         loadProducts(),
       ]);
       
-      toast({
-        title: "Dữ liệu đã được cập nhật",
-        description: "Tất cả dữ liệu đã được tải lại thành công",
+      toast.success("Dữ liệu đã được cập nhật", {
+        description: "Tất cả dữ liệu đã được tải lại thành công"
       });
     } catch (error: any) {
       console.error("Error refreshing data:", error);
@@ -517,12 +495,21 @@ export const usePurchaseOrderData = (currentUserId: string) => {
   };
 
   // Initialize data on mount
+  // Khi supplierId thay đổi, load lại products
   useEffect(() => {
     loadPurchaseOrders();
     loadSuppliers();
-    loadProducts();
   }, []);
 
+  useEffect(() => {
+    if (suppliers && suppliers.length > 0 && purchaseOrders) {
+      // Nếu có supplierId được chọn, load sản phẩm theo supplier
+      // Tìm supplierId từ purchase order form hoặc state nếu có
+      // Ở đây bạn cần truyền supplierId vào loadProducts khi cần
+    }
+  }, [suppliers, purchaseOrders]);
+
+  // Export thêm loadProducts để component gọi khi chọn supplier
   return {
     // Data
     purchaseOrders,

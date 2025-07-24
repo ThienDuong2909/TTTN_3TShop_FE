@@ -53,6 +53,7 @@ export default function PurchaseOrders() {
     navigateToGoodsReceipt,
     refreshData,
     setSelectedPO,
+    loadProducts,
   } = usePurchaseOrderData(state.user.id);
 
   console.log("purchaseOrders", purchaseOrders);
@@ -208,6 +209,7 @@ export default function PurchaseOrders() {
                 isEditMode={isEditMode}
                 editingPO={editingPO}
                 isLoadingPODetails={isLoadingPODetails}
+                loadProducts={loadProducts}
               />
             </div>
           </div>
