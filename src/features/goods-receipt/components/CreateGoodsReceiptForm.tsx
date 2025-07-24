@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Edit, FileSpreadsheet, Save, Loader2 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
@@ -27,7 +27,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "../../../components/ui/tabs";
-import { formatPrice, formatDate } from "../../../services/api";
+import { formatPrice, formatDate, getPurchaseOrderReceivedStatus } from "../../../services/api";
 import ExcelImport from "./ExcelImport";
 import clsx from "clsx";
 
@@ -223,6 +223,62 @@ export default function CreateGoodsReceiptForm({
     onPOSelect(poId);
   };
 
+  // State để lưu trạng thái nhập hàng thực tế của từng sản phẩm
+  const [receivedStatus, setReceivedStatus] = useState<any[]>([]);
+  const [quantityErrors, setQuantityErrors] = useState<{[key: number]: string}>({});
+
+  // Khi chọn phiếu đặt hàng, load trạng thái nhập hàng thực tế
+  useEffect(() => {
+    const fetchReceivedStatus = async () => {
+      if (grForm.purchaseOrderId) {
+        try {
+          const status = await getPurchaseOrderReceivedStatus(grForm.purchaseOrderId);
+          console.log('API /purchase-orders/:id/received-status response:', status);
+          setReceivedStatus(Array.isArray(status?.data) ? status.data : []);
+        } catch (e) {
+          setReceivedStatus([]);
+        }
+      } else {
+        setReceivedStatus([]);
+      }
+    };
+    fetchReceivedStatus();
+  }, [grForm.purchaseOrderId]);
+
+  // Hàm lấy số còn lại phải nhập cho 1 sản phẩm (theo MaCTSP)
+  const getRemainingQuantity = (maCTSP: string | number) => {
+    const found = receivedStatus.find((item: any) => String(item.MaCTSP) === String(maCTSP));
+    return found ? found.SoLuongConLai : 0;
+  };
+
+  // Validate số lượng thực tế khi nhập tay
+  const handleReceivedQuantityChange = (index: number, value: number) => {
+    const item = grForm.items[index];
+    const remainingFromAPI = getRemainingQuantity(item.purchaseOrderItemId);
+
+    // Tổng số đã nhập cho sản phẩm này trong form (trừ dòng hiện tại)
+    const totalEnteredOtherRows = grForm.items.reduce((sum, it, idx) => {
+      if (idx !== index && String(it.purchaseOrderItemId) === String(item.purchaseOrderItemId)) {
+        return sum + (it.receivedQuantity || 0);
+      }
+      return sum;
+    }, 0);
+
+    // Số còn lại thực sự cho dòng này
+    const realRemaining = (remainingFromAPI ?? 0) - totalEnteredOtherRows;
+
+    let error = '';
+    if (value <= 0) {
+      error = 'Số lượng phải lớn hơn 0';
+    } else if (realRemaining >= 0 && value > realRemaining) {
+      error = `Số lượng tối đa có thể nhập: ${realRemaining}`;
+    }
+    setQuantityErrors(prev => ({ ...prev, [index]: error }));
+    if (!error) {
+      updateGRItem(index, 'receivedQuantity', value);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Basic Info */}
@@ -377,18 +433,18 @@ export default function CreateGoodsReceiptForm({
                             <Input
                               type="number"
                               value={item.receivedQuantity}
-                              onChange={(e) =>
-                                updateGRItem(
-                                  index,
-                                  "receivedQuantity",
-                                  Math.max(0, Math.min(parseInt(e.target.value) || 0, item.orderedQuantity))
-                                )
-                              }
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 0;
+                                handleReceivedQuantityChange(index, val);
+                              }}
                               onBlur={() => setTouched(t => ({...t, [`receivedQuantity_${index}`]: true}))}
-                              min="0"
-                              max={item.orderedQuantity}
-                              className={clsx("w-20 focus:outline-none", isFieldInvalid(`receivedQuantity_${index}`, item.receivedQuantity) && 'border-red-500')}
+                              min="1"
+                              max={getRemainingQuantity(item.purchaseOrderItemId) || item.orderedQuantity}
+                              className={clsx("w-20 focus:outline-none", (isFieldInvalid(`receivedQuantity_${index}`, item.receivedQuantity) || quantityErrors[index]) && 'border-red-500')}
                             />
+                            {quantityErrors[index] && (
+                              <div className="text-xs text-red-500 mt-1">{quantityErrors[index]}</div>
+                            )}
                           </TableCell>
                           <TableCell className="font-medium">
                             {formatPrice(item.receivedQuantity * item.unitPrice)}

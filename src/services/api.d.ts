@@ -7,6 +7,7 @@ export function getSuppliers(): Promise<any[]>;
 export function getEmployees(): Promise<any[]>;
 export function getPurchaseOrderStatuses(): Promise<any[]>;
 export function getProductDetails(): Promise<any[]>;
+export function getPurchaseOrderReceivedStatus(id: string): Promise<any>;
 
 // Goods Receipt functions
 export function getGoodsReceipts(): Promise<any[]>;
