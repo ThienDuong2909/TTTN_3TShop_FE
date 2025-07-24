@@ -26,6 +26,7 @@ export function showSuccess(message: string): void;
 // Product functions
 export function getAllProducts(): Promise<any[]>;
 export function getProductDetail(id: string | number): Promise<any>;
+export function getProductsBySupplier(supplierId: string | number): Promise<any[]>;
 // Cart functions
 export function addToCartApi(data: {
   maKH: number;

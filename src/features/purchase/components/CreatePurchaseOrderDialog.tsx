@@ -23,6 +23,7 @@ interface CreatePurchaseOrderDialogProps {
   isEditMode?: boolean;
   editingPO?: any;
   isLoadingPODetails?: boolean;
+  loadProducts: (supplierId: string) => void;
 }
 
 export default function CreatePurchaseOrderDialog({
@@ -38,6 +39,7 @@ export default function CreatePurchaseOrderDialog({
   isEditMode = false,
   editingPO,
   isLoadingPODetails = false,
+  loadProducts,
 }: CreatePurchaseOrderDialogProps) {
   const handleCancel = () => {
     onOpenChange(false);
@@ -77,6 +79,7 @@ export default function CreatePurchaseOrderDialog({
             onSubmit={onSubmit}
             onCancel={handleCancel}
             isLoading={isLoading}
+            loadProducts={loadProducts}
           />
         )}
       </DialogContent>
