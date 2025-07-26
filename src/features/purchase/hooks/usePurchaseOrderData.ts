@@ -104,6 +104,17 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     refreshing: false,
   });
 
+  // Loading states for individual actions
+  const [actionLoading, setActionLoading] = useState<{
+    sending: string[];
+    confirming: string[];
+    editing: string[];
+  }>({
+    sending: [],
+    confirming: [],
+    editing: [],
+  });
+
   const [stats, setStats] = useState<PurchaseOrderStats>({
     totalOrders: 0,
     draftOrders: 0,
@@ -115,6 +126,7 @@ export const usePurchaseOrderData = (currentUserId: string) => {
 
   // Load purchase orders
   const loadPurchaseOrders = async () => {
+    console.log("=== LOAD PURCHASE ORDERS CALLED ===");
     setLoading(prev => ({ ...prev, purchaseOrders: true }));
     
     try {
@@ -303,8 +315,31 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         description: "Phiếu đặt hàng đã được tạo thành công"
       });
 
-      // Reload data
-      await loadPurchaseOrders();
+      // Add the new purchase order to state instead of reloading all
+      const newPurchaseOrder: PurchaseOrder = {
+        id: apiData.MaPDH,
+        supplierId: poForm.supplierId,
+        supplierName: supplier.name,
+        items: poForm.items.map(item => ({
+          MaSP: item.MaSP,
+          productName: item.productName,
+          MaMau: item.MaMau,
+          MaKichThuoc: item.MaKichThuoc,
+          colorName: item.colorName,
+          sizeName: item.sizeName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.quantity * item.unitPrice,
+        })),
+        status: "draft",
+        totalAmount: poForm.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+        orderDate: new Date().toISOString(),
+        expectedDeliveryDate: poForm.expectedDeliveryDate,
+        notes: poForm.notes,
+        createdBy: currentUserId,
+      };
+      
+      setPurchaseOrders(prev => [newPurchaseOrder, ...prev]);
       
       return true;
     } catch (error: any) {
@@ -385,8 +420,31 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         description: "Phiếu đặt hàng đã được cập nhật thành công"
       });
 
-      // Reload data
-      await loadPurchaseOrders();
+      // Update the specific purchase order in state instead of reloading all
+      setPurchaseOrders(prev => 
+        prev.map(po => 
+          po.id === poId 
+            ? {
+                ...po,
+                supplierId: poForm.supplierId,
+                supplierName: supplier.name,
+                items: poForm.items.map(item => ({
+                  MaSP: item.MaSP,
+                  productName: item.productName,
+                  MaMau: item.MaMau,
+                  MaKichThuoc: item.MaKichThuoc,
+                  colorName: item.colorName,
+                  sizeName: item.sizeName,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+                  totalPrice: item.quantity * item.unitPrice,
+                })),
+                totalAmount: poForm.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+                notes: poForm.notes,
+              }
+            : po
+        )
+      );
       
       return true;
     } catch (error: any) {
@@ -412,16 +470,58 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     return false;
   };
 
+  // Download Excel file
+  const downloadExcel = (excelFile: any) => {
+    console.log('Downloading excel file:', excelFile);
+    const downloadUrl = `http://localhost:8080${excelFile.downloadUrl}`;
+    console.log('Download URL:', downloadUrl);
+    window.open(downloadUrl, '_blank');
+  };
+
   // Send purchase order
   const sendPurchaseOrder = async (poId: string) => {
-    setLoading(prev => ({ ...prev, updating: true }));
+    console.log('=== SEND PURCHASE ORDER START ===', poId);
+    // Add to sending loading state
+    setActionLoading(prev => ({ ...prev, sending: [...prev.sending, poId] }));
     
     try {
-      await updatePurchaseOrderStatus(poId, 2); // Status 2 = sent
-      toast.success("Đã gửi phiếu đặt hàng", {
-        description: "Phiếu đặt hàng đã được gửi cho nhà cung cấp"
+      const response = await updatePurchaseOrderStatus(poId, 2); // Status 2 = sent
+      
+      console.log('Send purchase order response:', response);
+      
+      // Check if response contains excel file data
+      if (response?.excelFile) {
+        console.log('Excel file found:', response.excelFile);
+        downloadExcel(response.excelFile);
+        toast.success("Đã gửi phiếu đặt hàng", {
+          description: "Phiếu đặt hàng đã được gửi cho nhà cung cấp và file Excel đã được tải về"
+        });
+      } else if (response?.data?.excelFile) {
+        console.log('Excel file found in data:', response.data.excelFile);
+        downloadExcel(response.data.excelFile);
+        toast.success("Đã gửi phiếu đặt hàng", {
+          description: "Phiếu đặt hàng đã được gửi cho nhà cung cấp và file Excel đã được tải về"
+        });
+      } else {
+        console.log('No excel file found in response');
+        toast.success("Đã gửi phiếu đặt hàng", {
+          description: "Phiếu đặt hàng đã được gửi cho nhà cung cấp"
+        });
+      }
+      
+      console.log('=== UPDATING STATE INSTEAD OF RELOADING ===');
+      // Update the specific purchase order status in state instead of reloading all
+      setPurchaseOrders(prev => {
+        console.log('Current purchase orders:', prev.length);
+        const updated = prev.map(po => 
+          po.id === poId 
+            ? { ...po, status: "sent" as const }
+            : po
+        );
+        console.log('Updated purchase orders:', updated.length);
+        return updated;
       });
-      await loadPurchaseOrders();
+      console.log('=== SEND PURCHASE ORDER END ===');
     } catch (error: any) {
       console.error("Error sending purchase order:", error);
       let errorMessage = "Không thể gửi phiếu đặt hàng";
@@ -436,20 +536,33 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         description: errorMessage
       });
     } finally {
-      setLoading(prev => ({ ...prev, updating: false }));
+      // Remove from sending loading state
+      setActionLoading(prev => ({ 
+        ...prev, 
+        sending: prev.sending.filter(id => id !== poId) 
+      }));
     }
   };
 
   // Confirm purchase order
   const confirmPurchaseOrder = async (poId: string) => {
-    setLoading(prev => ({ ...prev, updating: true }));
+    // Add to confirming loading state
+    setActionLoading(prev => ({ ...prev, confirming: [...prev.confirming, poId] }));
     
     try {
       await updatePurchaseOrderStatus(poId, 3); // Status 3 = confirmed
       toast.success("Đã xác nhận phiếu đặt hàng", {
         description: "Phiếu đặt hàng đã được xác nhận"
       });
-      await loadPurchaseOrders();
+      
+      // Update the specific purchase order status in state instead of reloading all
+      setPurchaseOrders(prev => 
+        prev.map(po => 
+          po.id === poId 
+            ? { ...po, status: "confirmed" as const }
+            : po
+        )
+      );
     } catch (error: any) {
       console.error("Error confirming purchase order:", error);
       let errorMessage = "Không thể xác nhận phiếu đặt hàng";
@@ -464,7 +577,11 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         description: errorMessage
       });
     } finally {
-      setLoading(prev => ({ ...prev, updating: false }));
+      // Remove from confirming loading state
+      setActionLoading(prev => ({ 
+        ...prev, 
+        confirming: prev.confirming.filter(id => id !== poId) 
+      }));
     }
   };
 
@@ -473,7 +590,7 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     navigate(`/admin/goods-receipt?po=${poId}`);
   };
 
-  // Refresh all data
+  // Refresh all data - Only use when user explicitly requests sync with server
   const refreshData = async () => {
     setLoading(prev => ({ ...prev, refreshing: true }));
     
@@ -497,15 +614,18 @@ export const usePurchaseOrderData = (currentUserId: string) => {
   // Initialize data on mount
   // Khi supplierId thay đổi, load lại products
   useEffect(() => {
+    console.log('=== COMPONENT MOUNT - Loading initial data ===');
     loadPurchaseOrders();
     loadSuppliers();
   }, []);
 
   useEffect(() => {
+    console.log('=== useEffect [suppliers, purchaseOrders] triggered ===');
     if (suppliers && suppliers.length > 0 && purchaseOrders) {
       // Nếu có supplierId được chọn, load sản phẩm theo supplier
       // Tìm supplierId từ purchase order form hoặc state nếu có
       // Ở đây bạn cần truyền supplierId vào loadProducts khi cần
+      console.log('Suppliers and purchaseOrders changed, but not calling loadProducts');
     }
   }, [suppliers, purchaseOrders]);
 
@@ -518,6 +638,7 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     selectedPO,
     stats,
     loading,
+    actionLoading,
     
     // Actions
     loadPurchaseOrders,
@@ -530,5 +651,7 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     navigateToGoodsReceipt,
     refreshData,
     setSelectedPO,
+    downloadExcel,
+    setActionLoading,
   };
 }; 
