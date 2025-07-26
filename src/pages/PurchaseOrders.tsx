@@ -46,6 +46,7 @@ export default function PurchaseOrders() {
     selectedPO,
     stats,
     loading,
+    actionLoading,
     createPurchaseOrder,
     updatePurchaseOrder,
     sendPurchaseOrder,
@@ -54,6 +55,7 @@ export default function PurchaseOrders() {
     refreshData,
     setSelectedPO,
     loadProducts,
+    setActionLoading,
   } = usePurchaseOrderData(state.user.id);
 
   console.log("purchaseOrders", purchaseOrders);
@@ -102,7 +104,17 @@ export default function PurchaseOrders() {
 
   const handleEdit = async (po: any) => {
     console.log("Edit PO:", po);
-    await openEditDialog(po);
+    // Add to editing loading state
+    setActionLoading((prev: any) => ({ ...prev, editing: [...prev.editing, po.id] }));
+    try {
+      await openEditDialog(po);
+    } finally {
+      // Remove from editing loading state
+      setActionLoading((prev: any) => ({ 
+        ...prev, 
+        editing: prev.editing.filter((id: string) => id !== po.id) 
+      }));
+    }
   };
 
   const handleSend = async (poId: string) => {
@@ -195,9 +207,17 @@ export default function PurchaseOrders() {
                   setIsCreatePOOpen(open);
                 }}
                 trigger={
-                  <Button className="bg-brand-600 hover:bg-brand-700" onClick={handleOpenCreateDialog}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Tạo phiếu đặt hàng
+                  <Button 
+                    className="bg-brand-600 hover:bg-brand-700" 
+                    onClick={handleOpenCreateDialog}
+                    disabled={loading.creating || loading.updating}
+                  >
+                    {loading.creating || loading.updating ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4 mr-2" />
+                    )}
+                    {loading.creating || loading.updating ? "Đang tạo..." : "Tạo phiếu đặt hàng"}
                   </Button>
                 }
                 poForm={poForm}
@@ -226,6 +246,7 @@ export default function PurchaseOrders() {
               onSend={handleSend}
               onConfirm={handleConfirm}
               onCreateReceipt={handleCreateReceipt}
+              loadingStates={actionLoading}
             />
 
             {/* Purchase Order Details Dialog */}
