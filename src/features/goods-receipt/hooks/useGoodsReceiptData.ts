@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { useToast } from "../../../components/ui/use-toast";
+import { toast } from "sonner";
 import {
   getGoodsReceipts,
   createGoodsReceipt,
-  updateInventoryAfterReceipt,
   getAvailablePurchaseOrders,
   getPurchaseOrderForReceipt,
 } from "../../../services/api";
@@ -93,7 +92,6 @@ export const getStatusFromTrangThai = (maTrangThai: number): PurchaseOrder["stat
 };
 
 export const useGoodsReceiptData = (currentUserId: string) => {
-  const { toast } = useToast();
   
   // State
   const [goodsReceipts, setGoodsReceipts] = useState<GoodsReceipt[]>([]);
@@ -169,10 +167,8 @@ export const useGoodsReceiptData = (currentUserId: string) => {
         totalValue,
       }));
     } catch (error) {
-      toast({
-        title: "Lỗi tải dữ liệu",
-        description: "Không thể tải danh sách phiếu nhập hàng",
-        variant: "destructive",
+      toast.error("Lỗi tải dữ liệu", {
+        description: "Không thể tải danh sách phiếu nhập hàng"
       });
     } finally {
       setLoading(prev => ({ ...prev, goodsReceipts: false }));
@@ -195,10 +191,8 @@ export const useGoodsReceiptData = (currentUserId: string) => {
         pendingPOs: Array.isArray(orders) ? orders.length : 0,
       }));
     } catch (error) {
-      toast({
-        title: "Lỗi tải phiếu đặt hàng",
-        description: "Không thể tải danh sách phiếu đặt hàng",
-        variant: "destructive",
+      toast.error("Lỗi tải phiếu đặt hàng", {
+        description: "Không thể tải danh sách phiếu đặt hàng"
       });
     } finally {
       setLoading(prev => ({ ...prev, purchaseOrders: false }));
@@ -214,10 +208,8 @@ export const useGoodsReceiptData = (currentUserId: string) => {
         return poDetails.data;
       }
     } catch (error) {
-      toast({
-        title: "Lỗi tải chi tiết phiếu đặt hàng",
-        description: "Không thể tải chi tiết phiếu đặt hàng",
-        variant: "destructive",
+      toast.error("Lỗi tải chi tiết phiếu đặt hàng", {
+        description: "Không thể tải chi tiết phiếu đặt hàng"
       });
     }
     return null;
@@ -226,10 +218,8 @@ export const useGoodsReceiptData = (currentUserId: string) => {
   // Create goods receipt
   const createGoodsReceiptRecord = async (grForm: GRForm) => {
     if (!grForm.purchaseOrderId || (grForm.items || []).length === 0) {
-      toast({
-        title: "Thông tin không đầy đủ",
-        description: "Vui lòng chọn phiếu đặt hàng và kiểm tra số lượng nhận",
-        variant: "destructive",
+      toast.error("Thông tin không đầy đủ", {
+        description: "Vui lòng chọn phiếu đặt hàng và kiểm tra số lượng nhận"
       });
       return false;
     }
@@ -254,9 +244,8 @@ export const useGoodsReceiptData = (currentUserId: string) => {
       const result = await createGoodsReceipt(goodsReceiptData);
 
       if (result) {
-        toast({
-          title: "Thành công",
-          description: "Phiếu nhập hàng đã được tạo thành công",
+        toast.success("Thành công", {
+          description: "Phiếu nhập hàng đã được tạo thành công"
         });
 
         // Reload data
@@ -267,11 +256,15 @@ export const useGoodsReceiptData = (currentUserId: string) => {
 
         return true;
       }
-    } catch (error) {
-      toast({
-        title: "Lỗi tạo phiếu nhập hàng",
-        description: "Không thể tạo phiếu nhập hàng",
-        variant: "destructive",
+    } catch (err: any) {
+      let errorMessage = "Không thể tạo phiếu nhập hàng";
+      if (err && err.message) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      toast.error("Lỗi tạo phiếu nhập hàng", {
+        description: errorMessage
       });
     } finally {
       setLoading(prev => ({ ...prev, creating: false }));
@@ -289,9 +282,8 @@ export const useGoodsReceiptData = (currentUserId: string) => {
         loadAvailablePurchaseOrders(),
       ]);
       
-      toast({
-        title: "Dữ liệu đã được cập nhật",
-        description: "Tất cả dữ liệu đã được tải lại thành công",
+      toast.success("Dữ liệu đã được cập nhật", {
+        description: "Tất cả dữ liệu đã được tải lại thành công"
       });
     } catch (error) {
       console.error("Error refreshing data:", error);

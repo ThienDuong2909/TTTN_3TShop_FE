@@ -14,6 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from "../../../components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../../../components/ui/tooltip";
 import { formatPrice, formatDate } from "../../../services/api";
 import { PurchaseOrder } from "../types";
 
@@ -25,6 +31,11 @@ interface PurchaseOrderTableProps {
   onSend: (poId: string) => void;
   onConfirm: (poId: string) => void;
   onCreateReceipt: (poId: string) => void;
+  loadingStates?: {
+    sending?: string[];
+    confirming?: string[];
+    editing?: string[];
+  };
 }
 
 export default function PurchaseOrderTable({
@@ -35,7 +46,15 @@ export default function PurchaseOrderTable({
   onSend,
   onConfirm,
   onCreateReceipt,
+  loadingStates = {},
 }: PurchaseOrderTableProps) {
+  // Sắp xếp theo ngày tạo mới nhất lên đầu
+  const sortedPurchaseOrders = [...purchaseOrders].sort((a, b) => {
+    const dateA = new Date(a.orderDate).getTime();
+    const dateB = new Date(b.orderDate).getTime();
+    return dateB - dateA; // Mới nhất lên đầu
+  });
+
   const getStatusBadge = (status: string) => {
     const statusMap = {
       draft: { label: "Nháp", className: "bg-gray-300 text-gray-900" },
@@ -61,7 +80,7 @@ export default function PurchaseOrderTable({
     <Card>
       <CardHeader>
         <CardTitle>
-          Danh sách phiếu đặt hàng ({purchaseOrders.length})
+          Danh sách phiếu đặt hàng ({sortedPurchaseOrders.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -86,14 +105,14 @@ export default function PurchaseOrderTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {purchaseOrders.length === 0 ? (
+                {sortedPurchaseOrders.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       Không có phiếu đặt hàng nào
                     </TableCell>
                   </TableRow>
                 ) : (
-                  purchaseOrders.map((po) => (
+                  sortedPurchaseOrders.map((po) => (
                     <TableRow key={po.id}>
                       <TableCell className="font-medium whitespace-nowrap">{po.id}</TableCell>
                       <TableCell className="whitespace-nowrap">
@@ -132,16 +151,35 @@ export default function PurchaseOrderTable({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => onEdit(po)}
+                                disabled={loadingStates.editing?.includes(po.id)}
                               >
-                                <Edit className="h-3 w-3" />
+                                {loadingStates.editing?.includes(po.id) ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Edit className="h-3 w-3" />
+                                )}
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => onSend(po.id)}
-                              >
-                                <Send className="h-3 w-3" />
-                              </Button>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => onSend(po.id)}
+                                      disabled={loadingStates.sending?.includes(po.id)}
+                                    >
+                                      {loadingStates.sending?.includes(po.id) ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        <Send className="h-3 w-3" />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Gửi phiếu đặt hàng và tải file Excel</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </>
                           )}
                           {po.status === "sent" && (
@@ -149,8 +187,13 @@ export default function PurchaseOrderTable({
                               variant="outline"
                               size="sm"
                               onClick={() => onConfirm(po.id)}
+                              disabled={loadingStates.confirming?.includes(po.id)}
                             >
-                              <CheckCircle className="h-3 w-3" />
+                              {loadingStates.confirming?.includes(po.id) ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <CheckCircle className="h-3 w-3" />
+                              )}
                             </Button>
                           )}
                           {(po.status === "confirmed" ||

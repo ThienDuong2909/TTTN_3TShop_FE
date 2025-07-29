@@ -7,6 +7,7 @@ export function getSuppliers(): Promise<any[]>;
 export function getEmployees(): Promise<any[]>;
 export function getPurchaseOrderStatuses(): Promise<any[]>;
 export function getProductDetails(): Promise<any[]>;
+export function getPurchaseOrderReceivedStatus(id: string): Promise<any>;
 
 // Goods Receipt functions
 export function getGoodsReceipts(): Promise<any[]>;
@@ -26,6 +27,7 @@ export function showSuccess(message: string): void;
 // Product functions
 export function getAllProducts(): Promise<any[]>;
 export function getProductDetail(id: string | number): Promise<any>;
+export function getProductsBySupplier(supplierId: string | number): Promise<any[]>;
 // Cart functions
 export function addToCartApi(data: {
   maKH: number;
