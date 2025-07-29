@@ -55,7 +55,7 @@ interface CreateGoodsReceiptDialogProps {
   availablePOs: PurchaseOrder[];
   selectedPO: PurchaseOrder | null;
   onPOSelect: (poId: string) => void;
-  onCreateGR: () => void;
+  onCreateGR: (form: GRForm) => void;
   loading: {
     purchaseOrders: boolean;
     creating: boolean;
@@ -66,6 +66,8 @@ interface CreateGoodsReceiptDialogProps {
   setExcelData: (data: any[]) => void;
   excelError: string;
   setExcelError: (error: string) => void;
+  excelValidationErrors?: any[];
+  setExcelValidationErrors?: (errors: any[]) => void;
 }
 
 export default function CreateGoodsReceiptDialog({
@@ -85,6 +87,8 @@ export default function CreateGoodsReceiptDialog({
   setExcelData,
   excelError,
   setExcelError,
+  excelValidationErrors = [],
+  setExcelValidationErrors = () => {},
 }: CreateGoodsReceiptDialogProps) {
   const handleCancel = () => {
     onOpenChange(false);
@@ -116,6 +120,8 @@ export default function CreateGoodsReceiptDialog({
           setExcelData={setExcelData}
           excelError={excelError}
           setExcelError={setExcelError}
+          excelValidationErrors={excelValidationErrors}
+          setExcelValidationErrors={setExcelValidationErrors}
         />
       </DialogContent>
     </Dialog>
