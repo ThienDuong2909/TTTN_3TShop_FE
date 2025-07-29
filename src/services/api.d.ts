@@ -38,7 +38,7 @@ export function addToCartApi(data: {
 }): Promise<any>;
 
 export function getCartItemsApi (maKH: string | number): Promise<any>;
-export function removeFromCartApi (maKH: number, maSP :number, maHex : string, tenKichThuoc: string): Promise<any>;
+export function removeFromCartApi (maKH: number, maSP :number, maHex : string, tenKichThuoc: string, donGia: number): Promise<any>;
 export interface OrderProduct {
   maSP: number;
   soLuong: number;
@@ -58,6 +58,34 @@ export function createOrder(data: CreateOrderPayload): Promise<any>;
 export function checkStockAvailability(maCTSP: number): Promise<{ soLuongTon: number }>;
 export declare const clearCartApi: (maKH: number) => Promise<any>;
 
+export interface Category {
+  MaLoaiSP: number;
+  TenLoai: string;
+  HinhMinhHoa?: string;
+  soLuongSanPham: number;
+}
+
+export declare function getAllCategories(): Promise<Category[]>;
+
+export declare function getProductsByCategory(id: number): Promise<any[]>;
+
+
+export function getCurrentExchangeRate(): Promise<number>;
+// ...existing code...
+
+export function getBestSellerProducts(): Promise<any[]>;
+
+// ...existing code...
+export function getNewProducts(): Promise<any[]>;
+
+export function getDiscountProducts(): Promise<any[]>;
+export function getSearchProducts(q: string): Promise<any[]>;
+
+export function getCustomerOrders(maKH: number): Promise<any[]>;
+export function getOrderDetail(payload: { maKH: number, maDDH: number|string }): Promise<any>;
+
+
 // Auth functions
 export function login(credentials: { email: string; password: string }): Promise<any>;
 export function register(userData: { Email: string; Password: string; TenKH: string }): Promise<any>;
+

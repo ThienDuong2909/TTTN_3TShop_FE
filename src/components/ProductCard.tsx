@@ -11,8 +11,10 @@ export interface Product {
   price: number;
   originalPrice?: number;
   image: string;
+  images?: string[];
   rating: number;
   reviews: number;
+  totalSold: number;
   discount?: number;
   isNew?: boolean;
   isBestSeller?: boolean;
@@ -86,8 +88,18 @@ export function ProductCard({
             />
 
             {/* Badges */}
+            {/* {product.isBestSeller && (
+              <Badge className="absolute top-4 right-4 bg-yellow-500 text-black shadow-sm">
+                <TrendingUp className="w-3 h-3 mr-1" />
+                Bán chạy
+              </Badge>
+            )} */}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
-              {product.discount && (
+              {product.isBestSeller ? (
+                <Badge className="bg-yellow-500 text-black shadow-sm">
+                  Đã bán {product.totalSold}/tháng
+                </Badge>
+              ) : (product.discount ?? 0) > 0 && product.discount && (
                 <Badge className="bg-red-500 text-white shadow-sm">
                   -{product.discount}%
                 </Badge>
@@ -97,16 +109,11 @@ export function ProductCard({
               )}
             </div>
 
-            {product.isBestSeller && (
-              <Badge className="absolute top-4 right-4 bg-yellow-500 text-black shadow-sm">
-                <TrendingUp className="w-3 h-3 mr-1" />
-                Bán chạy
-              </Badge>
-            )}
+            
 
             {/* Hover Actions */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            {/* <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <div className="flex gap-2">
                 <Button
                   size="sm"
@@ -140,7 +147,7 @@ export function ProductCard({
                   <ShoppingCart className="w-4 h-4 text-gray-600" />
                 </Button>
               </div>
-            </div>
+            </div> */}
           </div>
 
           <div className="p-4">
@@ -173,7 +180,7 @@ export function ProductCard({
                 <span className="font-bold text-brand-600 dark:text-brand-400">
                   {formatPrice(product.price)}
                 </span>
-                {product.originalPrice && (
+                {(product.discount ?? 0) > 0 && product.originalPrice && (
                   <span className="text-sm text-gray-500 line-through">
                     {formatPrice(product.originalPrice)}
                   </span>
