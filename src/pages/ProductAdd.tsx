@@ -104,8 +104,14 @@ export const ProductAdd = () => {
         // Fetch suppliers
         const suppliersRes = await fetch("http://localhost:8080/api/suppliers");
         const suppliersData = await suppliersRes.json();
-        if (suppliersData.success) {
-          setSuppliers(suppliersData.data);
+        if (
+          suppliersData.success &&
+          suppliersData.data &&
+          Array.isArray(suppliersData.data.data)
+        ) {
+          setSuppliers(suppliersData.data.data);
+        } else {
+          setSuppliers([]);
         }
 
         // Fetch colors
@@ -344,9 +350,20 @@ export const ProductAdd = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+
     // Validation
     if (!formData.TenSP || !formData.MaLoaiSP || !formData.MaNCC || !formData.Gia || !formData.NgayApDung) {
       toast.error("Vui lòng điền đầy đủ thông tin bắt buộc!");
+      return;
+    }
+
+    // Validate Ngày áp dụng không nhỏ hơn ngày hiện tại
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const appliedDate = new Date(formData.NgayApDung);
+    appliedDate.setHours(0, 0, 0, 0);
+    if (appliedDate < today) {
+      toast.error("Ngày áp dụng không được nhỏ hơn ngày hiện tại!");
       return;
     }
 
@@ -524,17 +541,24 @@ export const ProductAdd = () => {
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Giá sản phẩm *
               </label>
-              <input
-                type="number"
-                value={formData.Gia}
-                onChange={(e) =>
-                  setFormData({ ...formData, Gia: parseInt(e.target.value) || 0 })
-                }
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-[#825B32] focus:outline-none"
-                placeholder="Nhập giá sản phẩm"
-                min="0"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.Gia.toLocaleString('vi-VN')}
+                  onChange={(e) => {
+                    // Remove all non-digit characters
+                    const raw = e.target.value.replace(/[^\d]/g, '');
+                    setFormData({ ...formData, Gia: parseInt(raw) || 0 });
+                  }}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-[#825B32] focus:outline-none pr-16"
+                  placeholder="Nhập giá sản phẩm"
+                  min="0"
+                  required
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm select-none">₫</span>
+              </div>
             </div>
 
             <div>

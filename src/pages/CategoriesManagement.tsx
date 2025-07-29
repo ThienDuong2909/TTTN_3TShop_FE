@@ -1,6 +1,5 @@
 "use client"
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
 import { Toaster } from "sonner";
 
 type Category = {
@@ -11,12 +10,14 @@ type Category = {
 };
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { Edit2, Search, Trash2 } from "lucide-react";
+import { Edit2, Search, Trash2, Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
+import { Progress } from "../components/ui/progress";
 import { toast } from "sonner";
+import { CLOUDINARY_CONFIG } from "../config/cloudinary";
 
 // Helper function to format date
  const formatDate = (dateString: string) => {
@@ -31,6 +32,7 @@ import { toast } from "sonner";
 
 export default function CategoriesManagement() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Fetch categories from API
   useEffect(() => {
@@ -63,16 +65,106 @@ export default function CategoriesManagement() {
   });
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string>("");
+
+  // Helper function to upload image to Cloudinary
+  const uploadImageToCloudinary = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_CONFIG.UPLOAD_PRESET);
+    formData.append('cloud_name', CLOUDINARY_CONFIG.CLOUD_NAME);
+    
+    try {
+      const response = await fetch(CLOUDINARY_CONFIG.API_URL, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+      
+      const data = await response.json();
+      return data.secure_url;
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
+      throw error;
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file ảnh hợp lệ!');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Kích thước file không được vượt quá 5MB!');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Create image preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Simulate progress (Cloudinary doesn't provide real progress)
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+
+      const imageUrl = await uploadImageToCloudinary(file);
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      setFormData(prev => ({ ...prev, HinhMinhHoa: imageUrl }));
+      toast.success('Upload ảnh thành công!');
+    } catch (error) {
+      console.error('Upload failed:', error);
+      toast.error('Upload ảnh thất bại!');
+      setImagePreview("");
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, HinhMinhHoa: "" }));
+    setImagePreview("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleAdd = () => {
     setEditingCategory(null);
     setFormData({ TenLoai: "", HinhMinhHoa: "" });
+    setImagePreview("");
     setIsModalOpen(true);
   };
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
     setFormData({ TenLoai: category.TenLoai, HinhMinhHoa: category.HinhMinhHoa || "" });
+    setImagePreview(category.HinhMinhHoa || "");
     setIsModalOpen(true);
   };
 
@@ -195,7 +287,7 @@ export default function CategoriesManagement() {
                       <img
                         src={cat.HinhMinhHoa}
                         alt={cat.TenLoai}
-                        className="w-12 h-12 object-cover rounded border"
+                        className="w-24 h-20 object-cover rounded border"
                         onError={e => (e.currentTarget.src = '/default-category.png')}
                       />
                     ) : (
@@ -254,31 +346,114 @@ export default function CategoriesManagement() {
                   className="mt-2"
                 />
               </div>
+              
+              {/* Image Upload Section */}
               <div>
-                <Label htmlFor="HinhMinhHoa">Đường dẫn hình minh họa</Label>
-                <Input
-                  id="HinhMinhHoa"
-                  placeholder="https://..."
-                  value={formData.HinhMinhHoa}
-                  onChange={(e) => setFormData({ ...formData, HinhMinhHoa: e.target.value })}
-                  className="mt-2"
-                />
-                {formData.HinhMinhHoa && (
-                  <div className="mt-3 flex flex-col items-start gap-2">
-                    <span className="text-xs text-gray-500">Xem trước:</span>
-                    <img
-                      src={formData.HinhMinhHoa}
-                      alt="Preview"
-                      className="w-32 h-32 object-cover rounded border"
-                      onError={e => (e.currentTarget.style.display = 'none')}
+                <Label>Hình minh họa</Label>
+                <div className="mt-2 space-y-4">
+                  
+                  {/* Upload from device */}
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="w-full"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {isUploading ? 'Đang upload...' : 'Chọn ảnh từ thiết bị'}
+                    </Button>
+                  </div>
+
+                  {/* Upload Progress */}
+                  {isUploading && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Đang upload...</span>
+                        <span>{uploadProgress}%</span>
+                      </div>
+                      <Progress value={uploadProgress} className="w-full" />
+                    </div>
+                  )}
+
+                  {/* Manual URL Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="HinhMinhHoa" className="text-sm text-gray-600">Hoặc nhập URL ảnh:</Label>
+                    <Input
+                      id="HinhMinhHoa"
+                      placeholder="https://example.com/image.jpg"
+                      value={formData.HinhMinhHoa}
+                      onChange={(e) => {
+                        setFormData({ ...formData, HinhMinhHoa: e.target.value });
+                        setImagePreview(e.target.value);
+                      }}
+                      className="w-full"
                     />
                   </div>
-                )}
+
+                  {/* Image Preview */}
+                  {(imagePreview || formData.HinhMinhHoa) && (
+                    <div className="relative">
+                      <div className="flex items-start gap-3 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <img
+                          src={imagePreview || formData.HinhMinhHoa}
+                          alt="Preview"
+                          className="w-24 h-24 object-cover rounded border"
+                          onError={() => {
+                            setImagePreview("");
+                            if (!imagePreview) {
+                              setFormData(prev => ({ ...prev, HinhMinhHoa: "" }));
+                            }
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                            Xem trước hình ảnh
+                          </div>
+                          <div className="text-xs text-gray-500 break-all">
+                            {(imagePreview || formData.HinhMinhHoa).length > 50 
+                              ? `${(imagePreview || formData.HinhMinhHoa).substring(0, 50)}...`
+                              : (imagePreview || formData.HinhMinhHoa)
+                            }
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={removeImage}
+                          className="text-red-500 hover:text-red-700 p-1"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty state */}
+                  {!imagePreview && !formData.HinhMinhHoa && (
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+                      <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 dark:text-gray-400">Chưa có hình ảnh</p>
+                      <p className="text-sm text-gray-500 mt-1">Chọn ảnh từ thiết bị hoặc nhập URL</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Hủy</Button>
-              <Button type="submit">{editingCategory ? "Cập nhật" : "Thêm mới"}</Button>
+              <Button type="submit" disabled={isUploading}>
+                {isUploading ? 'Đang upload...' : (editingCategory ? "Cập nhật" : "Thêm mới")}
+              </Button>
             </div>
           </form>
         </DialogContent>

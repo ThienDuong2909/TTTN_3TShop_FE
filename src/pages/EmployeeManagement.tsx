@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-  import { Eye, EyeOff, RefreshCw, Edit2, ArrowRight, History } from "lucide-react";
+import { Eye, EyeOff, RefreshCw, Edit2, ArrowRight, History } from "lucide-react";
 import { DataTable, Column } from "../components/ui/DataTable";
 import { Modal } from "../components/ui/Modal";
 import { toast, Toaster } from "sonner";
+import districts from "../data/districts.json";
 
 // Interface matching SQL structure
 interface Employee {
@@ -25,6 +26,31 @@ interface Employee {
 
 export const EmployeeManagement = () => {
   const [departments, setDepartments] = useState<{ id: string, name: string }[]>([]);
+  
+  // Helper functions for currency formatting
+  const formatCurrency = (value: number): string => {
+    if (!value || value === 0) return '';
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
+  const unformatCurrency = (value: string): number => {
+    if (!value) return 0;
+    // Remove all non-digit characters
+    const numberString = value.replace(/\D/g, '');
+    return parseInt(numberString) || 0;
+  };
+
+  const handleSalaryChange = (value: string) => {
+    // Allow only numbers and common currency characters
+    const cleanValue = value.replace(/[^\d.,₫]/g, '');
+    const numericValue = unformatCurrency(cleanValue);
+    setFormData({ ...formData, luong: numericValue });
+  };
   
   // Helper functions for work history
   const formatDate = (dateString: string) => {
@@ -240,7 +266,8 @@ export const EmployeeManagement = () => {
     newDepartment: "",
     transferDate: new Date().toISOString().slice(0, 10),
     position: "Nhân viên",
-    notes: ""
+    notes: "",
+    district: "" // Thêm trường khu vực
   });
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -256,6 +283,7 @@ export const EmployeeManagement = () => {
     username: "",
     password: "3TShop@2025",
     isActive: "DANGLAMVIEC",
+    district: "", // Thêm trường khu vực cho nhân viên mới
   });
 
   const handleAdd = () => {
@@ -271,6 +299,7 @@ export const EmployeeManagement = () => {
       username: "",
       password: "3TShop@2025",
       isActive: "DANGLAMVIEC",
+      district: "",
     });
     setIsModalOpen(true);
   };
@@ -288,6 +317,7 @@ export const EmployeeManagement = () => {
       username: employee.username || "",
       password: "",
       isActive: employee.isActive,
+      district: "", // Không cần hiển thị khu vực khi sửa nhân viên
     });
     setIsModalOpen(true);
   };
@@ -303,13 +333,21 @@ export const EmployeeManagement = () => {
       return;
     }
 
+    // Kiểm tra nếu chuyển sang bộ phận giao hàng (mã 11) thì phải chọn khu vực
+    const isDeliveryDepartment = transferData.newDepartment === "11";
+    if (isDeliveryDepartment && !transferData.district) {
+      toast.warning("Vui lòng chọn khu vực phụ trách cho bộ phận giao hàng!");
+      return;
+    }
+
     try {
       const payload = {
         MaNV: transferEmployee.maNV,
         MaBoPhanMoi: parseInt(transferData.newDepartment),
         NgayChuyen: transferData.transferDate,
         ChucVu: transferData.position,
-        GhiChu: transferData.notes
+        GhiChu: transferData.notes,
+        ...(isDeliveryDepartment && { KhuVuc: transferData.district }) // Chỉ gửi KhuVuc nếu là bộ phận giao hàng
       };
 
       const response = await fetch('http://localhost:8080/api/employees/transfer', {
@@ -330,7 +368,8 @@ export const EmployeeManagement = () => {
           newDepartment: "",
           transferDate: new Date().toISOString().slice(0, 10),
           position: "Nhân viên",
-          notes: ""
+          notes: "",
+          district: ""
         });
         refreshEmployees(); // Refresh lại danh sách nhân viên
       } else {
@@ -390,6 +429,12 @@ export const EmployeeManagement = () => {
       return;
     }
 
+    // For new employees in delivery department, district is required
+    if (!editingEmployee && formData.department === "11" && !formData.district) {
+      toast.warning("Vui lòng chọn khu vực phụ trách cho bộ phận giao hàng!");
+      return;
+    }
+
     // For new employees, password is required
     if (!editingEmployee && !formData.password) {
       toast.warning("Vui lòng nhập mật khẩu cho nhân viên mới!");
@@ -421,6 +466,11 @@ export const EmployeeManagement = () => {
       DiaChi: formData.diaChi,
       Luong: formData.luong,
     };
+
+    // Nếu là bộ phận giao hàng, thêm trường KhuVuc
+    if (!editingEmployee && formData.department === "11" && formData.district) {
+      employeePayload.KhuVuc = formData.district;
+    }
 
     // For new employees, always include departments array
     if (!editingEmployee) {
@@ -554,9 +604,11 @@ export const EmployeeManagement = () => {
       title: "Lương",
       dataIndex: "luong",
       sortable: true,
-      width: "90px",
+      width: "120px",
       render: (value) => (
-        <span className="text-xs">{value ? `${(value/1000000).toFixed(1)}M` : "0"}</span>
+        <span className="text-xs" title={value ? formatCurrency(value) : "Chưa có"}>
+          {value ? `${(value/1000000).toFixed(1)}M` : "0"}
+        </span>
       ),
     },
     {
@@ -612,12 +664,13 @@ export const EmployeeManagement = () => {
           <button
             onClick={() => {
               setTransferEmployee(record);
-              setTransferData({
-                newDepartment: "",
-                transferDate: new Date().toISOString().slice(0, 10),
-                position: "Nhân viên",
-                notes: ""
-              });
+        setTransferData({
+          newDepartment: "",
+          transferDate: new Date().toISOString().slice(0, 10),
+          position: "Nhân viên",
+          notes: "",
+          district: ""
+        });
               setIsTransferModalOpen(true);
             }}
             className="group relative bg-emerald-50 hover:bg-emerald-100 text-emerald-600 hover:text-emerald-700 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
@@ -703,7 +756,7 @@ export const EmployeeManagement = () => {
               </label>
               <select
                 value={formData.department}
-                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value, district: "" })}
                 className={`w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs ${
                   editingEmployee ? 'bg-gray-100 cursor-not-allowed' : ''
                 }`}
@@ -721,6 +774,31 @@ export const EmployeeManagement = () => {
                 </div>
               )}
             </div>
+
+            {/* Hiển thị dropdown chọn khu vực chỉ khi thêm mới và chọn bộ phận giao hàng (mã 11) */}
+            {!editingEmployee && formData.department === "11" && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Chọn khu vực phụ trách *
+                </label>
+                <select
+                  value={formData.district}
+                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                  className="w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
+                  required
+                >
+                  <option value="">Chọn phường/xã</option>
+                  {districts.map((district, index) => (
+                    <option key={index} value={district}>
+                      {district}
+                    </option>
+                  ))}
+                </select>
+                <div className="mt-1 text-xs text-gray-500">
+                  Nhân viên sẽ phụ trách giao hàng tại khu vực này
+                </div>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Họ và tên *</label>
               <input
@@ -772,14 +850,24 @@ export const EmployeeManagement = () => {
               </div>
             )}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Lương (VNĐ)</label>
-              <input
-                type="number"
-                value={formData.luong}
-                onChange={(e) => setFormData({ ...formData, luong: parseInt(e.target.value) || 0 })}
-                min="0"
-                className="w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-              />
+              <label className="block text-xs font-medium text-gray-700 mb-1">Lương</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.luong ? formatCurrency(formData.luong) : ''}
+                  onChange={(e) => handleSalaryChange(e.target.value)}
+                  className="w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
+                  placeholder="0 ₫"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-400 text-xs">₫</span>
+                </div>
+              </div>
+              {formData.luong > 0 && (
+                <div className="mt-1 text-xs text-gray-500">
+                  {formatCurrency(formData.luong)}
+                </div>
+              )}
             </div>
             {!editingEmployee && (
               <div className="md:col-span-2">
@@ -880,7 +968,7 @@ export const EmployeeManagement = () => {
             </label>
             <select
               value={transferData.newDepartment}
-              onChange={(e) => setTransferData({ ...transferData, newDepartment: e.target.value })}
+              onChange={(e) => setTransferData({ ...transferData, newDepartment: e.target.value, district: "" })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
               required
             >
@@ -894,6 +982,31 @@ export const EmployeeManagement = () => {
                 ))}
             </select>
           </div>
+
+          {/* Hiển thị dropdown chọn khu vực chỉ khi chọn bộ phận giao hàng (mã 11) */}
+          {transferData.newDepartment === "11" && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Chọn khu vực phụ trách *
+              </label>
+              <select
+                value={transferData.district}
+                onChange={(e) => setTransferData({ ...transferData, district: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
+                required
+              >
+                <option value="">Chọn phường/xã</option>
+                {districts.map((district, index) => (
+                  <option key={index} value={district}>
+                    {district}
+                  </option>
+                ))}
+              </select>
+              <div className="mt-1 text-xs text-gray-500">
+                Nhân viên sẽ phụ trách giao hàng tại khu vực này
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">

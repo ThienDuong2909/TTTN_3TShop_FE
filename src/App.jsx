@@ -31,8 +31,9 @@ import CategoriesManagement from './pages/CategoriesManagement';
 import PurchaseOrders from './pages/PurchaseOrders';
 import GoodsReceipt from './pages/GoodsReceipt';
 import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
 import Customers from './pages/Customers';
-import Suppliers from './pages/Suppliers';
+import Suppliers from './pages/SupplierManagement';
 import Invoices from './pages/Invoices';
 import Discounts from './pages/Discounts';
 import Reviews from './pages/Reviews';
@@ -75,7 +76,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/products" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute>
               <AdminLayout>
                 <ProductManagement />
               </AdminLayout>
@@ -120,6 +121,13 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AdminLayout>
                 <Orders />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/orders/:id" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <OrderDetail />
               </AdminLayout>
             </ProtectedRoute>
           } />

@@ -23,7 +23,8 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
   const { state } = useApp();
   const navigate = useNavigate();
 
-  const isAdmin = state.user?.role === "admin";
+  // const isAdmin = state.user?.role === "admin";
+  const isAdmin = true
 
   const navigation = [
     {
@@ -206,10 +207,14 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
           </Avatar>
           <span className="sr-only">Thông tin người dùng</span>
           <div className="flex-1 min-w-0">
-            <div className="font-medium truncate">{state.user?.name}</div>
+            <div className="font-medium truncate">Admin</div>
+            <div className="text-xs text-muted-foreground truncate">
+              admin@gmail.com
+            </div>
+            {/* <div className="font-medium truncate">{state.user?.name}</div>
             <div className="text-xs text-muted-foreground truncate">
               {state.user?.email}
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
