@@ -63,11 +63,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
       {/* Main content */}
-      <main className="lg:pl-64">
-        <div className="px-2 py-3 sm:px-3 lg:px-4">
+      <main className="lg:pl-52">
+        <div className="py-3 sm:px-2 lg:px-2">
           {children}
         </div>
       </main>
+      {/* <main className="lg:pl-48">
+        <div className="py-3 sm:px-3 lg:px-4">
+          {children}
+        </div>
+      </main> */}
     </div>
   );
 } 

@@ -3,11 +3,11 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
   Save,
-  Edit3,
+  // Edit3,
   Package,
   Eye,
   Plus,
-  Minus,
+  // Minus,
   History,
   TrendingUp,
   Palette,
@@ -192,7 +192,7 @@ const AddProductDetailDialog: React.FC<{
   return (
     <>
       <Button className="bg-[#825B32] text-white" onClick={() => setOpen(true)}>
-        <Plus className="w-4 h-4 mr-2" /> Thêm chi tiết sản phẩm
+        <Plus className="w-2 h-2 mr-2" /> Thêm chi tiết sản phẩm
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
@@ -287,13 +287,13 @@ export const AdminProductDetail: React.FC = () => {
 
   const [product, setProduct] = useState<ApiProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingVariants, setEditingVariants] = useState<{
-    [key: string]: number;
-  }>({});
+  // const [isEditing, setIsEditing] = useState(false);
+  // const [editingVariants, setEditingVariants] = useState<{
+  //   [key: string]: number;
+  // }>({});
   const [selectedImage, setSelectedImage] = useState(0);
   const [showStockHistory, setShowStockHistory] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  // const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showPriceHistory, setShowPriceHistory] = useState(false);
 
   // Fetch product data from API
@@ -375,71 +375,71 @@ export const AdminProductDetail: React.FC = () => {
     }
   };
 
-  const handleQuantityChange = (variantId: string, newQuantity: number) => {
-    if (newQuantity < 0) return;
+  // const handleQuantityChange = (variantId: string, newQuantity: number) => {
+  //   if (newQuantity < 0) return;
 
-    setEditingVariants((prev) => ({
-      ...prev,
-      [variantId]: newQuantity,
-    }));
-  };
+  //   setEditingVariants((prev) => ({
+  //     ...prev,
+  //     [variantId]: newQuantity,
+  //   }));
+  // };
 
-  const confirmStockUpdate = async () => {
-    if (!product) return;
+  // const confirmStockUpdate = async () => {
+  //   if (!product) return;
 
-    try {
-      // Prepare data for API call
-      const stockUpdates = Object.entries(editingVariants).map(([variantId, newQuantity]) => ({
-        MaCTSP: parseInt(variantId),
-        SoLuongTon: newQuantity,
-      }));
+  //   try {
+  //     // Prepare data for API call
+  //     const stockUpdates = Object.entries(editingVariants).map(([variantId, newQuantity]) => ({
+  //       MaCTSP: parseInt(variantId),
+  //       SoLuongTon: newQuantity,
+  //     }));
 
-      const response = await fetch('http://localhost:8080/api/products/update-stock', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(stockUpdates),
-      });
+  //     const response = await fetch('http://localhost:8080/api/products/update-stock', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify(stockUpdates),
+  //     });
 
-      const result = await response.json();
+  //     const result = await response.json();
       
-      if (result.success) {
-        // Refresh product data
-        const productResponse = await fetch(`http://localhost:8080/api/products/${id}`);
-        const productResult = await productResponse.json();
+  //     if (result.success) {
+  //       // Refresh product data
+  //       const productResponse = await fetch(`http://localhost:8080/api/products/${id}`);
+  //       const productResult = await productResponse.json();
         
-        if (productResult.success) {
-          setProduct(productResult.data);
-        }
+  //       if (productResult.success) {
+  //         setProduct(productResult.data);
+  //       }
 
-        setEditingVariants({});
-        setIsEditing(false);
-        setShowConfirmModal(false);
+  //       setEditingVariants({});
+  //       setIsEditing(false);
+  //       setShowConfirmModal(false);
 
-        toast.success("Đã cập nhật số lượng tồn kho thành công!", {
-          description: `Đã cập nhật ${stockUpdates.length} biến thể sản phẩm`,
-          duration: 3000,
-        });
-      } else {
-        toast.error("Có lỗi xảy ra khi cập nhật tồn kho!", {
-          description: result.message || "Vui lòng thử lại sau",
-          duration: 5000,
-        });
-      }
-    } catch (error) {
-      console.error("Error updating stock:", error);
-      toast.error("Có lỗi xảy ra khi cập nhật tồn kho!", {
-        description: "Không thể kết nối đến server, vui lòng thử lại sau",
-        duration: 5000,
-      });
-    }
-  };
+  //       toast.success("Đã cập nhật số lượng tồn kho thành công!", {
+  //         description: `Đã cập nhật ${stockUpdates.length} biến thể sản phẩm`,
+  //         duration: 3000,
+  //       });
+  //     } else {
+  //       toast.error("Có lỗi xảy ra khi cập nhật tồn kho!", {
+  //         description: result.message || "Vui lòng thử lại sau",
+  //         duration: 5000,
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error("Error updating stock:", error);
+  //     toast.error("Có lỗi xảy ra khi cập nhật tồn kho!", {
+  //       description: "Không thể kết nối đến server, vui lòng thử lại sau",
+  //       duration: 5000,
+  //     });
+  //   }
+  // };
 
-  const cancelEditing = () => {
-    setEditingVariants({});
-    setIsEditing(false);
-  };
+  // const cancelEditing = () => {
+  //   setEditingVariants({});
+  //   setIsEditing(false);
+  // };
 
   const refreshProductData = async () => {
     if (!id) return;
@@ -455,8 +455,8 @@ export const AdminProductDetail: React.FC = () => {
     }
   };
 
-  const stockChangeCount = Object.keys(editingVariants).length;
-  const hasChanges = stockChangeCount > 0;
+  // const stockChangeCount = Object.keys(editingVariants).length;
+  // const hasChanges = stockChangeCount > 0;
 
   // Loading state
   if (loading) {
@@ -855,7 +855,15 @@ export const AdminProductDetail: React.FC = () => {
                   productId={product.MaSP} 
                   onAdded={refreshProductData} 
                 />
-                {!isEditing ? (
+                {/* <Button
+                  onClick={() => setIsEditing(true)}
+                  size="sm"
+                  className="bg-[#825B32] text-white border-none shadow-sm hover:bg-[#6d4827] transition-all px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold"
+                >
+                  <Edit3 className="w-4 h-4 mr-1" />
+                  Chỉnh sửa tồn kho
+                </Button> */}
+                {/* {!isEditing ? (
                   <Button
                     onClick={() => setIsEditing(true)}
                     size="sm"
@@ -884,18 +892,18 @@ export const AdminProductDetail: React.FC = () => {
                       Lưu thay đổi ({stockChangeCount})
                     </Button>
                   </div>
-                )}
+                )} */}
               </div>
               <Dialog
                 open={showStockHistory}
                 onOpenChange={setShowStockHistory}
               >
-                <DialogTrigger asChild>
+                {/* <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
                     <History className="w-4 h-4 mr-2" />
                     Lịch sử tồn kho
                   </Button>
-                </DialogTrigger>
+                </DialogTrigger> */}
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Lịch sử điều chỉnh tồn kho</DialogTitle>
@@ -963,11 +971,11 @@ export const AdminProductDetail: React.FC = () => {
             <TableBody>
               {product.ChiTietSanPhams.map((variant) => {
                 const stockStatus = getStockStatus(variant);
-                const editingQuantity = editingVariants[variant.MaCTSP.toString()];
-                const currentQuantity =
-                  editingQuantity !== undefined
-                    ? editingQuantity
-                    : variant.SoLuongTon;
+                // const editingQuantity = editingVariants[variant.MaCTSP.toString()];
+                // const currentQuantity =
+                //   editingQuantity !== undefined
+                //     ? editingQuantity
+                //     : variant.SoLuongTon;
 
                 return (
                   <TableRow key={variant.MaCTSP}>
@@ -991,7 +999,7 @@ export const AdminProductDetail: React.FC = () => {
                       </code>
                     </TableCell>
                     <TableCell>
-                      {isEditing ? (
+                      {/* {isEditing ? (
                         <div className="flex items-center space-x-2">
                           <Button
                             variant="outline"
@@ -1031,11 +1039,11 @@ export const AdminProductDetail: React.FC = () => {
                             <Plus className="w-3 h-3" />
                           </Button>
                         </div>
-                      ) : (
+                      ) : ( */}
                         <span className="font-medium">
                           {variant.SoLuongTon}
                         </span>
-                      )}
+                      {/* )} */}
                     </TableCell>
                     <TableCell>
                       <Badge className={stockStatus.color}>
@@ -1146,7 +1154,7 @@ export const AdminProductDetail: React.FC = () => {
       </Dialog>
 
       {/* Confirm Stock Update Modal */}
-      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+      {/* <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center text-[#825B32]">
@@ -1207,7 +1215,7 @@ export const AdminProductDetail: React.FC = () => {
             </Button>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </div>
   );
 };

@@ -148,3 +148,25 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* Remove black outline from all input and select elements */
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus,
+  [role="combobox"]:focus,
+  [role="button"]:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Custom focus styles for better UX */
+  input:focus,
+  textarea:focus,
+  select:focus,
+  [role="combobox"]:focus {
+    border-color: hsl(var(--primary)) !important;
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.3) !important;
+  }
+}
