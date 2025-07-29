@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect,useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import {
   Star,
   Heart,
@@ -52,19 +53,29 @@ export default function ProductDetail() {
   
 
 const [product, setProduct] = useState<Product | null>(null);
+const [loading, setLoading] = useState(true);
 const stock = product?.stockMap?.[`${selectedColor}_${selectedSize}`] || 0;
 
 useEffect(() => {
+  window.scrollTo(0, 0); // Scroll to top when component mounts
+}, []);
+useEffect(() => {
     const fetchProduct = async () => {
+      const minLoading = new Promise((resolve) => setTimeout(resolve, 300));
       try {
+        setLoading(true);
+        
         if (!id) return;
 
         const raw = await getProductDetail(Number(id)); // Ép kiểu rõ ràng
         const mapped = mapProductDetailFromApi(raw);
-        console.log(mapped)
+        console.log(product)
         setProduct(mapped);
       } catch (err) {
         console.error("Lỗi khi lấy chi tiết sản phẩm:", err);
+      }finally {
+        await minLoading;
+        setLoading(false); // Kết thúc loading
       }
     };
 
@@ -72,15 +83,21 @@ useEffect(() => {
   }, [id]);
 
 
+  const productImages = useMemo(() => {
+  if (!product) return [];
+  return product.images?.length ? product.images : [product.image];
+}, [product]);
   // Mock additional images for carousel
-  const productImages = product
-    ? [
-        product.image,
-        product.image.replace("400", "401"),
-        product.image.replace("400", "402"),
-        product.image.replace("400", "403"),
-      ]
-    : [];
+  // const productImages = product?.images?.length ? product.images : [product.image];
+  // const productImages = product
+  // ? [
+  //     product.image,
+  //     product.image.replace("400", "401"),
+  //     product.image.replace("400", "402"),
+  //     product.image.replace("400", "403"),
+  //   ]
+  // : [];
+
 
   // Mock reviews
   const reviews = [
@@ -140,7 +157,7 @@ useEffect(() => {
     const sizes = product.sizeMap[selectedColor];
     if (sizes.length > 0) {
       setSelectedSize(sizes[0]);
-      setQuantity(1); // 👈 reset lại khi chọn màu mới
+      setQuantity(1); 
     }
   }
 }, [selectedColor]);
@@ -156,6 +173,14 @@ const increaseQuantity = () => {
 useEffect(() => {
   setQuantity(1); // 👈 reset lại khi chọn size
 }, [selectedSize]);
+
+if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+        <Loader2 className="animate-spin w-12 h-12 text-brand-600" />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -301,11 +326,11 @@ useEffect(() => {
             )}
 
             {/* Discount Badge */}
-            {product.discount && (
+            {/* {product.discount && (
               <Badge className="absolute top-4 left-4 bg-red-500 text-white">
                 -{product.discount}%
               </Badge>
-            )}
+            )} */}
           </div>
 
           {/* Thumbnail Images */}
@@ -359,7 +384,7 @@ useEffect(() => {
             </div>
 
             {/* Badges */}
-            <div className="flex gap-2 mb-4">
+            {/* <div className="flex gap-2 mb-4">
               {product.isNew && (
                 <Badge variant="secondary" className="text-green-600">
                   Mới
@@ -370,7 +395,7 @@ useEffect(() => {
                   Bán chạy
                 </Badge>
               )}
-            </div>
+            </div> */}
 
             {/* Price */}
             <div className="space-y-2 mb-6">
@@ -452,11 +477,7 @@ useEffect(() => {
             {/* Quantity */}
             <div>
               <label className="block text-sm font-medium mb-2">Số lượng</label>
-              {selectedColor && selectedSize && (
-                <p className="text-sm text-gray-500 mb-1">
-                  Tồn kho: {stock}
-                </p>
-              )}
+              
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
@@ -476,6 +497,11 @@ useEffect(() => {
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
+              {selectedColor && selectedSize && (
+                <p className="text-sm text-gray-500 mb-1">
+                  Tồn kho: {stock}
+                </p>
+              )}
               {stock === 0 && (
                 <p className="text-sm text-red-500 mt-2">
                   Sản phẩm với màu sắc và kích thước đã chọn hiện đang hết hàng.

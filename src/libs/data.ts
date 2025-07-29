@@ -22,7 +22,8 @@ export interface CartItem {
   quantity: number;
   selectedColor?: string;
   selectedSize?: string;
-}
+  donGia?: number;
+} 
 
 export interface User {
   id: string;

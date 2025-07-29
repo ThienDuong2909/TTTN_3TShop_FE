@@ -40,36 +40,6 @@ function Footer() {
   ];
 
   return (
-    <footer className="bg-gray-50 dark:bg-gray-900 border-t">
-      {/* Newsletter Section */}
-      <div className="bg-brand-600 text-white">
-        <div className="container mx-auto px-4 py-12">
-          <div className="text-center max-w-2xl mx-auto">
-            <h3 className="text-2xl font-bold mb-4">
-              Đăng ký nhận thông tin khuyến mãi
-            </h3>
-            <p className="text-brand-100 mb-6">
-              Nhận thông tin về sản phẩm mới, ưu đãi đặc biệt và xu hướng thời
-              trang
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <Input
-                type="email"
-                placeholder="Nhập email của bạn"
-                className="flex-1 bg-white text-gray-900"
-              />
-              <Button
-                variant="secondary"
-                className="bg-white text-brand-600 hover:bg-gray-100"
-              >
-                Đăng ký
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Footer */}
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
@@ -211,8 +181,7 @@ function Footer() {
             © 2024 FashionHub. Tất cả quyền được bảo lưu.
           </p>
         </div>
-      </div>
-    </footer>
+        </div>
   );
 }
 

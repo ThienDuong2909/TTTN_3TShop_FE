@@ -1,3 +1,4 @@
+import { data } from "react-router-dom";
 import api from "./fetch";
 
 // ===================
@@ -446,10 +447,16 @@ export const getCartItemsApi = async (maKH) => {
   return response.data.data; // dữ liệu giỏ hàng
 };
 
-export const removeFromCartApi = async (maKH, maSP, maHex, tenKichThuoc) => {
+export const removeFromCartApi = async (
+  maKH,
+  maSP,
+  maHex,
+  tenKichThuoc,
+  donGia
+) => {
   try {
     const response = await api.delete("/gio-hang/xoa", {
-      data: { maKH, maSP, maHex, tenKichThuoc },
+      data: { maKH, maSP, maHex, tenKichThuoc, donGia },
     });
     return response.data.data; // trả lại cart cập nhật nếu cần
   } catch (error) {
@@ -472,4 +479,93 @@ export async function checkStockAvailability(maCTSP) {
 export const clearCartApi = async (maKH) => {
   const response = await api.post("/gio-hang/xoa-tat-ca", { maKH });
   return response.data.data;
+};
+// Lấy tất cả danh mục sản phẩm
+// Giả sử API trả về danh mục theo đường dẫn "/loai-sp" hoặc "/category"
+export const getAllCategories = async () => {
+  try {
+    const response = await api.get("/category/");
+    return response.data.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh mục:", error);
+    throw error;
+  }
+};
+export const getProductsByCategory = async (id) => {
+  const res = await api.post(`/category/products`, { maLoaiSP: id });
+  return res.data.data;
+};
+
+// ...existing code...
+
+export const getCurrentExchangeRate = async () => {
+  try {
+    const res = await api.get("/tigia/co-hieu-luc");
+    return res.data.data?.GiaTri; // trả về số, ví dụ: 24000
+  } catch (error) {
+    console.error("Lỗi lấy tỉ giá:", error);
+    throw error;
+  }
+};
+
+export const getBestSellerProducts = async () => {
+  try {
+    const res = await api.get("/san-pham/best-sellers");
+    return res.data?.data || [];
+  } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm bán chạy:", error);
+    throw error;
+  }
+};
+
+export const getNewProducts = async () => {
+  try {
+    const res = await api.get("/san-pham/new-product");
+    return res.data?.data || [];
+  } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm mới:", error);
+    throw error;
+  }
+};
+
+export const getDiscountProducts = async () => {
+  try {
+    const res = await api.get("/san-pham/discount");
+    return res.data?.data || [];
+  } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm giảm giá:", error);
+    throw error;
+  }
+};
+
+export const getSearchProducts = async (q) => {
+  try {
+    const res = await api.get(
+      `/san-pham/search?keyword=${encodeURIComponent(q)}`
+    );
+    return res.data?.data || [];
+  } catch (error) {
+    console.error("Lỗi khi tìm kiếm sản phẩm:", error);
+    throw error;
+  }
+};
+
+export const getCustomerOrders = async (maKH) => {
+  try {
+    const res = await api.post("/gio-hang/don-hang", { maKH });
+    return res.data?.data || [];
+  } catch (error) {
+    console.error("Lỗi khi lấy đơn hàng khách hàng:", error);
+    throw error;
+  }
+};
+
+export const getOrderDetail = async ({ maKH, maDDH }) => {
+  try {
+    const res = await api.post("/gio-hang/don-hang/chi-tiet", { maKH, maDDH });
+    return res.data?.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
+    throw error;
+  }
 };

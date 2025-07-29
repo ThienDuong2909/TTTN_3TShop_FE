@@ -16,11 +16,15 @@ import Register from './pages/Register';
 import ProductListing from './pages/ProductListing';
 import ProductDetail from './pages/ProductDetail';
 import NotFound from './pages/NotFound';
+import SearchResults from './pages/SearchResults';
+import OrderManagement from './pages/OrderManagement';
+import OrderDetail from './pages/OrderDetail';
 
 // Protected Pages  
 import Profile from './pages/Profile';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
+
 
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
@@ -38,6 +42,7 @@ import Staff from './pages/Staff';
 import Departments from './pages/Departments';
 import Colors from './pages/ColorManagement';
 import AdminLayout from './layouts/AdminLayout';
+import CategoryPage from './pages/CategoryPage';
 
 // Wrapper component for main layout
 const MainLayout = ({ children }) => (
@@ -171,6 +176,8 @@ function App() {
           <Route path="/register" element={<MainLayout><Register /></MainLayout>} />
           <Route path="/products" element={<MainLayout><ProductListing /></MainLayout>} />
           <Route path="/product/:id" element={<MainLayout><ProductDetail /></MainLayout>} />
+          <Route path="/category/:id" element={<MainLayout><CategoryPage /></MainLayout>} />
+          <Route path="/search" element={<MainLayout><SearchResults /></MainLayout>} />
           
           {/* Protected User Routes */}
           <Route path="/profile" element={
@@ -191,6 +198,21 @@ function App() {
             <MainLayout>
               <ProtectedRoute>
                 <Checkout />
+              </ProtectedRoute>
+            </MainLayout>
+          } />
+
+          <Route path="/orders" element={
+            <MainLayout>
+              <ProtectedRoute>
+                <OrderManagement />
+              </ProtectedRoute>
+            </MainLayout>
+              } />
+              <Route path="/orders/:id" element={
+            <MainLayout>
+              <ProtectedRoute>
+                <OrderDetail />
               </ProtectedRoute>
             </MainLayout>
           } />
