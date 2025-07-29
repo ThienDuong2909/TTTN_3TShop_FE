@@ -42,10 +42,10 @@ api.interceptors.response.use(
       console.error("Full error:", error);
       console.error("=== END DEBUG ===");
       
-      // setTimeout(() => {
-      //   localStorage.removeItem("token");
-      //   window.location.href = "/login";
-      // }, 2000);
+      setTimeout(() => {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }, 2000);
       
     }
     

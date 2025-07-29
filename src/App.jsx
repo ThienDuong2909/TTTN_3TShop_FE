@@ -1,4 +1,4 @@
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 
 import { AppProvider } from './contexts/AppContext';
@@ -6,8 +6,8 @@ import { ThemeProvider } from './components/ThemeProvider';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
-import { Home, Settings, Package, FileText, Truck, LogOut } from 'lucide-react';
-import { useApp } from './contexts/AppContext';
+import { Home } from 'lucide-react';
+// import { Toaster } from './components/ui/toaster';
 
 // Public Pages
 import Index from './pages/Index';
@@ -29,16 +29,19 @@ import Checkout from './pages/Checkout';
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
 import ProductManagement from './pages/ProductManagement';
+import ProductAdd from './pages/ProductAdd';
+import AdminProductDetail from './pages/AdminProductDetail';
 import CategoriesManagement from './pages/CategoriesManagement';
 import PurchaseOrders from './pages/PurchaseOrders';
 import GoodsReceipt from './pages/GoodsReceipt';
 import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
 import Customers from './pages/Customers';
-import Suppliers from './pages/Suppliers';
+import Suppliers from './pages/SupplierManagement';
 import Invoices from './pages/Invoices';
 import Discounts from './pages/Discounts';
 import Reviews from './pages/Reviews';
-import Staff from './pages/Staff';
+import Employees from './pages/EmployeeManagement';
 import Departments from './pages/Departments';
 import Colors from './pages/ColorManagement';
 import AdminLayout from './layouts/AdminLayout';
@@ -78,9 +81,23 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/products" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute>
               <AdminLayout>
                 <ProductManagement />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/add-product" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <ProductAdd />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/products/:id" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <AdminProductDetail />
               </AdminLayout>
             </ProtectedRoute>
           } />
@@ -109,6 +126,13 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AdminLayout>
                 <Orders />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/orders/:id" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <OrderDetail />
               </AdminLayout>
             </ProtectedRoute>
           } />
@@ -147,10 +171,10 @@ function App() {
               </AdminLayout>
             </ProtectedRoute>
           } />
-          <Route path="/admin/staff" element={
+          <Route path="/admin/employees" element={
             <ProtectedRoute requireAdmin>
               <AdminLayout>
-                <Staff />
+                <Employees />
               </AdminLayout>
             </ProtectedRoute>
           } />
@@ -172,8 +196,8 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<MainLayout><Index /></MainLayout>} />
           <Route path="/home" element={<MainLayout><Home /></MainLayout>} />
-          <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
-          <Route path="/register" element={<MainLayout><Register /></MainLayout>} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/products" element={<MainLayout><ProductListing /></MainLayout>} />
           <Route path="/product/:id" element={<MainLayout><ProductDetail /></MainLayout>} />
           <Route path="/category/:id" element={<MainLayout><CategoryPage /></MainLayout>} />
@@ -220,7 +244,9 @@ function App() {
           {/* 404 */}
           <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
         </Routes>
-        <Toaster />
+        <Toaster 
+          position="top-center"
+          richColors/>
       </AppProvider>
     </ThemeProvider>
   );

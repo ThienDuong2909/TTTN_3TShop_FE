@@ -249,6 +249,16 @@ export const getPurchaseOrderForReceipt = async (id) => {
   }
 };
 
+// Lấy trạng thái nhập hàng của từng sản phẩm trong phiếu đặt hàng NCC
+export const getPurchaseOrderReceivedStatus = async (purchaseOrderId) => {
+  try {
+    const response = await api.get(`/purchase-orders/${purchaseOrderId}/received-status`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 // ===================
 // GOODS RECEIPT API
 // ===================

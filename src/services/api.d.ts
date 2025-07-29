@@ -7,6 +7,7 @@ export function getSuppliers(): Promise<any[]>;
 export function getEmployees(): Promise<any[]>;
 export function getPurchaseOrderStatuses(): Promise<any[]>;
 export function getProductDetails(): Promise<any[]>;
+export function getPurchaseOrderReceivedStatus(id: string): Promise<any>;
 
 // Goods Receipt functions
 export function getGoodsReceipts(): Promise<any[]>;
@@ -26,6 +27,7 @@ export function showSuccess(message: string): void;
 // Product functions
 export function getAllProducts(): Promise<any[]>;
 export function getProductDetail(id: string | number): Promise<any>;
+export function getProductsBySupplier(supplierId: string | number): Promise<any[]>;
 // Cart functions
 export function addToCartApi(data: {
   maKH: number;
@@ -55,6 +57,7 @@ export function createOrder(data: CreateOrderPayload): Promise<any>;
 
 export function checkStockAvailability(maCTSP: number): Promise<{ soLuongTon: number }>;
 export declare const clearCartApi: (maKH: number) => Promise<any>;
+
 export interface Category {
   MaLoaiSP: number;
   TenLoai: string;
@@ -80,3 +83,9 @@ export function getSearchProducts(q: string): Promise<any[]>;
 
 export function getCustomerOrders(maKH: number): Promise<any[]>;
 export function getOrderDetail(payload: { maKH: number, maDDH: number|string }): Promise<any>;
+
+
+// Auth functions
+export function login(credentials: { email: string; password: string }): Promise<any>;
+export function register(userData: { Email: string; Password: string; TenKH: string }): Promise<any>;
+

@@ -1,24 +1,39 @@
 "use client"
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
 import { Toaster } from "sonner";
 
 type Category = {
   MaLoaiSP: number;
   TenLoai: string;
-  hinhanh?: string;
+  NgayTao: string;
+  HinhMinhHoa?: string;
 };
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { Search } from "lucide-react";
+import { Edit2, Search, Trash2, Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
+import { Progress } from "../components/ui/progress";
 import { toast } from "sonner";
+import { CLOUDINARY_CONFIG } from "../config/cloudinary";
 
+// Helper function to format date
+ const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
 export default function CategoriesManagement() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   // Fetch categories from API
   useEffect(() => {
     const fetchCategories = async () => {
@@ -40,25 +55,116 @@ export default function CategoriesManagement() {
     };
     fetchCategories();
   }, []);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
     TenLoai: "",
-    hinhanh: "",
+    HinhMinhHoa: "",
   });
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string>("");
+
+  // Helper function to upload image to Cloudinary
+  const uploadImageToCloudinary = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_CONFIG.UPLOAD_PRESET);
+    formData.append('cloud_name', CLOUDINARY_CONFIG.CLOUD_NAME);
+    
+    try {
+      const response = await fetch(CLOUDINARY_CONFIG.API_URL, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+      
+      const data = await response.json();
+      return data.secure_url;
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
+      throw error;
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file ảnh hợp lệ!');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Kích thước file không được vượt quá 5MB!');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Create image preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Simulate progress (Cloudinary doesn't provide real progress)
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+
+      const imageUrl = await uploadImageToCloudinary(file);
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      setFormData(prev => ({ ...prev, HinhMinhHoa: imageUrl }));
+      toast.success('Upload ảnh thành công!');
+    } catch (error) {
+      console.error('Upload failed:', error);
+      toast.error('Upload ảnh thất bại!');
+      setImagePreview("");
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, HinhMinhHoa: "" }));
+    setImagePreview("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleAdd = () => {
     setEditingCategory(null);
-    setFormData({ TenLoai: "", hinhanh: "" });
+    setFormData({ TenLoai: "", HinhMinhHoa: "" });
+    setImagePreview("");
     setIsModalOpen(true);
   };
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
-    setFormData({ TenLoai: category.TenLoai, hinhanh: category.hinhanh || "" });
+    setFormData({ TenLoai: category.TenLoai, HinhMinhHoa: category.HinhMinhHoa || "" });
+    setImagePreview(category.HinhMinhHoa || "");
     setIsModalOpen(true);
   };
 
@@ -96,13 +202,13 @@ export default function CategoriesManagement() {
         const res = await fetch(`http://localhost:8080/api/category/${editingCategory.MaLoaiSP}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ TenLoai: formData.TenLoai, hinhanh: formData.hinhanh }),
+          body: JSON.stringify({ TenLoai: formData.TenLoai, HinhMinhHoa: formData.HinhMinhHoa }),
         });
         if (res.ok) {
           toast.success("Cập nhật thành công!");
           setCategories((prev) =>
             prev.map((c) =>
-              c.MaLoaiSP === editingCategory.MaLoaiSP ? { ...c, TenLoai: formData.TenLoai } : c
+              c.MaLoaiSP === editingCategory.MaLoaiSP ? { ...c, TenLoai: formData.TenLoai, HinhMinhHoa: formData.HinhMinhHoa } : c
             )
           );
         } else {
@@ -117,7 +223,7 @@ export default function CategoriesManagement() {
         const res = await fetch("http://localhost:8080/api/category", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ TenLoai: formData.TenLoai, hinhanh: formData.hinhanh }),
+          body: JSON.stringify({ TenLoai: formData.TenLoai, HinhMinhHoa: formData.HinhMinhHoa }),
         });
         if (res.ok) {
           const data = await res.json();
@@ -136,9 +242,6 @@ export default function CategoriesManagement() {
     setIsModalOpen(false);
     setEditingCategory(null);
   };
-
-  // Get all parent categories for dropdown
-
 
   // Filtered categories by search
   const filteredCategories = categories.filter((cat) =>
@@ -180,11 +283,11 @@ export default function CategoriesManagement() {
               <TableRow key={cat.MaLoaiSP} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
                 <TableCell>
                   <div className="flex items-center justify-center">
-                    {cat.hinhanh ? (
+                    {cat.HinhMinhHoa ? (
                       <img
-                        src={cat.hinhanh}
+                        src={cat.HinhMinhHoa}
                         alt={cat.TenLoai}
-                        className="w-12 h-12 object-cover rounded border"
+                        className="w-24 h-20 object-cover rounded border"
                         onError={e => (e.currentTarget.src = '/default-category.png')}
                       />
                     ) : (
@@ -200,28 +303,24 @@ export default function CategoriesManagement() {
                   <div className="font-semibold text-gray-900 dark:text-white text-base">{cat.TenLoai}</div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-gray-700 text-sm">--</span>
+                  <span className="text-gray-700 text-sm">{formatDate(cat.NgayTao)}</span>
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex items-center justify-center gap-2">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                    onClick={() => handleEdit(cat)}
-                    className="hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/30"
-                    title="Sửa"
+                    <button
+                      onClick={() => handleEdit(cat)}
+                      className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200 hover:shadow-md"
+                      title="Sửa danh mục"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 00-4-4l-8 8v3zm0 0v3a2 2 0 002 2h3" /></svg>
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                    onClick={() => handleDelete(cat)}
-                    className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30"
-                    title="Xóa"
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(cat)}
+                      className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-200 hover:shadow-md"
+                      title="Xóa danh mục"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </Button>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -247,31 +346,114 @@ export default function CategoriesManagement() {
                   className="mt-2"
                 />
               </div>
+              
+              {/* Image Upload Section */}
               <div>
-                <Label htmlFor="hinhanh">Đường dẫn hình ảnh</Label>
-                <Input
-                  id="hinhanh"
-                  placeholder="https://..."
-                  value={formData.hinhanh}
-                  onChange={(e) => setFormData({ ...formData, hinhanh: e.target.value })}
-                  className="mt-2"
-                />
-                {formData.hinhanh && (
-                  <div className="mt-3 flex flex-col items-start gap-2">
-                    <span className="text-xs text-gray-500">Xem trước:</span>
-                    <img
-                      src={formData.hinhanh}
-                      alt="Preview"
-                      className="w-32 h-32 object-cover rounded border"
-                      onError={e => (e.currentTarget.style.display = 'none')}
+                <Label>Hình minh họa</Label>
+                <div className="mt-2 space-y-4">
+                  
+                  {/* Upload from device */}
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="w-full"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {isUploading ? 'Đang upload...' : 'Chọn ảnh từ thiết bị'}
+                    </Button>
+                  </div>
+
+                  {/* Upload Progress */}
+                  {isUploading && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Đang upload...</span>
+                        <span>{uploadProgress}%</span>
+                      </div>
+                      <Progress value={uploadProgress} className="w-full" />
+                    </div>
+                  )}
+
+                  {/* Manual URL Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="HinhMinhHoa" className="text-sm text-gray-600">Hoặc nhập URL ảnh:</Label>
+                    <Input
+                      id="HinhMinhHoa"
+                      placeholder="https://example.com/image.jpg"
+                      value={formData.HinhMinhHoa}
+                      onChange={(e) => {
+                        setFormData({ ...formData, HinhMinhHoa: e.target.value });
+                        setImagePreview(e.target.value);
+                      }}
+                      className="w-full"
                     />
                   </div>
-                )}
+
+                  {/* Image Preview */}
+                  {(imagePreview || formData.HinhMinhHoa) && (
+                    <div className="relative">
+                      <div className="flex items-start gap-3 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <img
+                          src={imagePreview || formData.HinhMinhHoa}
+                          alt="Preview"
+                          className="w-24 h-24 object-cover rounded border"
+                          onError={() => {
+                            setImagePreview("");
+                            if (!imagePreview) {
+                              setFormData(prev => ({ ...prev, HinhMinhHoa: "" }));
+                            }
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                            Xem trước hình ảnh
+                          </div>
+                          <div className="text-xs text-gray-500 break-all">
+                            {(imagePreview || formData.HinhMinhHoa).length > 50 
+                              ? `${(imagePreview || formData.HinhMinhHoa).substring(0, 50)}...`
+                              : (imagePreview || formData.HinhMinhHoa)
+                            }
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={removeImage}
+                          className="text-red-500 hover:text-red-700 p-1"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty state */}
+                  {!imagePreview && !formData.HinhMinhHoa && (
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+                      <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 dark:text-gray-400">Chưa có hình ảnh</p>
+                      <p className="text-sm text-gray-500 mt-1">Chọn ảnh từ thiết bị hoặc nhập URL</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Hủy</Button>
-              <Button type="submit">{editingCategory ? "Cập nhật" : "Thêm mới"}</Button>
+              <Button type="submit" disabled={isUploading}>
+                {isUploading ? 'Đang upload...' : (editingCategory ? "Cập nhật" : "Thêm mới")}
+              </Button>
             </div>
           </form>
         </DialogContent>

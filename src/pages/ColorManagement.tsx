@@ -130,10 +130,15 @@ export const ColorManagement = () => {
       }
     },
     {
-      key: "MaMau",
-      title: "",
+      key: "TenMau",
+      title: "Tên màu",
       dataIndex: "TenMau",
-      render: (value) => <span className="text-l">{value}</span>,
+      render: (value, record) => (
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-gray-900">{value}</span>
+          <span className="text-xs text-gray-500 font-mono">{record.MaHex}</span>
+        </div>
+      ),
     },
     {
       key: "TrangThai",
@@ -173,22 +178,6 @@ export const ColorManagement = () => {
 
   return (
     <>
-      <div className="flex items-center mb-4 gap-2 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <span className="font-medium text-gray-700 mr-2 text-sm">Lọc theo trạng thái:</span>
-        <button
-          className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'all' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
-          onClick={() => setFilterStatus('all')}
-        >Tất cả</button>
-        <button
-          className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'active' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
-          onClick={() => setFilterStatus('active')}
-        >Đang sử dụng</button>
-        <button
-          className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'inactive' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
-          onClick={() => setFilterStatus('inactive')}
-        >Ngừng sử dụng</button>
-      </div>
-
       <div className="bg-white p-6 rounded-lg border border-gray-200">
         <DataTable
           title="Quản lý màu sắc sản phẩm"
@@ -198,6 +187,23 @@ export const ColorManagement = () => {
           onEdit={handleEdit}
           addButtonText="Thêm màu sắc"
           searchPlaceholder="Tìm kiếm màu sắc..."
+          filterComponent={
+            <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+              <span className="font-medium text-gray-700 mr-2 text-sm">Lọc theo trạng thái:</span>
+              <button
+                className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'all' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
+                onClick={() => setFilterStatus('all')}
+              >Tất cả</button>
+              <button
+                className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'active' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
+                onClick={() => setFilterStatus('active')}
+              >Đang sử dụng</button>
+              <button
+                className={`px-3 py-1 rounded-lg font-semibold text-xs transition-colors duration-450 shadow-sm border ${filterStatus === 'inactive' ? 'bg-[#8B5C2A] text-white border-[#8B5C2A]' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-[#f3e7db]'} `}
+                onClick={() => setFilterStatus('inactive')}
+              >Ngừng sử dụng</button>
+            </div>
+          }
         />
       </div>
 

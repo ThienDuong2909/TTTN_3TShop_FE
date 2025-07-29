@@ -19,6 +19,7 @@ interface DataTableProps {
   title?: string;
   searchPlaceholder?: string;
   addButtonText?: string;
+  filterComponent?: React.ReactNode; // Thêm prop để nhận filter component
 }
 
 export const DataTable: React.FC<DataTableProps> = ({
@@ -31,6 +32,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   title,
   searchPlaceholder = "Tìm kiếm...",
   addButtonText = "Thêm mới",
+  filterComponent, // Thêm prop mới
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{
@@ -75,6 +77,7 @@ export const DataTable: React.FC<DataTableProps> = ({
     if (column.render) {
       return column.render(
         record[column.dataIndex || column.key],
+        record,
         index,
       );
     }
@@ -92,9 +95,9 @@ export const DataTable: React.FC<DataTableProps> = ({
           {onAdd && (
             <button
               onClick={onAdd}
-              className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
+              className="px-4 py-1 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
             >
-              {addButtonText}
+              <span className="text-sm font-medium">{addButtonText}</span>
             </button>
           )}
         </div>
@@ -105,7 +108,7 @@ export const DataTable: React.FC<DataTableProps> = ({
             placeholder={searchPlaceholder}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full md:w-96 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+            className="w-full md:w-96 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
           />
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
             <svg
@@ -123,6 +126,13 @@ export const DataTable: React.FC<DataTableProps> = ({
             </svg>
           </div>
         </div>
+        
+        {/* Filter Component */}
+        {filterComponent && (
+          <div className="mt-4">
+            {filterComponent}
+          </div>
+        )}
       </div>
 
       {/* Table */}

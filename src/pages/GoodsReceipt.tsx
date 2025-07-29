@@ -3,13 +3,7 @@ import { Plus, Search, RefreshCw } from "lucide-react";
 import AdminHeader from "../components/AdminHeader";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
+
 import { useApp } from "../contexts/AppContext";
 
 // Import components and hooks
@@ -21,9 +15,14 @@ import {
   useGoodsReceiptForm,
 } from "../features/goods-receipt";
 
+import React, { useState } from "react";
+
 export default function GoodsReceipt() {
   const { state } = useApp();
   const navigate = useNavigate();
+
+  // Thêm state resetKey để force remount ExcelImport
+  const [resetKey, setResetKey] = useState(0);
 
   // Check permissions
   if (
@@ -56,14 +55,14 @@ export default function GoodsReceipt() {
     setIsCreateGROpen,
     searchQuery,
     setSearchQuery,
-    statusFilter,
-    setStatusFilter,
     getFilteredGRs,
     resetForm,
     excelData,
     setExcelData,
     excelError,
     setExcelError,
+    excelValidationErrors,
+    setExcelValidationErrors,
   } = useGoodsReceiptForm(
     state.user.id,
     availablePOs,
@@ -77,8 +76,8 @@ export default function GoodsReceipt() {
   };
 
   // Handle create goods receipt
-  const handleCreateGR = async () => {
-    const success = await createGoodsReceiptRecord(grForm);
+  const handleCreateGR = async (form: any) => {
+    const success = await createGoodsReceiptRecord(form);
     if (success) {
       setIsCreateGROpen(false);
       resetForm();
@@ -94,10 +93,9 @@ export default function GoodsReceipt() {
   // Handle dialog open/close
   const handleDialogOpenChange = (open: boolean) => {
     if (open) {
-      // Reset form when opening dialog
-      resetForm();
-      // Reset selectedPO when opening dialog
-      setSelectedPO(null);
+      setSelectedPO(null); // Đặt null trước để form con nhận đúng giá trị
+      resetForm(); // Reset mọi state liên quan
+      setResetKey((k) => k + 1); // Tăng key để force remount ExcelImport
     }
     setIsCreateGROpen(open);
   };
@@ -138,6 +136,7 @@ export default function GoodsReceipt() {
                 </Button>
                 
                 <CreateGoodsReceiptDialog
+                  key={resetKey}
                   open={isCreateGROpen}
                   onOpenChange={handleDialogOpenChange}
                   trigger={
@@ -159,6 +158,8 @@ export default function GoodsReceipt() {
                   setExcelData={setExcelData}
                   excelError={excelError}
                   setExcelError={setExcelError}
+                  excelValidationErrors={excelValidationErrors}
+                  setExcelValidationErrors={setExcelValidationErrors}
                 />
               </div>
             </div>
