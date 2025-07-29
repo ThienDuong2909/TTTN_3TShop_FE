@@ -315,31 +315,11 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         description: "Phiếu đặt hàng đã được tạo thành công"
       });
 
-      // Add the new purchase order to state instead of reloading all
-      const newPurchaseOrder: PurchaseOrder = {
-        id: apiData.MaPDH,
-        supplierId: poForm.supplierId,
-        supplierName: supplier.name,
-        items: poForm.items.map(item => ({
-          MaSP: item.MaSP,
-          productName: item.productName,
-          MaMau: item.MaMau,
-          MaKichThuoc: item.MaKichThuoc,
-          colorName: item.colorName,
-          sizeName: item.sizeName,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.quantity * item.unitPrice,
-        })),
-        status: "draft",
-        totalAmount: poForm.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
-        orderDate: new Date().toISOString(),
-        expectedDeliveryDate: poForm.expectedDeliveryDate,
-        notes: poForm.notes,
-        createdBy: currentUserId,
-      };
-      
-      setPurchaseOrders(prev => [newPurchaseOrder, ...prev]);
+      // Refresh data from API instead of adding to state
+      await Promise.all([
+        loadPurchaseOrders(),
+        loadSuppliers(),
+      ]);
       
       return true;
     } catch (error: any) {
@@ -420,31 +400,11 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         description: "Phiếu đặt hàng đã được cập nhật thành công"
       });
 
-      // Update the specific purchase order in state instead of reloading all
-      setPurchaseOrders(prev => 
-        prev.map(po => 
-          po.id === poId 
-            ? {
-                ...po,
-                supplierId: poForm.supplierId,
-                supplierName: supplier.name,
-                items: poForm.items.map(item => ({
-                  MaSP: item.MaSP,
-                  productName: item.productName,
-                  MaMau: item.MaMau,
-                  MaKichThuoc: item.MaKichThuoc,
-                  colorName: item.colorName,
-                  sizeName: item.sizeName,
-                  quantity: item.quantity,
-                  unitPrice: item.unitPrice,
-                  totalPrice: item.quantity * item.unitPrice,
-                })),
-                totalAmount: poForm.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
-                notes: poForm.notes,
-              }
-            : po
-        )
-      );
+      // Refresh data from API instead of updating state
+      await Promise.all([
+        loadPurchaseOrders(),
+        loadSuppliers(),
+      ]);
       
       return true;
     } catch (error: any) {
@@ -510,17 +470,8 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       }
       
       console.log('=== UPDATING STATE INSTEAD OF RELOADING ===');
-      // Update the specific purchase order status in state instead of reloading all
-      setPurchaseOrders(prev => {
-        console.log('Current purchase orders:', prev.length);
-        const updated = prev.map(po => 
-          po.id === poId 
-            ? { ...po, status: "sent" as const }
-            : po
-        );
-        console.log('Updated purchase orders:', updated.length);
-        return updated;
-      });
+      // Refresh data from API instead of updating state
+      await loadPurchaseOrders();
       console.log('=== SEND PURCHASE ORDER END ===');
     } catch (error: any) {
       console.error("Error sending purchase order:", error);
@@ -552,17 +503,11 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     try {
       await updatePurchaseOrderStatus(poId, 3); // Status 3 = confirmed
       toast.success("Đã xác nhận phiếu đặt hàng", {
-        description: "Phiếu đặt hàng đã được xác nhận"
+        description: "Phiếu đặt hàng đã được xác nhận thành công"
       });
       
-      // Update the specific purchase order status in state instead of reloading all
-      setPurchaseOrders(prev => 
-        prev.map(po => 
-          po.id === poId 
-            ? { ...po, status: "confirmed" as const }
-            : po
-        )
-      );
+      // Refresh data from API instead of updating state
+      await loadPurchaseOrders();
     } catch (error: any) {
       console.error("Error confirming purchase order:", error);
       let errorMessage = "Không thể xác nhận phiếu đặt hàng";

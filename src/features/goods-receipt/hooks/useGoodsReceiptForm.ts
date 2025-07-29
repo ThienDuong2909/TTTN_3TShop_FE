@@ -81,6 +81,7 @@ export const useGoodsReceiptForm = (
   // Excel import states
   const [excelData, setExcelData] = useState<any[]>([]);
   const [excelError, setExcelError] = useState("");
+  const [excelValidationErrors, setExcelValidationErrors] = useState<any[]>([]);
 
   const initializeGRForm = (po: any) => {
     const poId = po?.MaPDH || po?.id || "";
@@ -115,6 +116,7 @@ export const useGoodsReceiptForm = (
     // Reset Excel data as well
     setExcelData([]);
     setExcelError("");
+    setExcelValidationErrors([]);
   };
 
   // Filter goods receipts based on search and status
@@ -164,6 +166,8 @@ export const useGoodsReceiptForm = (
     setExcelData,
     excelError,
     setExcelError,
+    excelValidationErrors,
+    setExcelValidationErrors,
     
     // Actions
     initializeGRForm,

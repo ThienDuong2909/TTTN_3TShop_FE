@@ -17,6 +17,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "../../../components/ui/dialog";
 import { Badge } from "../../../components/ui/badge";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
@@ -81,6 +82,7 @@ interface ExcelImportProps {
   excelError: string;
   onExcelDataChange: (data: any[]) => void;
   onExcelErrorChange: (error: string) => void;
+  onValidationErrorsChange?: (errors: ValidationError[]) => void;
 }
 
 interface ValidationError {
@@ -96,12 +98,20 @@ export default function ExcelImport({
   excelError,
   onExcelDataChange,
   onExcelErrorChange,
+  onValidationErrorsChange = () => {},
 }: ExcelImportProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [processedItems, setProcessedItems] = useState<Omit<GoodsReceiptItem, "totalReceivedValue">[]>([]);
+  
+  // New states for sheet selection and data detection
+  const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null);
+  const [availableSheets, setAvailableSheets] = useState<string[]>([]);
+  const [selectedSheet, setSelectedSheet] = useState<string>("");
+  const [rawExcelData, setRawExcelData] = useState<any[]>([]);
+  const [dataStartRow, setDataStartRow] = useState<number>(0);
+  const [isSheetDialogOpen, setIsSheetDialogOpen] = useState(false);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -111,6 +121,16 @@ export default function ExcelImport({
     onExcelErrorChange("");
     setValidationErrors([]);
     setProcessedItems([]);
+    setWorkbook(null);
+    setAvailableSheets([]);
+    setSelectedSheet("");
+    setRawExcelData([]);
+    setDataStartRow(0);
+    
+    // Reset file input để có thể upload lại cùng file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
 
     // Validate file type
     const allowedTypes = [
@@ -134,39 +154,14 @@ export default function ExcelImport({
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: "array" });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-        if (jsonData.length === 0) {
-          onExcelErrorChange("File Excel không có dữ liệu");
-          return;
-        }
-
-        // Validate Excel structure
-        const structureValidation = validateExcelStructure(jsonData);
-        if (!structureValidation.isValid) {
-          onExcelErrorChange(structureValidation.error || "Cấu trúc file Excel không hợp lệ");
-          return;
-        }
-
-        // Validate data
-        const validation = validateExcelData(jsonData);
-        setValidationErrors(validation.errors);
-
-        if (validation.errors.length > 0) {
-          onExcelErrorChange(`Phát hiện ${validation.errors.length} lỗi trong dữ liệu Excel`);
-          return;
-        }
-
-        onExcelDataChange(jsonData);
-        const items = processExcelData(jsonData);
-        setProcessedItems(items);
         
-        toast({
-          title: "Import thành công",
-          description: `Đã import ${jsonData.length} dòng dữ liệu từ Excel`,
-        });
+        // Store workbook and available sheets
+        setWorkbook(workbook);
+        setAvailableSheets(workbook.SheetNames);
+        
+        // Open sheet selection dialog
+        setIsSheetDialogOpen(true);
+        
       } catch (error) {
         onExcelErrorChange("Lỗi đọc file Excel. Vui lòng kiểm tra định dạng file.");
         console.error("Excel processing error:", error);
@@ -175,22 +170,188 @@ export default function ExcelImport({
     reader.readAsArrayBuffer(file);
   };
 
+  // Function to detect data start row
+  const detectDataStartRow = (worksheet: XLSX.WorkSheet): number => {
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    const maxRow = range.e.r;
+    
+    // Look for header row with product table columns
+    const tableHeaderKeywords = [
+      'stt', 'no', 'số thứ tự',
+      'tên sản phẩm', 'product', 'sản phẩm', 
+      'màu sắc', 'color', 'mau sac',
+      'size', 'kich thuoc', 'kích thước',
+      'đơn vị tính', 'unit', 'don vi tinh',
+      'số lượng đặt', 'ordered quantity', 'so luong dat',
+      'số lượng nhận', 'received quantity', 'so luong nhan',
+      'đơn giá', 'unit price', 'don gia',
+      'thành tiền', 'total', 'thanh tien'
+    ];
+    
+    for (let row = 0; row <= Math.min(maxRow, 30); row++) { // Check first 30 rows
+      const rowData: any = {};
+      
+      // Get all cells in this row
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        const cell = worksheet[cellAddress];
+        if (cell) {
+          const cellValue = cell.v?.toString().toLowerCase() || '';
+          rowData[cellValue] = true;
+        }
+      }
+      
+      // Check if this row contains table header keywords (need at least 3 matches)
+      const matchedKeywords = tableHeaderKeywords.filter(keyword => 
+        Object.keys(rowData).some(cellValue => cellValue.includes(keyword))
+      );
+      
+      if (matchedKeywords.length >= 3) {
+        console.log('Found table header at row', row + 1, 'with keywords:', matchedKeywords);
+        return row + 1; // Data starts from next row
+      }
+    }
+    
+    console.log('No table header found, using first row');
+    return 1; // Default to first row if no header detected
+  };
+
+  // Function to load sheet data
+  const loadSheetData = (sheetName: string) => {
+    if (!workbook) return;
+    
+    const worksheet = workbook.Sheets[sheetName];
+    const detectedStartRow = detectDataStartRow(worksheet);
+    setDataStartRow(detectedStartRow);
+    
+    // Convert sheet to JSON starting from detected data row
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+      range: detectedStartRow - 1, // XLSX uses 0-based indexing
+      header: 1 // Get raw data as arrays
+    });
+    
+    // Convert to objects with headers
+    if (jsonData.length > 0) {
+      const headers = jsonData[0] as string[];
+      const dataRows = jsonData.slice(1) as any[][];
+      
+      const processedData = dataRows
+        .map((row, index) => {
+          const obj: any = {};
+          headers.forEach((header, colIndex) => {
+            if (header && row[colIndex] !== undefined) {
+              obj[header] = row[colIndex];
+            }
+          });
+          return obj;
+        })
+        .filter(row => {
+          // Remove empty rows and rows that don't contain product data
+          const hasProductData = Object.values(row).some(value => 
+            value !== null && 
+            value !== undefined && 
+            value !== '' && 
+            value.toString().trim() !== ''
+          );
+          
+          // Check if row contains product-related data (not just headers or empty)
+          const hasProductName = Object.keys(row).some(key => 
+            key.toLowerCase().includes('tên sản phẩm') || 
+            key.toLowerCase().includes('product')
+          );
+          
+          return hasProductData && hasProductName;
+        })
+        .filter(row => {
+          // Additional filter: remove rows that are likely headers or footers
+          const firstValue = Object.values(row)[0];
+          if (typeof firstValue === 'string') {
+            const lowerValue = firstValue.toLowerCase();
+            // Skip rows that are likely headers, footers, or summary rows
+            if (lowerValue.includes('tổng') || 
+                lowerValue.includes('total') || 
+                lowerValue.includes('cộng') ||
+                lowerValue.includes('sum') ||
+                lowerValue.includes('stt') ||
+                lowerValue.includes('no') ||
+                lowerValue === '' ||
+                lowerValue === ' ') {
+              return false;
+            }
+          }
+          return true;
+        });
+      
+      console.log('Filtered table data:', processedData.length, 'rows');
+      setRawExcelData(processedData);
+      setSelectedSheet(sheetName);
+    } else {
+      setRawExcelData([]);
+    }
+  };
+
+  // Function to process selected sheet data
+  const processSelectedSheet = () => {
+    if (!rawExcelData.length) {
+      onExcelErrorChange("Không có dữ liệu trong sheet được chọn");
+      setIsSheetDialogOpen(false); // Đóng dialog khi không có dữ liệu
+      return;
+    }
+
+    // Luôn xử lý và gửi dữ liệu về form nhập kho
+    onExcelDataChange(rawExcelData);
+    const items = processExcelData(rawExcelData);
+    setProcessedItems(items);
+    
+    // Gửi dữ liệu trực tiếp vào form nhập kho
+    onDataProcessed(items);
+
+    // Validate Excel structure
+    const structureValidation = validateExcelStructure(rawExcelData);
+    if (!structureValidation.isValid) {
+      onExcelErrorChange(structureValidation.error || "Cấu trúc file Excel không hợp lệ");
+      setIsSheetDialogOpen(false);
+      return;
+    }
+
+    // Validate data
+    const validation = validateExcelData(rawExcelData);
+    setValidationErrors(validation.errors);
+    onValidationErrorsChange(validation.errors);
+
+    if (validation.errors.length > 0) {
+      onExcelErrorChange(`Phát hiện ${validation.errors.length} lỗi trong dữ liệu Excel`);
+    } else {
+      toast({
+        title: "Import thành công",
+        description: `Đã import ${rawExcelData.length} dòng dữ liệu từ sheet "${selectedSheet}"`,
+      });
+    }
+    
+    // Đóng dialog sau khi xử lý
+    setIsSheetDialogOpen(false);
+  };
+
   const validateExcelStructure = (data: any[]): { isValid: boolean; error?: string } => {
     if (!data || data.length === 0) {
       return { isValid: false, error: "File Excel không có dữ liệu" };
     }
 
+    // Các cột cần thiết dựa trên file mẫu
     const requiredColumns = [
-      "product_id",
-      "received_quantity",
+      "tên sản phẩm",
+      "số lượng nhận",
+      "đơn giá (vnđ)",
     ];
 
     const firstRow = data[0];
+    const availableColumns = Object.keys(firstRow).map(col => col.toLowerCase());
+    
     const missingColumns = requiredColumns.filter(col => {
-      return !(
-        firstRow.hasOwnProperty(col) ||
-        firstRow.hasOwnProperty(col.replace("_", " ")) ||
-        firstRow.hasOwnProperty(col.replace("_", ""))
+      return !availableColumns.some(availableCol => 
+        availableCol.includes(col) || 
+        availableCol.includes(col.replace(" ", "")) ||
+        availableCol.includes(col.replace("(", "").replace(")", ""))
       );
     });
 
@@ -207,20 +368,6 @@ export default function ExcelImport({
   const validateExcelData = (data: any[]): { errors: ValidationError[] } => {
     const errors: ValidationError[] = [];
 
-    if (!selectedPO) {
-      errors.push({
-        row: 0,
-        field: "purchase_order",
-        message: "Vui lòng chọn phiếu đặt hàng trước khi import Excel"
-      });
-      return { errors };
-    }
-
-    const poItems = selectedPO?.CT_PhieuDatHangNCCs || selectedPO?.items || [];
-    const poProductIds = poItems.map((item: any) => 
-      (item.MaCTSP || item.productId || "").toString()
-    );
-
     data.forEach((row, index) => {
       const rowNumber = index + 2; // Excel rows start from 2 (1 is header)
 
@@ -232,129 +379,205 @@ export default function ExcelImport({
         return "";
       };
 
-      // Validate product_id
-      const productId = normalizeKey(row, [
-        "product_id",
-        "Product ID",
-        "Mã SP",
-        "productid",
+      // Validate product name (required)
+      const productName = normalizeKey(row, [
+        "tên sản phẩm",
+        "product_name", 
+        "productName",
+        "Tên sản phẩm"
       ]);
       
-      if (!productId) {
+      if (!productName || productName.toString().trim() === '') {
         errors.push({
           row: rowNumber,
-          field: "product_id",
-          message: "Mã sản phẩm không được để trống"
-        });
-      } else if (!poProductIds.includes(productId.toString())) {
-        errors.push({
-          row: rowNumber,
-          field: "product_id",
-          message: `Sản phẩm có mã ${productId} không có trong phiếu đặt hàng`
+          field: "tên sản phẩm",
+          message: "Tên sản phẩm không được để trống"
         });
       }
 
-      // Validate received_quantity
-      const receivedQty = parseInt(
+      // Validate ordered quantity (required)
+      const orderedQty = parseInt(
         normalizeKey(row, [
-          "received_quantity",
-          "Received Qty",
-          "SL Nhận", 
-          "receivedquantity",
+          "số lượng đặt",
+          "ordered_quantity",
+          "orderedQuantity", 
+          "Số lượng đặt"
         ])
       );
       
-      if (isNaN(receivedQty) || receivedQty < 0) {
+      if (isNaN(orderedQty) || orderedQty <= 0) {
         errors.push({
           row: rowNumber,
-          field: "received_quantity",
+          field: "số lượng đặt",
+          message: "Số lượng đặt phải là số dương"
+        });
+      }
+
+      // Validate received quantity (required)
+      const receivedQty = parseInt(
+        normalizeKey(row, [
+          "số lượng nhận",
+          "received_quantity",
+          "receivedQuantity", 
+          "Số lượng nhận"
+        ])
+      );
+      
+      if (isNaN(receivedQty) || receivedQty <= 0) {
+        errors.push({
+          row: rowNumber,
+          field: "số lượng nhận",
           message: "Số lượng nhận phải là số dương"
         });
       }
 
-      // Validate condition (optional) - removed since it's not used in manual input
-      // const condition = normalizeKey(row, [
-      //   "condition",
-      //   "Condition",
-      //   "Tình trạng",
-      //   "tinhtrang",
-      // ]) || "good";
+      // Validate unit price (optional but recommended)
+      const unitPrice = parseInt(
+        normalizeKey(row, [
+          "đơn giá (vnđ)",
+          "unit_price",
+          "unitPrice",
+          "don_gia",
+          "Đơn giá (VNĐ)"
+        ])
+      );
       
-      // if (!["good", "damaged", "defective"].includes(condition.toLowerCase())) {
-      //   errors.push({
-      //     row: rowNumber,
-      //     field: "condition",
-      //     message: "Tình trạng phải là: good, damaged, hoặc defective"
-      //   });
-      // }
+      if (unitPrice && (isNaN(unitPrice) || unitPrice < 0)) {
+        errors.push({
+          row: rowNumber,
+          field: "đơn giá",
+          message: "Đơn giá phải là số không âm"
+        });
+      }
+
+      // If purchase order is selected, validate against PO items
+      if (selectedPO) {
+        const poItems = selectedPO?.CT_PhieuDatHangNCCs || selectedPO?.items || [];
+        
+        // Lấy thông tin màu và size từ Excel
+        const color = normalizeKey(row, ["màu sắc", "color", "mau_sac", "Màu sắc"]) || "";
+        const size = normalizeKey(row, ["size", "kich_thuoc", "kichThuoc", "Size"]) || "";
+        
+        // Tìm sản phẩm khớp trong PO (tên sản phẩm + màu + size)
+        const matchingPOItem = poItems.find((item: any) => {
+          const poProductName = (item.TenSP || item.productName || "").toLowerCase();
+          const poColor = (item.ChiTietSanPham?.Mau?.TenMau || item.Mau?.TenMau || item.selectedColor || "").toLowerCase();
+          const poSize = (item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || item.KichThuoc?.TenKichThuoc || item.selectedSize || "").toLowerCase();
+          
+          const excelProductName = productName.toLowerCase();
+          const excelColor = color.toLowerCase();
+          const excelSize = size.toLowerCase();
+          
+          // So sánh tên sản phẩm (fuzzy matching)
+          const nameMatches = poProductName.includes(excelProductName) || 
+                             excelProductName.includes(poProductName);
+          
+          // So sánh màu sắc (nếu có)
+          const colorMatches = !excelColor || !poColor || 
+                              poColor.includes(excelColor) || 
+                              excelColor.includes(poColor);
+          
+          // So sánh size (nếu có)
+          const sizeMatches = !excelSize || !poSize || 
+                             poSize.includes(excelSize) || 
+                             excelSize.includes(poSize);
+          
+          return nameMatches && colorMatches && sizeMatches;
+        });
+        
+        if (!matchingPOItem) {
+          let errorMessage = `Sản phẩm "${productName}"`;
+          if (color) errorMessage += ` màu "${color}"`;
+          if (size) errorMessage += ` size "${size}"`;
+          errorMessage += ` không có trong phiếu đặt hàng`;
+          
+          errors.push({
+            row: rowNumber,
+            field: "tên sản phẩm",
+            message: errorMessage
+          });
+        } else {
+          // Kiểm tra số lượng đặt có khớp với PO không
+          const poOrderedQty = (matchingPOItem as any).SoLuong || matchingPOItem.quantity || 0;
+          
+          if (orderedQty !== poOrderedQty) {
+            errors.push({
+              row: rowNumber,
+              field: "số lượng đặt",
+              message: `Số lượng đặt (${orderedQty}) không khớp với phiếu đặt hàng (${poOrderedQty})`
+            });
+          }
+        }
+      }
     });
 
     return { errors };
   };
 
   const processExcelData = (data: any[]): Omit<GoodsReceiptItem, "totalReceivedValue">[] => {
-    if (!selectedPO) {
-      throw new Error("Vui lòng chọn phiếu đặt hàng trước khi import Excel.");
-    }
-
-    const poItems = selectedPO?.CT_PhieuDatHangNCCs || selectedPO?.items || [];
-    
-    // Create a map of PO items by product ID for quick lookup
-    const poItemsMap = new Map();
-    poItems.forEach((item: any, index: number) => {
-      const productId = (item.MaCTSP || item.productId || "").toString();
-      poItemsMap.set(productId, { ...item, index });
-    });
+    const normalizeKey = (obj: any, possibleKeys: string[]) => {
+      for (const key of possibleKeys) {
+        if (obj[key] !== undefined) return obj[key];
+      }
+      return "";
+    };
 
     const processedItems: Omit<GoodsReceiptItem, "totalReceivedValue">[] = data.map((row, index) => {
-      // Normalize column names
-      const normalizeKey = (obj: any, possibleKeys: string[]) => {
-        for (const key of possibleKeys) {
-          if (obj[key] !== undefined) return obj[key];
-        }
-        return "";
-      };
+      // Lấy dữ liệu trực tiếp từ Excel
+      const productName = normalizeKey(row, ["tên sản phẩm", "product_name", "productName", "Tên sản phẩm"]) || "";
+      const color = normalizeKey(row, ["màu sắc", "color", "mau_sac", "Màu sắc"]) || "";
+      const size = normalizeKey(row, ["size", "kich_thuoc", "kichThuoc", "Size"]) || "";
+      const orderedQty = parseInt(normalizeKey(row, ["số lượng đặt", "ordered_quantity", "orderedQuantity", "Số lượng đặt"])) || 0;
+      const receivedQty = parseInt(normalizeKey(row, ["số lượng nhận", "received_quantity", "receivedQuantity", "Số lượng nhận"])) || 0;
+      const unitPrice = parseInt(normalizeKey(row, ["đơn giá (vnđ)", "unit_price", "unitPrice", "don_gia", "Đơn giá (VNĐ)"])) || 0;
+      const notes = normalizeKey(row, ["ghi chú", "notes", "note", "Ghi chú"]) || "";
 
-      const productId = normalizeKey(row, [
-        "product_id",
-        "Product ID",
-        "Mã SP",
-        "productid",
-      ]);
-      const receivedQty = parseInt(
-        normalizeKey(row, [
-          "received_quantity",
-          "Received Qty",
-          "SL Nhận", 
-          "receivedquantity",
-        ])
-      ) || 0;
-      // const condition = normalizeKey(row, [
-      //   "condition",
-      //   "Condition",
-      //   "Tình trạng",
-      //   "tinhtrang",
-      // ]) || "good";
-      const notes = normalizeKey(row, ["notes", "Notes", "Ghi chú", "ghichu"]) || "";
-
-      // Find matching item from PO
-      const poItem = poItemsMap.get(productId.toString());
-
-      if (!poItem) {
-        throw new Error(`Không tìm thấy sản phẩm có mã ${productId} trong phiếu đặt hàng`);
+      // Tìm sản phẩm tương ứng trong purchase order (nếu có) - Sử dụng logic giống validation
+      let poItem = null;
+      if (selectedPO) {
+        const poItems = selectedPO?.CT_PhieuDatHangNCCs || selectedPO?.items || [];
+        
+        // Lấy thông tin màu và size từ Excel
+        const excelColor = color.toLowerCase();
+        const excelSize = size.toLowerCase();
+        
+        // Tìm sản phẩm khớp trong PO (tên sản phẩm + màu + size) - Logic giống validation
+        poItem = poItems.find((item: any) => {
+          const poProductName = (item.TenSP || item.productName || "").toLowerCase();
+          const poColor = (item.ChiTietSanPham?.Mau?.TenMau || item.Mau?.TenMau || item.selectedColor || "").toLowerCase();
+          const poSize = (item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || item.KichThuoc?.TenKichThuoc || item.selectedSize || "").toLowerCase();
+          
+          const excelProductName = productName.toLowerCase();
+          
+          // So sánh tên sản phẩm (fuzzy matching)
+          const nameMatches = poProductName.includes(excelProductName) || 
+                             excelProductName.includes(poProductName);
+          
+          // So sánh màu sắc (nếu có)
+          const colorMatches = !excelColor || !poColor || 
+                              poColor.includes(excelColor) || 
+                              excelColor.includes(poColor);
+          
+          // So sánh size (nếu có)
+          const sizeMatches = !excelSize || !poSize || 
+                             poSize.includes(excelSize) || 
+                             excelSize.includes(poSize);
+          
+          return nameMatches && colorMatches && sizeMatches;
+        });
       }
 
       return {
-        purchaseOrderItemId: `${selectedPO?.MaPDH || selectedPO?.id || "unknown"}-${poItem.index + 1}`,
-        productId: productId.toString(),
-        productName: poItem.ChiTietSanPham?.SanPham?.TenSP || poItem.TenSP || poItem.productName || "",
-        selectedColor: poItem.ChiTietSanPham?.Mau?.MaHex ? `#${poItem.ChiTietSanPham.Mau.MaHex}` : (poItem.Mau?.MaHex ? `#${poItem.Mau.MaHex}` : "") || poItem.selectedColor || "",
-        colorName: poItem.ChiTietSanPham?.Mau?.TenMau || poItem.Mau?.TenMau || "",
-        selectedSize: poItem.ChiTietSanPham?.KichThuoc?.TenKichThuoc || poItem.KichThuoc?.TenKichThuoc || poItem.selectedSize || "",
-        orderedQuantity: poItem.SoLuong || poItem.quantity || 0,
+        purchaseOrderItemId: (poItem as any)?.MaCTSP || poItem?.productId || `excel_${index}`,
+        productId: (poItem as any)?.MaCTSP || poItem?.productId || `excel_${index}`,
+        productName: productName,
+        selectedColor: color || ((poItem as any)?.ChiTietSanPham?.Mau?.MaHex ? `#${(poItem as any).ChiTietSanPham.Mau.MaHex}` : ((poItem as any)?.Mau?.MaHex ? `#${(poItem as any).Mau.MaHex}` : "")) || poItem?.selectedColor || "",
+        colorName: color || (poItem as any)?.ChiTietSanPham?.Mau?.TenMau || (poItem as any)?.Mau?.TenMau || "",
+        selectedSize: size || (poItem as any)?.ChiTietSanPham?.KichThuoc?.TenKichThuoc || (poItem as any)?.KichThuoc?.TenKichThuoc || poItem?.selectedSize || "",
+        orderedQuantity: orderedQty || (poItem as any)?.SoLuong || poItem?.quantity || 0,
         receivedQuantity: receivedQty,
-        unitPrice: poItem.DonGia || poItem.unitPrice || 0,
-        condition: "good", // Mặc định là tốt, không cần import từ Excel
+        unitPrice: unitPrice || (poItem as any)?.DonGia || poItem?.unitPrice || 0,
+        condition: "good", // Mặc định là tốt
         notes: notes,
       };
     });
@@ -437,9 +660,37 @@ export default function ExcelImport({
     onExcelErrorChange("");
     setValidationErrors([]);
     setProcessedItems([]);
+    setWorkbook(null);
+    setAvailableSheets([]);
+    setSelectedSheet("");
+    setRawExcelData([]);
+    setDataStartRow(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const handleUploadClick = () => {
+    // Reset file input trước khi mở file picker
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    // Trigger file input click
+    fileInputRef.current?.click();
+  };
+
+  // Function to check if a row has errors
+  const getRowErrors = (rowIndex: number): ValidationError[] => {
+    return validationErrors.filter(error => error.row === rowIndex + 2); // +2 because Excel rows start from 2
+  };
+
+  // Function to get row styling based on errors
+  const getRowStyle = (rowIndex: number) => {
+    const errors = getRowErrors(rowIndex);
+    if (errors.length > 0) {
+      return "bg-red-50 border-l-4 border-red-500";
+    }
+    return "";
   };
 
   return (
@@ -478,7 +729,7 @@ export default function ExcelImport({
                 className="hidden"
               />
               <Button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={handleUploadClick}
                 className="flex items-center gap-2"
               >
                 <Upload className="h-4 w-4" />
@@ -488,53 +739,25 @@ export default function ExcelImport({
           </div>
 
           {/* Error Display */}
-          {excelError && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{excelError}</AlertDescription>
-            </Alert>
-          )}
+          {/* Ẩn thông báo lỗi - chỉ hiển thị lỗi trong bảng */}
 
-          {/* Validation Errors */}
-          {validationErrors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="space-y-2">
-                  <div>Phát hiện {validationErrors.length} lỗi trong dữ liệu:</div>
-                  <div className="max-h-32 overflow-y-auto space-y-1">
-                    {validationErrors.slice(0, 5).map((error, index) => (
-                      <div key={index} className="text-sm">
-                        Dòng {error.row}: {error.message}
-                      </div>
-                    ))}
-                    {validationErrors.length > 5 && (
-                      <div className="text-sm text-muted-foreground">
-                        ... và {validationErrors.length - 5} lỗi khác
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Success Display */}
-          {excelData.length > 0 && !excelError && validationErrors.length === 0 && (
-            <Alert>
-              <CheckCircle className="h-4 w-4" />
+          {/* Data Display - Always show when there's data */}
+          {excelData.length > 0 && (
+            <Alert variant={validationErrors.length === 0 ? "default" : "destructive"}>
+              {validationErrors.length === 0 ? (
+                <CheckCircle className="h-4 w-4" />
+              ) : (
+                <AlertCircle className="h-4 w-4" />
+              )}
               <AlertDescription>
                 <div className="flex items-center justify-between">
-                  <span>Đã import thành công {excelData.length} dòng dữ liệu từ Excel</span>
+                  <span>
+                    {validationErrors.length === 0 
+                      ? `Đã import thành công ${excelData.length} dòng dữ liệu từ Excel`
+                      : `Đã import ${excelData.length} dòng dữ liệu từ Excel (có ${validationErrors.length} lỗi)`
+                    }
+                  </span>
                   <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsPreviewOpen(true)}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Xem trước
-                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -550,78 +773,90 @@ export default function ExcelImport({
           )}
         </div>
 
-        {/* Preview Dialog */}
-        <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        {/* Đã xóa Preview Dialog */}
+
+        {/* Sheet Selection Dialog */}
+        <Dialog open={isSheetDialogOpen} onOpenChange={setIsSheetDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Xem trước dữ liệu nhập kho</DialogTitle>
+              <DialogTitle>Chọn Sheet và Preview dữ liệu</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                Tổng cộng: {processedItems.length} sản phẩm
-              </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>STT</TableHead>
-                    <TableHead>Sản phẩm</TableHead>
-                    <TableHead>Màu/Size</TableHead>
-                    <TableHead>SL Đặt</TableHead>
-                    <TableHead>SL Nhận</TableHead>
-                    <TableHead>Đơn giá</TableHead>
-                    <TableHead>Thành tiền</TableHead>
-                    <TableHead>Tình trạng</TableHead>
-                    <TableHead>Ghi chú</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {processedItems.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{item.productName}</div>
-                          <div className="text-sm text-muted-foreground">
-                            ID: {item.productId}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          {item.selectedColor && (
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-3 h-3 rounded border" 
-                                style={{ backgroundColor: item.selectedColor }}
-                              />
-                              <span className="text-xs">{item.colorName || item.selectedColor}</span>
-                            </div>
-                          )}
-                          {item.selectedSize && (
-                            <div className="text-xs">{item.selectedSize}</div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{item.orderedQuantity}</TableCell>
-                      <TableCell className="font-medium">{item.receivedQuantity}</TableCell>
-                      <TableCell>{formatPrice(item.unitPrice)}</TableCell>
-                      <TableCell className="font-medium">
-                        {formatPrice(item.unitPrice * item.receivedQuantity)}
-                      </TableCell>
-                      <TableCell>{getConditionBadge(item.condition)}</TableCell>
-                      <TableCell className="max-w-32 truncate" title={item.notes}>
-                        {item.notes || "-"}
-                      </TableCell>
-                    </TableRow>
+              {/* Sheet Selection */}
+              <div>
+                <h3 className="text-sm font-medium mb-2">Chọn Sheet:</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {availableSheets.map((sheetName) => (
+                    <Button
+                      key={sheetName}
+                      variant={selectedSheet === sheetName ? "default" : "outline"}
+                      onClick={() => loadSheetData(sheetName)}
+                      className="justify-start"
+                    >
+                      {sheetName}
+                    </Button>
                   ))}
-                </TableBody>
-              </Table>
-              <div className="text-right">
-                <div className="text-lg font-bold">
-                  Tổng giá trị: {formatPrice(
-                    processedItems.reduce((sum, item) => sum + (item.unitPrice * item.receivedQuantity), 0)
-                  )}
                 </div>
+              </div>
+
+              {/* Data Preview */}
+              {selectedSheet && rawExcelData.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium">
+                      Preview dữ liệu từ sheet "{selectedSheet}"
+                    </h3>
+                    <div className="text-sm text-muted-foreground">
+                      Dữ liệu bắt đầu từ dòng {dataStartRow + 1} • {rawExcelData.length} dòng
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {Object.keys(rawExcelData[0] || {}).map((header, index) => (
+                            <TableHead key={index} className="text-xs">
+                              {header}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {rawExcelData.slice(0, 5).map((row, rowIndex) => (
+                          <TableRow key={rowIndex}>
+                            {Object.values(row).map((value, colIndex) => (
+                              <TableCell key={colIndex} className="text-xs">
+                                {value?.toString() || ''}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {rawExcelData.length > 5 && (
+                      <div className="p-2 text-center text-sm text-muted-foreground border-t">
+                        ... và {rawExcelData.length - 5} dòng khác
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsSheetDialogOpen(false)}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  onClick={processSelectedSheet}
+                  disabled={!selectedSheet || rawExcelData.length === 0}
+                >
+                  Import dữ liệu
+                </Button>
               </div>
             </div>
           </DialogContent>
