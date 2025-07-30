@@ -9,10 +9,12 @@ import {
   MessageSquare,
   Building2,
   UserCheck,
+  Shield,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useApp } from "../contexts/AppContext";
 import { useNavigate } from "react-router-dom";
+import { hasPermission } from "../utils/permissions";
 
 interface AdminSidebarProps {
   activeTab: string;
@@ -23,121 +25,119 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
   const { state } = useApp();
   const navigate = useNavigate();
 
-  // const isAdmin = state.user?.role === "admin";
-  const isAdmin = true
+  const userPermissions = state.user?.permissions || [];
+  const isAdmin = state.user?.role === "admin";
 
   const navigation = [
     {
       name: "Tổng quan",
       id: "overview",
       icon: BarChart3,
-      permission: "all",
+      permission: "admin.*",
       route: "/admin",
     },
     {
       name: "Sản phẩm",
       id: "products",
       icon: Package,
-      permission: "view_products",
+      permission: "product.*",
       route: "/admin/products",
     },
     {
       name: "Loại sản phẩm",
-      id: "ctegories",
+      id: "categories",
       icon: Package,
-      permission: "view_categories",
+      permission: "category.*",
       route: "/admin/categories",
     },
     {
       name: "Đơn hàng",
       id: "orders",
       icon: ShoppingCart,
-      permission: "view_orders",
+      permission: "order.view",
       route: "/admin/orders",
     },
     {
       name: "Khách hàng",
       id: "customers",
       icon: Users,
-      permission: "view_customers",
+      permission: "admin.*",
       route: "/admin/customers",
     },
     {
       name: "Phiếu đặt hàng",
       id: "purchase-orders",
       icon: FileText,
-      permission: "manage_inventory",
-      adminOnly: true,
+      permission: "purchase.*",
       route: "/admin/purchase-orders",
     },
     {
       name: "Phiếu nhập hàng",
       id: "goods-receipt",
       icon: Package,
-      permission: "manage_inventory",
+      permission: "import.*",
       route: "/admin/goods-receipt",
     },
     {
       name: "Nhà cung cấp",
       id: "suppliers",
       icon: Truck,
-      permission: "view_suppliers",
-      adminOnly: true,
+      permission: "supplier.*",
       route: "/admin/suppliers",
     },
     {
       name: "Hóa đơn",
       id: "invoices",
       icon: FileText,
-      permission: "view_invoices",
+      permission: "invoice.*",
       route: "/admin/invoices",
     },
     {
       name: "Giảm giá",
       id: "discounts",
       icon: Tags,
-      permission: "manage_discounts",
-      adminOnly: true,
+      permission: "admin.*",
       route: "/admin/discounts",
     },
     {
       name: "Bình luận",
       id: "reviews",
       icon: MessageSquare,
-      permission: "manage_reviews",
+      permission: "admin.*",
       route: "/admin/reviews",
     },
     {
       name: "Nhân viên",
       id: "staff",
       icon: UserCheck,
-      permission: "manage_staff",
-      adminOnly: true,
+      permission: "employee.*",
       route: "/admin/employees",
     },
     {
       name: "Bộ phận",
       id: "departments",
       icon: Building2,
-      permission: "manage_departments",
-      adminOnly: true,
+      permission: "department.*",
       route: "/admin/departments",
     },
     {
       name: "Màu sắc",
       id: "colors",
       icon: Building2,
-      permission: "manage_departments",
-      adminOnly: true,
+      permission: "color.*",
       route: "/admin/colors",
+    },
+    {
+      name: "Phân quyền",
+      id: "permissions",
+      icon: Shield,
+      permission: "admin.*",
+      route: "/admin/permissions",
     },
   ];
 
   const filteredNavigation = navigation.filter((item) => {
-    if (item.adminOnly && !isAdmin) return false;
-    if (isAdmin) return true;
-    if (state.user?.permissions?.includes("all")) return true;
-    return state.user?.permissions?.includes(item.permission);
+    return hasPermission(userPermissions, item.permission);
   });
 
   const handleItemClick = (item: typeof navigation[0]) => {

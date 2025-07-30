@@ -15,6 +15,7 @@ import { Checkbox } from "../components/ui/checkbox";
 import { useApp } from "../contexts/AppContext";
 import * as api from "../services/api";
 import { toast } from "sonner";
+import { getPermissionsForRole } from "../utils/permissions";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -50,10 +51,18 @@ export default function Login() {
 
   function mapUserFromApi(res: any) {
     // Extract role from response
-    let role = res.data?.role || res.data?.user?.TaiKhoan?.VaiTro?.TenVaiTro;
-    if (role === "Admin") role = "admin";
-    else if (role === "NhanVien") role = "staff";
-    else if (role === "KhachHang") role = "customer";
+    const maVaiTro = res.data?.user?.TaiKhoan?.VaiTro?.MaVaiTro;
+    const tenVaiTro = res.data?.user?.TaiKhoan?.VaiTro?.TenVaiTro;
+    
+    // Map MaVaiTro to role name
+    let role: "admin" | "staff" | "customer" = "customer"; // default
+    if (maVaiTro === 1 || tenVaiTro === "Admin") role = "admin";
+    else if (maVaiTro === 2 || tenVaiTro === "NhanVienCuaHang") role = "staff";
+    else if (maVaiTro === 3 || tenVaiTro === "NhanVienGiaoHang") role = "staff";
+    else if (maVaiTro === 4 || tenVaiTro === "KhachHang") role = "customer";
+
+    // Get permissions for the role
+    const permissions = getPermissionsForRole(role);
 
     // Extract user info
     const apiUser = res.data?.user;
@@ -62,7 +71,9 @@ export default function Login() {
       email: apiUser?.TaiKhoan?.Email || apiUser?.Email || apiUser?.TenKH,
       name: apiUser?.TenKH || apiUser?.TaiKhoan?.Email || apiUser?.Email,
       role,
+      permissions,
       avatar: apiUser?.avatar || undefined,
+      maVaiTro,
       // Add more fields if needed
     };
   }
