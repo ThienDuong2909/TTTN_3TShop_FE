@@ -77,7 +77,7 @@ function App() {
           } />
           <Route path="/admin/products" element={
             <ProtectedRoute>
-              <AdminLayout>
+              <AdminLayout requireAdmin>
                 <ProductManagement />
               </AdminLayout>
             </ProtectedRoute>
