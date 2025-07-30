@@ -195,7 +195,7 @@ function Header() {
                       <div className="text-xs text-muted-foreground font-normal">
                         {state.user?.role === "admin" && "Quản trị viên"}
                         {state.user?.role === "staff" && "Nhân viên"}
-                        {state.user?.role === "customer" && "Khách hàng"}
+                        {state.user?.role === "CUSTOMER" && "Khách hàng"}
                       </div>
                     </div>
                   </DropdownMenuLabel>
@@ -215,7 +215,7 @@ function Header() {
                     <Link to="/profile">Thông tin cá nhân</Link>
                   </DropdownMenuItem>
 
-                  {state.user?.role === "customer" && (
+                  {state.user?.role === "CUSTOMER" && (
                     <>
                       <DropdownMenuItem>
                         <Link to="/orders">Đơn hàng của tôi</Link>

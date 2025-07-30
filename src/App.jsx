@@ -46,6 +46,8 @@ import Departments from './pages/Departments';
 import Colors from './pages/ColorManagement';
 import AdminLayout from './layouts/AdminLayout';
 import CategoryPage from './pages/CategoryPage';
+import NewProducts from "./pages/NewProducts";
+import BestSellerProducts from "./pages/BestSellerProducts";
 
 // Wrapper component for main layout
 const MainLayout = ({ children }) => (
@@ -202,7 +204,8 @@ function App() {
           <Route path="/product/:id" element={<MainLayout><ProductDetail /></MainLayout>} />
           <Route path="/category/:id" element={<MainLayout><CategoryPage /></MainLayout>} />
           <Route path="/search" element={<MainLayout><SearchResults /></MainLayout>} />
-          
+          <Route path="/new-products" element={<MainLayout><NewProducts /></MainLayout>} />
+          <Route path="/bestseller-products" element={<MainLayout><BestSellerProducts /></MainLayout>} />
           {/* Protected User Routes */}
           <Route path="/profile" element={
             <MainLayout>
