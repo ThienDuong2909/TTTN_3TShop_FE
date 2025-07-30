@@ -35,7 +35,7 @@ import CategoriesManagement from './pages/CategoriesManagement';
 import PurchaseOrders from './pages/PurchaseOrders';
 import GoodsReceipt from './pages/GoodsReceipt';
 import Orders from './pages/Orders';
-import OrderDetail from './pages/OrderDetail';
+// import OrderDetail from './pages/OrderDetail';
 import Customers from './pages/Customers';
 import Suppliers from './pages/SupplierManagement';
 import Invoices from './pages/Invoices';
