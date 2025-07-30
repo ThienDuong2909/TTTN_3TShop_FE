@@ -420,8 +420,10 @@ const translateX = -(
         </p>
       </div>
       <Button variant="outline" className="hidden md:flex">
-        Xem tất cả
-        <ChevronRight className="ml-2 h-4 w-4" />
+        <Link to="/new-products">
+    Xem tất cả
+    <ChevronRight className="ml-2 h-4 w-4" />
+  </Link>
       </Button>
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -437,12 +439,12 @@ const translateX = -(
         />
       ))}
     </div>
-    <div className="text-center mt-8 md:hidden">
+    {/* <div className="text-center mt-8 md:hidden">
       <Button variant="outline">
         Xem tất cả
         <ChevronRight className="ml-2 h-4 w-4" />
       </Button>
-    </div>
+    </div> */}
   </div>
 </section>
 
@@ -459,8 +461,10 @@ const translateX = -(
         </p>
       </div>
       <Button variant="outline" className="hidden md:flex">
-        Xem tất cả
-        <ChevronRight className="ml-2 h-4 w-4" />
+        <Link to="/bestseller-products">
+      Xem tất cả
+      <ChevronRight className="ml-2 h-4 w-4" />
+    </Link>
       </Button>
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -478,8 +482,10 @@ const translateX = -(
     </div>
     <div className="text-center mt-8 md:hidden">
       <Button variant="outline">
-        Xem tất cả
-        <ChevronRight className="ml-2 h-4 w-4" />
+        <Link to="/bestseller-products">
+      Xem tất cả
+      <ChevronRight className="ml-2 h-4 w-4" />
+    </Link>
       </Button>
     </div>
   </div>
