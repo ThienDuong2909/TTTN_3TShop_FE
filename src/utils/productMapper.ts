@@ -1,30 +1,40 @@
-export const mapSanPhamFromApi = (sanPham) => {
-  const allColors = sanPham.ChiTietSanPhams.map((ct) => ct.Mau.MaHex);
-  const allSizes = sanPham.ChiTietSanPhams.map(
-    (ct) => ct.KichThuoc.TenKichThuoc
-  );
+export const mapSanPhamFromApi = (sanPham: any) => {
+  const allColors = sanPham.ChiTietSanPhams?.map((ct) => ct.Mau?.MaHex).filter(Boolean) || [];
+  const allSizes = sanPham.ChiTietSanPhams?.map((ct) => ct.KichThuoc?.TenKichThuoc).filter(Boolean) || [];
+
+  const giaGoc = Number(sanPham.ThayDoiGia?.[0]?.Gia || 0);
+  const giam = Number(sanPham.CT_DotGiamGia?.[0]?.PhanTramGiam || 0);
+  const giaSauGiam = giaGoc - (giaGoc * giam) / 100;
+
+  const anhChinh = sanPham.AnhSanPhams?.find((anh: any) => anh.AnhChinh === true);
+  const fallbackImage = "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=600&fit=crop";
+  const image = anhChinh?.DuongDan || fallbackImage;
 
   return {
     id: sanPham.MaSP,
     name: sanPham.TenSP,
-    price: 300000, // Bạn có thể lấy giá thật nếu backend có (hiện chưa có)
-    image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=600&fit=crop", // Tạm thời ảnh placeholder
+    price: giaSauGiam,
+    originalPrice: giam > 0 ? giaGoc : undefined, // chỉ hiển thị nếu có giảm giá
+    discount: giam > 0 ? giam : undefined,
+    image,
     rating: 4.5,
     reviews: 100,
     isNew: false,
-    isBestSeller: false,
+     isBestSeller: !!sanPham.totalSold, // đánh dấu là bestseller nếu có totalSold
+    totalSold: sanPham.totalSold ?? 0,
     category: String(sanPham.MaLoaiSP),
     colors: [...new Set(allColors)] as string[],
     sizes: [...new Set(allSizes)] as string[],
   };
 };
-export function mapProductDetailFromApi(apiData: any): Product {
+
+export const mapProductDetailFromApi = (apiData: any)=> {
   const chiTietList = apiData.ChiTietSanPhams;
 
   const allColors = new Set<string>();
   const allSizes = new Set<string>();
   const sizeMap: Record<string, Set<string>> = {};
-  const stockMap: Record<string, number> = {}; // 👈 mới thêm
+  const stockMap: Record<string, number> = {};
 
   for (const ct of chiTietList) {
     const hex = ct.Mau?.MaHex || "#000000";
@@ -36,7 +46,7 @@ export function mapProductDetailFromApi(apiData: any): Product {
     if (!sizeMap[hex]) sizeMap[hex] = new Set();
     sizeMap[hex].add(size);
 
-    stockMap[`${hex}_${size}`] = ct.SoLuongTon; // 👈 ánh xạ tồn kho
+    stockMap[`${hex}_${size}`] = ct.SoLuongTon;
   }
 
   const sizeMapObj: Record<string, string[]> = {};
@@ -44,23 +54,33 @@ export function mapProductDetailFromApi(apiData: any): Product {
     sizeMapObj[hex] = Array.from(sizes);
   });
 
+  const giaGoc = Number(apiData.ThayDoiGia?.[0]?.Gia || 0);
+  const giam = Number(apiData.CT_DotGiamGia?.[0]?.PhanTramGiam || 0);
+  const giaSauGiam = giaGoc - (giaGoc * giam) / 100;
+
+  const anhChinh = apiData.AnhSanPhams?.find((anh: any) => anh.AnhChinh === true);
+  const fallbackImage = "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=600&fit=crop";
+  const image = anhChinh?.DuongDan || fallbackImage;
+  const images = apiData.AnhSanPhams?.map((anh: any) => anh.DuongDan) || [];
+
   return {
     id: apiData.MaSP,
     name: apiData.TenSP,
-    price: 299000,
-    originalPrice: 349000,
-    image:
-      "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=600&fit=crop",
+    price: giaSauGiam,
+    originalPrice: giam > 0 ? giaGoc : undefined,
+    discount: giam > 0 ? giam : undefined,
+    image,
+    images,
     rating: 4.5,
     reviews: 123,
-    discount: 15,
     isNew: true,
     isBestSeller: false,
     category: apiData.MaLoaiSP.toString(),
     colors: Array.from(allColors),
     sizes: Array.from(allSizes),
     sizeMap: sizeMapObj,
-    stockMap, // 👈 thêm vào product
+    stockMap,
   };
 }
+
 

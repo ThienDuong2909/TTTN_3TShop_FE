@@ -72,7 +72,16 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
       return { ...state, cart: [...state.cart, newItem] };
     }
     case "SET_CART_FROM_BACKEND":
-      return { ...state, cart: action.cart };
+      return {
+    ...state,
+    cart: action.cart.map((item) => ({
+      ...item,
+      product: {
+        ...item.product,
+        price: item.product.price ?? 0, 
+      },
+    })),
+  };
 
 
     case "REMOVE_FROM_CART":
@@ -142,7 +151,7 @@ interface AppContextType {
     color?: string,
     size?: string,
   ) => void;
-  removeFromCart: (productId: number, color:string, size: string) => void;
+  removeFromCart: (productId: number, color:string, size: string, donGia: number) => void;
   updateCartQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
   toggleWishlist: (productId: number) => void;
@@ -260,12 +269,14 @@ const clearCartFully = async () => {
   const removeFromCart = async (
   productId: number,
   color?: string,
-  size?: string
+  size?: string,
+  donGia?: number,
 ) => {
   if (!state.user) return;
 
   try {
-    await removeFromCartApi(state.user.id, productId, color, size);
+    console.log("Removing from cart:", { productId, color, size, donGia });
+    await removeFromCartApi(state.user.id, productId, color, size, donGia);
     dispatch({
       type: "REMOVE_FROM_CART",
       productId,

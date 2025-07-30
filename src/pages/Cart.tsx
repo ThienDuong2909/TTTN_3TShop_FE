@@ -31,42 +31,45 @@ export default function Cart() {
       setLoading(true);
 
       const res = await getCartItemsApi(state.user.id);
-
+      console
+.log("Cart items from backend:", res);
       const groupedMap = new Map<string, CartItem>();
 
       for (const item of res.items) {
-        const productId = item.maCTSP;
-        const color = item.mau.hex;
-        const size = item.kichThuoc.ten;
-        const soLuong = item.soLuong;
-        const key = `${productId}-${color}-${size}`;
+  const productId = item.maCTSP;
+  const color = item.mau?.hex;
+  const size = item.kichThuoc?.ten;
+  const donGia = Number(item.donGia ?? 0);
 
-        if (!groupedMap.has(key)) {
-          groupedMap.set(key, {
-            product: {
-              id: productId,
-              name: item.sanPham.tenSP,
-              price: Number(item.donGia),
-              originalPrice: undefined,
-              image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=600&fit=crop",
-              rating: 4.5,
-              reviews: 100,
-              discount: 0,
-              isNew: false,
-              isBestSeller: false,
-              category: "",
-              colors: [],
-              sizes: [],
-            },
-            quantity: item.soLuong,
-            selectedColor: color,
-            selectedSize: size,
-          });
-        } else {
-          const existing = groupedMap.get(key)!;
-          existing.quantity += item.soLuong;
-        }
-      }
+  const key = `${productId}-${color}-${size}-${donGia}`;
+
+  if (!groupedMap.has(key)) {
+    groupedMap.set(key, {
+      product: {
+        id: productId,
+        name: item.sanPham?.tenSP || "Tên SP",
+        price: donGia,
+        originalPrice: undefined,
+        image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=600&fit=crop",
+        rating: 4.5,
+        reviews: 0,
+        discount: 0,
+        isNew: false,
+        isBestSeller: false,
+        category: "",
+        colors: [],
+        sizes: [],
+      },
+      quantity: item.soLuong,
+      selectedColor: color,
+      selectedSize: size,
+    });
+  } else {
+    const existing = groupedMap.get(key)!;
+    existing.quantity += item.soLuong;
+  }
+}
+
 
       // ✅ Set chính xác giỏ hàng từ backend
       setCartFromBackend(Array.from(groupedMap.values()));
@@ -253,7 +256,8 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
                           removeFromCart(
                             item.product.id,
                             item.selectedColor,
-                            item.selectedSize
+                            item.selectedSize,
+                            item.product.price,
                           )
                         }
 
@@ -348,7 +352,7 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Coupon Code */}
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <label className="text-sm font-medium">Mã giảm giá</label>
                 <div className="flex gap-2">
                   <Input
@@ -375,7 +379,7 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
                     </Button>
                   </div>
                 )}
-              </div>
+              </div> */}
 
               <Separator />
 
@@ -431,7 +435,7 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
               </Link>
 
               {/* Payment Methods */}
-              <div className="text-center">
+              {/* <div className="text-center">
                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
                   Chúng tôi chấp nhận
                 </p>
@@ -449,7 +453,7 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
                     MOMO
                   </div>
                 </div>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
         </div>

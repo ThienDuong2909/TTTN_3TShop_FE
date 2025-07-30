@@ -25,20 +25,20 @@ function Header() {
   const isLoggedIn = !!state.user;
 
   const navigation = [
-    { name: "Trang chủ", href: "/", current: location.pathname === "/" },
-    { name: "Nam", href: "/nam", current: location.pathname === "/nam" },
-    { name: "Nữ", href: "/nu", current: location.pathname === "/nu" },
-    {
-      name: "Trẻ em",
-      href: "/tre-em",
-      current: location.pathname === "/tre-em",
-    },
-    { name: "Sale", href: "/sale", current: location.pathname === "/sale" },
-    {
-      name: "Liên hệ",
-      href: "/lien-he",
-      current: location.pathname === "/lien-he",
-    },
+    // { name: "Trang chủ", href: "/", current: location.pathname === "/" },
+    // { name: "Nam", href: "/nam", current: location.pathname === "/nam" },
+    // { name: "Nữ", href: "/nu", current: location.pathname === "/nu" },
+    // {
+    //   name: "Trẻ em",
+    //   href: "/tre-em",
+    //   current: location.pathname === "/tre-em",
+    // },
+    // { name: "Sale", href: "/sale", current: location.pathname === "/sale" },
+    // {
+    //   name: "Liên hệ",
+    //   href: "/lien-he",
+    //   current: location.pathname === "/lien-he",
+    // },
   ];
 
   const NavLinks = ({ mobile = false }) => (
@@ -129,7 +129,7 @@ function Header() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && state.searchQuery.trim()) {
                     navigate(
-                      `/search?q=${encodeURIComponent(state.searchQuery)}`,
+                      `/search?keyword=${encodeURIComponent(state.searchQuery)}`,
                     );
                   }
                 }}

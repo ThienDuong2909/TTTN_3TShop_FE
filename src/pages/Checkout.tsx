@@ -1,3 +1,4 @@
+// filepath: e:\ThucTap\TTTN_3TShop_FE\frontend\src\pages\Checkout.tsx
 // Checkout with success modal
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -8,9 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Separator } from "../components/ui/separator";
 import { Badge } from "../components/ui/badge";
 import { useApp } from "../contexts/AppContext";
-import { createOrder as apiCreateOrder } from "../services/api";
+import { createOrder as apiCreateOrder, getCurrentExchangeRate } from "../services/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
-
+import dayjs from "dayjs";
 declare global {
   interface Window {
     paypal: any;
@@ -22,9 +23,16 @@ export default function Checkout() {
   const navigate = useNavigate();
   const [name, setName] = useState(state.user?.name || "");
   const [address, setAddress] = useState(state.user?.address || "");
-  const [errors, setErrors] = useState<{ name?: string; address?: string }>({});
+  const [phone, setPhone] = useState("");
+  const [deliveryTime, setDeliveryTime] = useState(new Date().toISOString().slice(0, 16)); // Default to current date and time
+  const [errors, setErrors] = useState<{ name?: string; address?: string; phone?: string }>({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const paypalContainerRef = useRef<HTMLDivElement>(null);
+  const nameRef = useRef(name);
+  const addressRef = useRef(address);
+  const phoneRef = useRef(phone);
+  const deliveryTimeRef = useRef(deliveryTime);
+  const [usdRate, setUsdRate] = useState(23000);
 
   const subtotal = getCartTotal();
   const shippingFee = subtotal >= 500000 ? 0 : 30000;
@@ -35,6 +43,14 @@ export default function Checkout() {
       navigate("/login", { state: { from: "/checkout" } });
     }
   }, [state.user]);
+  useEffect(() => {
+  getCurrentExchangeRate()
+    .then((rate) => {
+      if (rate) {}
+        console.log("Current USD exchange rate:", rate);
+        setUsdRate(rate);})
+    .catch(() => setUsdRate(23000));
+}, []);
 
   useEffect(() => {
     if (!window.paypal || state.cart.length === 0 || !paypalContainerRef.current) return;
@@ -43,10 +59,18 @@ export default function Checkout() {
 
     window.paypal
       .Buttons({
-        createOrder: (data: any, actions: any) => {
+        createOrder: (data, actions) => {
+          const currentName = nameRef.current.trim();
+          const currentAddress = addressRef.current.trim();
+          const currentPhone = phoneRef.current.trim();
+          console.log("Current Name:", currentName);
+          console.log("Current Address:", currentAddress);
+          console.log("Current Phone:", currentPhone);
           const newErrors: typeof errors = {};
-          if (!name.trim()) newErrors.name = "Vui lòng nhập họ và tên";
-          if (!address.trim()) newErrors.address = "Vui lòng nhập địa chỉ giao hàng";
+          if (!currentName) newErrors.name = "Vui lòng nhập họ và tên";
+          if (!currentAddress) newErrors.address = "Vui lòng nhập địa chỉ giao hàng";
+          if (!/^\d{10}$/.test(currentPhone)) newErrors.phone = "Số điện thoại phải có 10 chữ số";
+
           setErrors(newErrors);
 
           if (Object.keys(newErrors).length > 0) {
@@ -57,60 +81,53 @@ export default function Checkout() {
             purchase_units: [
               {
                 amount: {
-                  value: (total / 23000).toFixed(2),
+                  value: (total / usdRate).toFixed(2),
                   currency_code: "USD",
                 },
               },
             ],
           });
         },
-        onApprove: async (data: any, actions: any) => {
+        onApprove: async (data, actions) => {
           const details = await actions.order.capture();
-          await handlePlaceOrder();
+          await handlePlaceOrder(nameRef.current, addressRef.current, phoneRef.current, deliveryTimeRef.current);
         },
-        onError: (err: any) => {
-          alert("Lỗi trong quá trình thanh toán.");
+        onError: (err) => {
           console.error(err);
         },
-        style: {
-          layout: "vertical",
-          color: "gold",
-          shape: "rect",
-          label: "paypal",
-        },
-        disableFunding: ["card", "credit", "sepa", "sofort", "giropay", "eps", "bancontact", "ideal", "mybank", "p24", "venmo", "blik"],
       })
       .render(paypalContainerRef.current);
-  }, [total, name, address]);
+  }, [total, usdRate]);
 
   const validate = () => {
     const newErrors: typeof errors = {};
     if (!name.trim()) newErrors.name = "Vui lòng nhập họ và tên";
     if (!address.trim()) newErrors.address = "Vui lòng nhập địa chỉ giao hàng";
+    if (!/^\d{10}$/.test(phone.trim())) newErrors.phone = "Số điện thoại phải có 10 chữ số";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handlePlaceOrder = async () => {
-    if (validate()) {
-      try {
-        const payload = {
-          maKH: state.user?.id,
-          nguoiNhan: name,
-          diaChiGiao: address,
-          dsSanPham: state.cart.map((item) => ({
-            maCTSP: item.product.id,
-            soLuong: item.quantity,
-          })),
-        };
-        await apiCreateOrder(payload);
-        clearCart();
-        setShowSuccessModal(true);
-      } catch (err) {
-        alert("Lỗi khi gửi đơn hàng về server.");
-        console.error(err);
-      }
+  const handlePlaceOrder = async (nameValue = name, addressValue = address, phoneValue = phone, deliveryTimeValue = deliveryTime) => {
+    try {
+      const payload = {
+        maKH: state.user?.id,
+        nguoiNhan: nameValue,
+        diaChiGiao: addressValue,
+        SDT: phoneValue,
+        thoiGianGiao: deliveryTimeValue,
+        dsSanPham: state.cart.map((item) => ({
+          maCTSP: item.product.id,
+          soLuong: item.quantity,
+        })),
+      };
+      await apiCreateOrder(payload);
+      clearCart();
+      setShowSuccessModal(true);
+    } catch (err) {
+      alert("Lỗi khi gửi đơn hàng về server.");
+      console.error(err);
     }
   };
 
@@ -121,7 +138,11 @@ export default function Checkout() {
     }).format(price);
   };
 
-  if (state.cart.length === 0&& !showSuccessModal) {
+  // Thêm trước return:
+const now = new Date();
+const pad = (n: number) => n.toString().padStart(2, "0");
+const minDateTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  if (state.cart.length === 0 && !showSuccessModal) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
         <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -147,25 +168,62 @@ export default function Checkout() {
               <CardTitle>Thông tin người nhận</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Họ và tên</label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className={errors.name ? "border-red-500" : ""}
-                />
-                {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
-              </div>
-              <div>
-                <label className="text-sm font-medium">Địa chỉ giao hàng</label>
-                <Input
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className={errors.address ? "border-red-500" : ""}
-                />
-                {errors.address && <p className="text-sm text-red-500 mt-1">{errors.address}</p>}
-              </div>
-            </CardContent>
+  <div>
+    <label className="text-sm font-medium">Họ và tên</label>
+    <Input
+      value={name}
+      onChange={(e) => {
+        setName(e.target.value);
+        nameRef.current = e.target.value;
+      }}
+      className={errors.name ? "border-red-500" : ""}
+    />
+    {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
+  </div>
+  <div>
+    <label className="text-sm font-medium">Địa chỉ giao hàng</label>
+    <Input
+      value={address}
+      onChange={(e) => {
+        setAddress(e.target.value);
+        addressRef.current = e.target.value;
+      }}
+      className={errors.address ? "border-red-500" : ""}
+    />
+    {errors.address && <p className="text-sm text-red-500 mt-1">{errors.address}</p>}
+  </div>
+  <div className="flex gap-4">
+    <div className="flex-1">
+      <label className="text-sm font-medium">Số điện thoại</label>
+      <Input
+        value={phone}
+        onChange={(e) => {
+          setPhone(e.target.value);
+          phoneRef.current = e.target.value;
+        }}
+        className={errors.phone ? "border-red-500" : ""}
+      />
+      {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone}</p>}
+    </div>
+    <div className="flex-1">
+      <label className="text-sm font-medium">Thời gian giao hàng</label>
+      <Input
+        type="datetime-local"
+        min={minDateTime}
+        value={deliveryTime}
+        onChange={(e) => {
+          setDeliveryTime(e.target.value);
+          deliveryTimeRef.current = e.target.value;
+        }}
+      />
+      <div className="text-xs text-gray-500 mt-1">
+  {deliveryTime
+    ? "Đã chọn: " + dayjs(deliveryTime).format("HH:mm DD-MM-YYYY")
+    : ""}
+</div>
+    </div>
+  </div>
+</CardContent>
           </Card>
 
           <Card>
@@ -235,6 +293,14 @@ export default function Checkout() {
               <span>Tổng cộng</span>
               <span className="text-brand-600 dark:text-brand-400">{formatPrice(total)}</span>
             </div>
+            {/* <div className="space-y-4">
+              <Button
+                className="w-full bg-brand-600 hover:bg-brand-700"
+                onClick={handlePlaceOrder}
+              >
+                Xác nhận đặt hàng (Thanh toán COD)
+              </Button>
+            </div> */}
 
             <div ref={paypalContainerRef} className="w-full mt-4"></div>
           </CardContent>
