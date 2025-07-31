@@ -16,7 +16,7 @@ import {
 } from "../../../components/ui/card";
 import { formatPrice } from "../../../services/api";
 import { getProductColorsSizes } from "../../../services/commonService";
-import { POForm, Supplier, Product, PurchaseOrderItem, Color, Size } from "../types";
+import { POForm, Supplier, Product, PurchaseOrderItem, ProductDetail } from "../types";
 import { useState, useEffect } from "react";
 import clsx from "clsx";
 
@@ -41,11 +41,11 @@ export default function CreatePurchaseOrderForm({
   isLoading = false,
   loadProducts,
 }: CreatePurchaseOrderFormProps) {
-  // State for colors and sizes for each item
-  const [itemColorsSizes, setItemColorsSizes] = useState<{ [key: number]: { colors: Color[], sizes: Size[] } }>({});
+  // State for product details for each item
+  const [itemProductDetails, setItemProductDetails] = useState<{ [key: number]: ProductDetail[] }>({});
   
-  // State for loading colors/sizes for each item
-  const [loadingColorsSizes, setLoadingColorsSizes] = useState<{ [key: number]: boolean }>({});
+  // State for loading product details for each item
+  const [loadingProductDetails, setLoadingProductDetails] = useState<{ [key: number]: boolean }>({});
   
   // State for filtered products (filtered from all products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -61,9 +61,6 @@ export default function CreatePurchaseOrderForm({
   
   // Filter products by supplier when supplier changes
   useEffect(() => {
-    console.log("=== SUPPLIER ID CHANGED ===");
-    console.log("New supplierId:", poForm.supplierId);
-    
     if (poForm.supplierId) {
       const supplierProducts = products.filter((product: any) => {
         const productSupplierId = product.MaNCC?.toString();
@@ -93,123 +90,64 @@ export default function CreatePurchaseOrderForm({
     }
   }, [poForm.supplierId, products, poForm.items]);
   
-  // Check if a combination is already selected (excluding current index)
-  const isCombinationSelected = (productId: string, colorId: number, sizeId: number, currentIndex: number) => {
+  // Check if a product detail is already selected (excluding current index)
+  const isProductDetailSelected = (productDetailId: number, currentIndex: number) => {
     return poForm.items.some((item, index) => 
       index !== currentIndex && 
-      item.MaSP === productId && 
-      item.MaMau === colorId && 
-      item.MaKichThuoc === sizeId
+      item.MaCTSP === productDetailId
     );
   };
-  
-  // Get available suppliers based on selected products
+
   const getAvailableSuppliers = () => {
-    const selectedProductIds = poForm.items.map(item => item.MaSP).filter(id => id);
-    
-    if (selectedProductIds.length === 0) {
-      return suppliers; // Show all suppliers if no products selected
-    }
-    
-    return suppliers.filter(() => {
+    const filteredSuppliers = suppliers.filter((supplier: any) => {
       return true;
     });
+    return filteredSuppliers;
   };
-  
-  // Load colors and sizes for a product
-  const loadProductColorsSizes = async (index: number, productId: string) => {
+
+  // Load product details (colors and sizes) for a product
+  const loadProductDetails = async (index: number, productId: string) => {
     if (!productId || productId === "") {
       return;
     }
     
     // Set loading state
-    setLoadingColorsSizes(prev => ({ ...prev, [index]: true }));
+    setLoadingProductDetails(prev => ({ ...prev, [index]: true }));
     
     try {
       const response = await getProductColorsSizes(productId);
       
       // Handle different API response formats
-      let colors: Color[] = [];
-      let sizes: Size[] = [];
-      let dataArray: any[] = [];
+      let productDetails: ProductDetail[] = [];
       
       // Try different response formats
       if (Array.isArray(response)) {
-        dataArray = response;
+        productDetails = response;
       } else if (response && response.success && Array.isArray(response.data)) {
-        dataArray = response.data;
+        productDetails = response.data;
       } else if (response && Array.isArray(response.data)) {
-        dataArray = response.data;
+        productDetails = response.data;
       } else if (response && typeof response === 'object') {
         // Try to find array in common properties
         const responseObj = response as any;
-        dataArray = responseObj.products || responseObj.items || responseObj.result || responseObj.data || [];
+        productDetails = responseObj.products || responseObj.items || responseObj.result || responseObj.data || [];
       }
       
-      if (dataArray.length > 0) {
-        // Extract unique colors from the data
-        const uniqueColors = new Map<number, Color>();
-        const uniqueSizes = new Map<number, Size>();
-        
-        dataArray.forEach((item: any, idx: number) => {
-          
-          // Extract color
-          if (item.Mau) {
-            uniqueColors.set(item.Mau.MaMau, {
-              MaMau: item.Mau.MaMau,
-              TenMau: item.Mau.TenMau,
-              MaHex: item.Mau.MaHex ? `#${item.Mau.MaHex}` : undefined
-            });
-          }
-          
-          // Extract size
-          if (item.KichThuoc) {
-            uniqueSizes.set(item.KichThuoc.MaKichThuoc, {
-              MaKichThuoc: item.KichThuoc.MaKichThuoc,
-              TenKichThuoc: item.KichThuoc.TenKichThuoc
-            });
-          }
-        });
-        
-        colors = Array.from(uniqueColors.values());
-        sizes = Array.from(uniqueSizes.values());
-        
-      } else {
-        // Fallback: try to get colors and sizes from product details if available
-        const selectedProduct = products.find(p => p.id.toString() === productId.toString());
-        if (selectedProduct) {
-          // Try to extract colors and sizes from product details if available
-          if ((selectedProduct as any).colors && Array.isArray((selectedProduct as any).colors)) {
-            colors = (selectedProduct as any).colors.map((color: any, idx: number) => ({
-              MaMau: idx + 1,
-              TenMau: color,
-              MaHex: color
-            }));
-          }
-          if ((selectedProduct as any).sizes && Array.isArray((selectedProduct as any).sizes)) {
-            sizes = (selectedProduct as any).sizes.map((size: any, idx: number) => ({
-              MaKichThuoc: idx + 1,
-              TenKichThuoc: size
-            }));
-          }
-        }
-      }
-      
-      setItemColorsSizes(prev => ({
+      setItemProductDetails(prev => ({
         ...prev,
-        [index]: { colors, sizes }
+        [index]: productDetails
       }));
       
     } catch (error) {
-      console.error(`Error loading colors/sizes for product ${productId}:`, error);
-      // Set empty arrays on error
-      setItemColorsSizes(prev => ({
+      console.error(`Error loading product details for product ${productId}:`, error);
+      // Set empty array on error
+      setItemProductDetails(prev => ({
         ...prev,
-        [index]: { colors: [], sizes: [] }
+        [index]: []
       }));
     } finally {
       // Clear loading state
-      setLoadingColorsSizes(prev => ({ ...prev, [index]: false }));
+      setLoadingProductDetails(prev => ({ ...prev, [index]: false }));
     }
   };
 
@@ -221,8 +159,7 @@ export default function CreatePurchaseOrderForm({
         {
           MaSP: "",
           productName: "",
-          MaMau: "",
-          MaKichThuoc: "",
+          MaCTSP: "",
           quantity: 1,
           unitPrice: 0,
         },
@@ -246,50 +183,54 @@ export default function CreatePurchaseOrderForm({
       if (product) {
         newItems[index].productName = product.name;
         newItems[index].unitPrice = Math.floor(product.price * 0.6); // Wholesale price
-        // Reset color and size when product changes
-        newItems[index].MaMau = "";
-        newItems[index].MaKichThuoc = "";
-        // Clear existing colors/sizes for this index first
-        setItemColorsSizes(prev => ({
+        // Reset product detail when product changes
+        newItems[index].MaCTSP = "";
+        newItems[index].colorName = "";
+        newItems[index].sizeName = "";
+        // Clear existing product details for this index first
+        setItemProductDetails(prev => ({
           ...prev,
-          [index]: { colors: [], sizes: [] }
+          [index]: []
         }));
         // Clear loading state for this index
-        setLoadingColorsSizes(prev => ({
+        setLoadingProductDetails(prev => ({
           ...prev,
           [index]: false
         }));
-        // Load colors and sizes for the new product immediately
-        loadProductColorsSizes(index, value);
+        // Load product details for the new product immediately
+        loadProductDetails(index, value);
       } else {
-        // Clear colors/sizes if no product selected
-        setItemColorsSizes(prev => ({
+        // Clear product details if no product selected
+        setItemProductDetails(prev => ({
           ...prev,
-          [index]: { colors: [], sizes: [] }
+          [index]: []
         }));
         // Clear loading state
-        setLoadingColorsSizes(prev => ({
+        setLoadingProductDetails(prev => ({
           ...prev,
           [index]: false
         }));
       }
     }
 
-    // Check if the selected combination is already used
-    if (field === "MaMau" || field === "MaKichThuoc") {
-      const currentItem = newItems[index];
-      if (currentItem.MaSP && currentItem.MaMau && currentItem.MaKichThuoc) {
-        const isAlreadySelected = isCombinationSelected(
-          currentItem.MaSP.toString(), 
-          currentItem.MaMau, 
-          currentItem.MaKichThuoc, 
-          index
-        );
-        
-        if (isAlreadySelected) {
-          // Clear the field that was just changed to avoid duplicate
-          newItems[index][field] = "";
-        }
+    // Auto-fill color and size names when product detail is selected
+    if (field === "MaCTSP") {
+      const productDetails = itemProductDetails[index] || [];
+      const selectedDetail = productDetails.find(detail => detail.MaCTSP === value);
+      if (selectedDetail) {
+        newItems[index].colorName = selectedDetail.Mau.TenMau;
+        newItems[index].sizeName = selectedDetail.KichThuoc.TenKichThuoc;
+      }
+    }
+
+    // Check if the selected product detail is already used
+    if (field === "MaCTSP") {
+      const isAlreadySelected = isProductDetailSelected(value, index);
+      if (isAlreadySelected) {
+        // Clear the field to avoid duplicate
+        newItems[index][field] = "";
+        newItems[index].colorName = "";
+        newItems[index].sizeName = "";
       }
     }
 
@@ -302,12 +243,12 @@ export default function CreatePurchaseOrderForm({
       items: poForm.items.filter((_, i) => i !== index),
     });
     
-    // Clean up colors/sizes state
-    setItemColorsSizes(prev => {
+    // Clean up product details state
+    setItemProductDetails(prev => {
       const newState = { ...prev };
       delete newState[index];
       // Re-index remaining items
-      const reindexed: { [key: number]: { colors: Color[], sizes: Size[] } } = {};
+      const reindexed: { [key: number]: ProductDetail[] } = {};
       Object.entries(newState).forEach(([key, value]) => {
         const keyNum = parseInt(key);
         if (keyNum > index) {
@@ -320,7 +261,7 @@ export default function CreatePurchaseOrderForm({
     });
     
     // Clean up loading state
-    setLoadingColorsSizes(prev => {
+    setLoadingProductDetails(prev => {
       const newState = { ...prev };
       delete newState[index];
       // Re-index remaining items
@@ -338,38 +279,29 @@ export default function CreatePurchaseOrderForm({
   };
 
   const calculateTotal = () => {
-    return poForm.items.reduce(
-      (sum, item) => sum + item.quantity * item.unitPrice,
-      0
-    );
+    return poForm.items.reduce((total, item) => {
+      return total + (item.quantity * item.unitPrice);
+    }, 0);
   };
 
   const handleSubmit = () => {
-    
-    if (!poForm.supplierId || poForm.items.length === 0) {
-      alert("Vui lòng chọn nhà cung cấp và thêm ít nhất một sản phẩm");
-      return;
-    }
     onSubmit();
+  };
+
+  const handleFieldBlur = (field: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
   };
 
   return (
     <div className="space-y-6 relative">
-      {/* Loading Overlay */}
-      {/* Removed isLoadingPODetails */}
-
-      {/* Basic Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
         <div>
           <Label htmlFor="supplier">Nhà cung cấp *</Label>
           <Select
-            key={`supplier-${poForm.supplierId || 'empty'}`}
             value={poForm.supplierId}
             onValueChange={(value) => {
               setPOForm({ ...poForm, supplierId: value });
-              if (value) {
-                loadProducts(value);
-              }
+              loadProducts(value);
             }}
           >
             <SelectTrigger
@@ -381,7 +313,6 @@ export default function CreatePurchaseOrderForm({
             <SelectContent>
               {(() => {
                 const availableSuppliers = getAvailableSuppliers();
-                
                 return availableSuppliers && availableSuppliers.length > 0 ? (
                   availableSuppliers.map((supplier) => (
                     <SelectItem key={supplier.id} value={supplier.id.toString()}>
@@ -397,22 +328,19 @@ export default function CreatePurchaseOrderForm({
             </SelectContent>
           </Select>
         </div>
-
         <div>
           <Label htmlFor="deliveryDate">Ngày giao dự kiến</Label>
           <Input
             id="deliveryDate"
             type="date"
             className="w-full"
-            value={poForm.expectedDeliveryDate}
+            value={poForm.expectedDeliveryDate ? poForm.expectedDeliveryDate.slice(0, 10) : ""}
             onChange={(e) =>
               setPOForm({ ...poForm, expectedDeliveryDate: e.target.value })
             }
           />
         </div>
       </div>
-
-      {/* Items */}
       <div>
         <div className="flex justify-between items-center mb-4">
           <Label>Danh sách sản phẩm *</Label>
@@ -421,7 +349,6 @@ export default function CreatePurchaseOrderForm({
             Thêm sản phẩm
           </Button>
         </div>
-
         {poForm.items.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để bắt đầu.
@@ -436,7 +363,7 @@ export default function CreatePurchaseOrderForm({
                     <div>
                       <Label>Sản phẩm</Label>
                       <Select
-                        key={`product-${index}-${item.MaSP || 'empty'}`}
+                        key={`product-${index}`}
                         value={item.MaSP?.toString() || ""}
                         onValueChange={(value) => {
                           updatePOItem(index, "MaSP", value);
@@ -446,22 +373,15 @@ export default function CreatePurchaseOrderForm({
                           className={clsx('focus:outline-none', isFieldInvalid(`MaSP_${index}`, item.MaSP) && 'border-red-500')}
                           onBlur={() => setTouched(t => ({...t, [`MaSP_${index}`]: true}))}
                         >
-                          <SelectValue placeholder="Chọn sản phẩm" />
+                          <SelectValue placeholder="Chọn sản phẩm">
+                            {filteredProducts.find(p => p.id == item.MaSP)?.name || products.find(p => p.id == item.MaSP)?.name || item.productName || "Chọn sản phẩm"}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {(() => {
-                            // If supplier is selected, show filtered products + currently selected product
                             if (poForm.supplierId) {
-                              const selectedProduct = products.find(p => p.id.toString() === item.MaSP?.toString());
-                              const productsToShow = [...filteredProducts];
-                              
-                              // Add currently selected product if it's not in filtered products
-                              if (selectedProduct && !filteredProducts.find(p => p.id === selectedProduct.id)) {
-                                productsToShow.push(selectedProduct);
-                              }
-                              
-                              if (productsToShow.length > 0) {
-                                return productsToShow.map((product: any) => (
+                              if (filteredProducts.length > 0) {
+                                return filteredProducts.map((product) => (
                                   <SelectItem key={product.id} value={product.id.toString()}>
                                     {product.name}
                                   </SelectItem>
@@ -474,146 +394,68 @@ export default function CreatePurchaseOrderForm({
                                 );
                               }
                             }
-                          
-                          // If no supplier selected, show all products
-                          return products && products.length > 0 ? (
-                            products.map((product) => (
-                              <SelectItem key={product.id} value={product.id.toString()}>
-                                {product.name}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <div className="px-2 py-1 text-sm text-muted-foreground">
-                              Không có sản phẩm nào
-                            </div>
-                          );
-                        })()}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label>Màu sắc</Label>
-                      <Select
-                        key={`color-${index}`}
-                        value={item.MaMau ? item.MaMau.toString() : ""}
-                        onValueChange={(value) =>
-                          updatePOItem(index, "MaMau", parseInt(value) || "")
-                        }
-                      >
-                        <SelectTrigger
-                          className={clsx('focus:outline-none', isFieldInvalid(`MaMau_${index}`, item.MaMau) && 'border-red-500')}
-                          onBlur={() => setTouched(t => ({...t, [`MaMau_${index}`]: true}))}
-                        >
-                          <SelectValue placeholder="Chọn màu" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(() => {
-                            const colorsData = itemColorsSizes[index]?.colors || [];
-                            
-                            if (colorsData.length > 0) {
-                              const availableColors = colorsData.filter(color => {
-                                // If size is selected, check if this specific color+size combination is already used
-                                if (item.MaKichThuoc) {
-                                  return !isCombinationSelected(item.MaSP.toString(), color.MaMau, item.MaKichThuoc, index);
-                                }
-                                // If no size selected yet, check if this color has at least one available size
-                                const sizes = itemColorsSizes[index]?.sizes || [];
-                                return sizes.some(size => 
-                                  !isCombinationSelected(item.MaSP.toString(), color.MaMau, size.MaKichThuoc, index)
-                                );
-                              });
-                              
-                              return availableColors.length > 0 ? (
-                                availableColors.map((color) => (
-                                  <SelectItem key={color.MaMau} value={color.MaMau.toString()}>
-                                    <div className="flex items-center gap-2">
-                                      {color.MaHex && (
-                                        <div 
-                                          className="w-4 h-4 rounded border border-gray-300"
-                                          style={{ backgroundColor: color.MaHex }}
-                                        />
-                                      )}
-                                      {color.TenMau}
-                                    </div>
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <div className="px-2 py-1 text-sm text-muted-foreground">
-                                  Tất cả màu đã được chọn
-                                </div>
-                              );
-                            } else {
-                              return (
-                                <div className="px-2 py-1 text-sm text-muted-foreground">
-                                  {item.MaSP ? 
-                                    (loadingColorsSizes[index] ? "Đang tải màu sắc..." : "Không có màu nào") 
-                                    : "Chọn sản phẩm trước"}
-                                </div>
-                              );
-                            }
+                            return products && products.length > 0 ? (
+                              products.map((product) => (
+                                <SelectItem key={product.id} value={product.id.toString()}>
+                                  {product.name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <div className="px-2 py-1 text-sm text-muted-foreground">
+                                Không có sản phẩm nào
+                              </div>
+                            );
                           })()}
                         </SelectContent>
                       </Select>
                     </div>
-
                     <div>
-                      <Label>Kích thước</Label>
+                      <Label>Chi tiết sản phẩm</Label>
                       <Select
-                        key={`size-${index}`}
-                        value={item.MaKichThuoc ? item.MaKichThuoc.toString() : ""}
+                        key={`product-detail-${index}`}
+                        value={item.MaCTSP ? item.MaCTSP.toString() : ""}
                         onValueChange={(value) =>
-                          updatePOItem(index, "MaKichThuoc", parseInt(value) || "")
+                          updatePOItem(index, "MaCTSP", parseInt(value) || "")
                         }
+                        disabled={!item.MaSP}
                       >
                         <SelectTrigger
-                          className={clsx('focus:outline-none', isFieldInvalid(`MaKichThuoc_${index}`, item.MaKichThuoc) && 'border-red-500')}
-                          onBlur={() => setTouched(t => ({...t, [`MaKichThuoc_${index}`]: true}))}
+                          className={clsx('focus:outline-none', isFieldInvalid(`MaCTSP_${index}`, item.MaCTSP) && 'border-red-500')}
+                          onBlur={() => setTouched(t => ({...t, [`MaCTSP_${index}`]: true}))}
                         >
-                          <SelectValue placeholder="Chọn kích thước" />
+                          <SelectValue placeholder={!item.MaSP ? "Chọn sản phẩm trước" : "Chọn màu và size"}>
+                            {item.colorName && item.sizeName ? `${item.colorName} - ${item.sizeName}` : "Chọn màu và size"}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {(() => {
-                            const sizesData = itemColorsSizes[index]?.sizes || [];
-                            
-                            if (sizesData.length > 0) {
-                              const availableSizes = sizesData.filter(size => {
-                                // If color is selected, check if this specific color+size combination is already used
-                                if (item.MaMau) {
-                                  return !isCombinationSelected(item.MaSP.toString(), item.MaMau, size.MaKichThuoc, index);
-                                }
-                                // If no color selected yet, check if this size has at least one available color
-                                const colors = itemColorsSizes[index]?.colors || [];
-                                return colors.some(color => 
-                                  !isCombinationSelected(item.MaSP.toString(), color.MaMau, size.MaKichThuoc, index)
-                                );
-                              });
-                              
-                              return availableSizes.length > 0 ? (
-                                availableSizes.map((size) => (
-                                  <SelectItem key={size.MaKichThuoc} value={size.MaKichThuoc.toString()}>
-                                    {size.TenKichThuoc}
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <div className="px-2 py-1 text-sm text-muted-foreground">
-                                  Tất cả kích thước đã được chọn
-                                </div>
-                              );
-                            } else {
-                              return (
-                                <div className="px-2 py-1 text-sm text-muted-foreground">
-                                  {item.MaSP ? 
-                                    (loadingColorsSizes[index] ? "Đang tải kích thước..." : "Không có kích thước nào") 
-                                    : "Chọn sản phẩm trước"}
-                                </div>
-                              );
-                            }
+                            const productDetails = itemProductDetails[index] || [];
+                            const availableDetails = productDetails.filter(detail => 
+                              !isProductDetailSelected(detail.MaCTSP, index)
+                            );
+                            return availableDetails.length > 0 ? (
+                              availableDetails.map((detail) => (
+                                <SelectItem key={detail.MaCTSP} value={detail.MaCTSP.toString()}>
+                                  <div className="flex items-center gap-2">
+                                    {detail.Mau.MaHex && (
+                                      <div 
+                                        className="w-4 h-4 rounded border border-gray-300"
+                                        style={{ backgroundColor: detail.Mau.MaHex }}
+                                      />
+                                    )}
+                                    {detail.Mau.TenMau} - {detail.KichThuoc.TenKichThuoc}
+                                  </div>
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <div className="px-2 py-1 text-sm text-muted-foreground">
+                                {productDetails.length > 0 ? "Tất cả chi tiết đã được chọn" : "Không có chi tiết sản phẩm"}
+                              </div>
+                            );
                           })()}
                         </SelectContent>
                       </Select>
                     </div>
-
                     <div>
                       <Label>Số lượng</Label>
                       <Input
@@ -622,7 +464,6 @@ export default function CreatePurchaseOrderForm({
                         value={item.quantity || ""}
                         onChange={(e) => {
                           const value = e.target.value;
-                          // Allow empty string while typing
                           if (value === "") {
                             updatePOItem(index, "quantity", 1);
                           } else {
@@ -638,7 +479,6 @@ export default function CreatePurchaseOrderForm({
                         onBlur={() => setTouched(t => ({...t, [`quantity_${index}`]: true}))}
                       />
                     </div>
-
                     <div>
                       <Label>Đơn giá</Label>
                       <Input
@@ -647,7 +487,6 @@ export default function CreatePurchaseOrderForm({
                         value={item.unitPrice === 0 ? "" : item.unitPrice || ""}
                         onChange={(e) => {
                           const value = e.target.value;
-                          // Allow empty string while typing
                           if (value === "") {
                             updatePOItem(index, "unitPrice", 0);
                           } else {
@@ -663,7 +502,6 @@ export default function CreatePurchaseOrderForm({
                         onBlur={() => setTouched(t => ({...t, [`unitPrice_${index}`]: true}))}
                       />
                     </div>
-
                     <div className="flex items-center gap-2">
                       <div className="text-sm font-medium">
                         {formatPrice(item.quantity * item.unitPrice)}
@@ -681,7 +519,6 @@ export default function CreatePurchaseOrderForm({
               </Card>
               );
             })}
-
             <div className="text-right">
               <div className="text-lg font-bold">
                 Tổng cộng: {formatPrice(calculateTotal())}
@@ -690,8 +527,6 @@ export default function CreatePurchaseOrderForm({
           </div>
         )}
       </div>
-
-      {/* Notes */}
       <div>
         <Label htmlFor="notes">Ghi chú</Label>
         <Textarea
@@ -702,8 +537,6 @@ export default function CreatePurchaseOrderForm({
           rows={3}
         />
       </div>
-
-      {/* Actions */}
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel} disabled={isLoading}>
           Hủy
@@ -716,7 +549,7 @@ export default function CreatePurchaseOrderForm({
           <Save className="h-4 w-4 mr-2" />
           {isLoading 
             ? "Đang tạo..." 
-            : "Tạo phiếu đặt hàng"
+            : "Tạo đơn đặt hàng"
           }
         </Button>
       </div>

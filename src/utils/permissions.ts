@@ -208,16 +208,16 @@ export const getPermissionsForRole = (roleName: string): string[] => {
 // Route permissions mapping
 export const ROUTE_PERMISSIONS = {
   // Admin routes
-  '/admin': ['admin.*'],
-  '/admin/dashboard': ['admin.*'],
+  '/admin': ['admin.*', 'order.view_assigned', 'order.view'],
+  '/admin/dashboard': ['admin.*', 'order.view_assigned', 'order.view'],
   '/admin/products': ['product.*'],
   '/admin/add-product': ['product.create'],
   '/admin/products/:id': ['product.view'],
   '/admin/categories': ['category.*'],
   '/admin/purchase-orders': ['purchase.*'],
   '/admin/goods-receipt': ['import.*'],
-  '/admin/orders': ['order.view'],
-  '/admin/orders/:id': ['order.view'],
+  '/admin/orders': ['order.view', 'order.view_assigned'],
+  '/admin/orders/:id': ['order.view', 'order.view_assigned'],
   '/admin/customers': ['admin.*'],
   '/admin/suppliers': ['supplier.*'],
   '/admin/invoices': ['invoice.*'],

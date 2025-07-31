@@ -68,14 +68,14 @@ function App() {
         <Routes>
           {/* Admin Routes - Sử dụng AdminLayout với sidebar */}
           <Route path="/admin" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['admin.*', 'order.view_assigned', 'order.view']}>
               <AdminLayout>
                 <AdminDashboard />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/dashboard" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['admin.*', 'order.view_assigned', 'order.view']}>
               <AdminLayout>
                 <AdminDashboard />
               </AdminLayout>
@@ -124,14 +124,14 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/orders" element={
-            <ProtectedRoute requiredPermissions={['order.view']}>
+            <ProtectedRoute requiredPermissions={['order.view', 'order.view_assigned']}>
               <AdminLayout>
                 <Orders />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/orders/:id" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['order.view', 'order.view_assigned']}>
               <AdminLayout>
                 <OrderDetail />
               </AdminLayout>

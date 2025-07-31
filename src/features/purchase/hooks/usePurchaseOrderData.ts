@@ -20,15 +20,12 @@ import { updatePurchaseOrder as updatePurchaseOrderAPI } from "../../../services
 
 // Transform API data to match our interface
 const transformPurchaseOrderFromAPI = (apiPO: any): PurchaseOrder => {
-  console.log("Transforming purchase order:", apiPO);
-  
   const items = (apiPO.CT_PhieuDatHangNCCs || []).map((item: any) => ({
-    MaSP: item.ChiTietSanPham?.MaSP || item.MaCTSP,
-    productName: item.ChiTietSanPham?.SanPham?.TenSP || item.MaCTSP,
-    MaMau: item.ChiTietSanPham?.MaMau || "",
-    MaKichThuoc: item.ChiTietSanPham?.MaKichThuoc || "",
-    colorName: item.ChiTietSanPham?.Mau?.TenMau || "",
-    sizeName: item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || "",
+    MaSP: item.ChiTietSanPham?.MaSP || item.MaSP,
+    productName: item.ChiTietSanPham?.SanPham?.TenSP || item.productName || "Sản phẩm không tên",
+    MaCTSP: item.MaCTSP || item.ChiTietSanPham?.MaCTSP || "",
+    colorName: item.ChiTietSanPham?.Mau?.TenMau || item.colorName || "",
+    sizeName: item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || item.sizeName || "",
     quantity: item.SoLuong || 0,
     unitPrice: parseFloat(item.DonGia) || 0,
     totalPrice: (item.SoLuong || 0) * (parseFloat(item.DonGia) || 0),
@@ -50,7 +47,6 @@ const transformPurchaseOrderFromAPI = (apiPO: any): PurchaseOrder => {
     createdBy: apiPO.MaNV || "",
   };
   
-  console.log("Transformed purchase order:", transformed);
   return transformed;
 };
 
@@ -63,15 +59,23 @@ const transformSupplierFromAPI = (apiSupplier: any): Supplier => ({
   address: apiSupplier.DiaChi || "",
 });
 
-const transformProductFromAPI = (apiProduct: any): Product => ({
-  id: apiProduct.MaSP,
-  name: apiProduct.TenSP || apiProduct.MaCTSP,
-  price: apiProduct.DonGia || 0,
-  description: apiProduct.MoTa || "",
-  category: apiProduct.LoaiSP || "clothing",
-  // Giữ lại MaNCC để filter theo nhà cung cấp
-  MaNCC: apiProduct.MaNCC,
-});
+const transformProductFromAPI = (apiProduct: any): Product => {
+  const transformed = {
+    id: apiProduct.MaSP || apiProduct.MaCTSP || apiProduct.id,
+    name: apiProduct.TenSP || apiProduct.TenSanPham || apiProduct.name || apiProduct.MaCTSP || "Sản phẩm không tên",
+    price: parseFloat(apiProduct.DonGia) || parseFloat(apiProduct.Gia) || 0,
+    description: apiProduct.MoTa || apiProduct.description || "",
+    category: apiProduct.LoaiSP || apiProduct.category || "clothing",
+    // Giữ lại MaNCC để filter theo nhà cung cấp
+    MaNCC: apiProduct.MaNCC || apiProduct.supplierId,
+    // Thêm các thông tin khác nếu có
+    color: apiProduct.Mau?.TenMau || apiProduct.color || "",
+    size: apiProduct.KichThuoc?.TenKichThuoc || apiProduct.size || "",
+    stock: apiProduct.SoLuongTon || apiProduct.stock || 0,
+  };
+  
+  return transformed;
+};
 
 // Helper function to map status
 const getStatusFromTrangThai = (maTrangThai: number): PurchaseOrder["status"] => {
@@ -126,12 +130,10 @@ export const usePurchaseOrderData = (currentUserId: string) => {
 
   // Load purchase orders
   const loadPurchaseOrders = async () => {
-    console.log("=== LOAD PURCHASE ORDERS CALLED ===");
     setLoading(prev => ({ ...prev, purchaseOrders: true }));
     
     try {
       const response = await getPurchaseOrders();
-      console.log("response", response);
       
       // Handle API response structure: {success, message, data}
       let orders: any[] = [];
@@ -179,31 +181,32 @@ export const usePurchaseOrderData = (currentUserId: string) => {
 
   // Load suppliers
   const loadSuppliers = async () => {
-    console.log("loadSuppliers called");
     setLoading(prev => ({ ...prev, suppliers: true }));
     
     try {
-      console.log("Calling getSuppliers API...");
       const response = await getSuppliers();
       
-      // Try to handle different response formats
+      // Extract supplier data from the API response structure
       let supplierData: any[] = [];
-      if (Array.isArray(response)) {
-        supplierData = response;
-      } else if (response && Array.isArray((response as any).data)) {
-        supplierData = (response as any).data;
-      } else if (response && typeof response === 'object') {
-        // If response is an object, try to find array in common properties
+      if (response && typeof response === 'object' && !Array.isArray(response)) {
         const responseObj = response as any;
-        supplierData = responseObj.suppliers || responseObj.items || responseObj.result || [];
+        if (responseObj.success && responseObj.data && responseObj.data.data) {
+          // API response structure: { success: true, data: { data: Array } }
+          supplierData = responseObj.data.data;
+        } else if (Array.isArray(responseObj.data)) {
+          supplierData = responseObj.data;
+        } else {
+          // Fallback: try to find array in common properties
+          supplierData = responseObj.suppliers || responseObj.items || responseObj.result || [];
+        }
+      } else if (Array.isArray(response)) {
+        supplierData = response;
       }
       
       if (supplierData.length > 0) {
         const transformedSuppliers = supplierData.map(transformSupplierFromAPI);
-        console.log("Transformed suppliers:", transformedSuppliers);
         setSuppliers(transformedSuppliers);
       } else {
-        console.log("No suppliers found or empty array");
         setSuppliers([]);
       }
     } catch (error: any) {
@@ -223,28 +226,47 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       setProducts([]);
       return;
     }
+    
     setLoading(prev => ({ ...prev, products: true }));
+    
     try {
       const response = await getProductsBySupplier(supplierId);
+      
       let productData: any[] = [];
-      if (Array.isArray(response)) {
-        productData = response;
-      } else if (response && Array.isArray((response as any).data)) {
-        productData = (response as any).data;
-      } else if (response && typeof response === 'object') {
+      
+      // Handle different API response structures
+      if (response && typeof response === 'object' && !Array.isArray(response)) {
         const responseObj = response as any;
-        productData = responseObj.products || responseObj.items || responseObj.result || [];
+        if (responseObj.success && responseObj.data && Array.isArray(responseObj.data)) {
+          // API response structure: { success: true, data: Array }
+          productData = responseObj.data;
+        } else if (responseObj.data && responseObj.data.data && Array.isArray(responseObj.data.data)) {
+          // API response structure: { data: { data: Array } }
+          productData = responseObj.data.data;
+        } else if (Array.isArray(responseObj.data)) {
+          productData = responseObj.data;
+        } else {
+          // Fallback: try to find array in common properties
+          productData = responseObj.products || responseObj.items || responseObj.result || [];
+        }
+      } else if (Array.isArray(response)) {
+        productData = response;
       }
+      
       if (productData.length > 0) {
         const transformedProducts = productData.map(transformProductFromAPI);
         setProducts(transformedProducts);
       } else {
         setProducts([]);
+        toast.info("Không có sản phẩm", {
+          description: "Nhà cung cấp này chưa có sản phẩm nào"
+        });
       }
     } catch (error: any) {
+      console.error("Error loading products by supplier:", error);
       setProducts([]);
       toast.error("Lỗi tải sản phẩm", {
-        description: "Không thể tải danh sách sản phẩm"
+        description: "Không thể tải danh sách sản phẩm của nhà cung cấp"
       });
     } finally {
       setLoading(prev => ({ ...prev, products: false }));
@@ -264,12 +286,8 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     
     try {
       
-      const supplier = suppliers.find(s => {
-        console.log("Comparing supplier.id:", s.id, "type:", typeof s.id, "with poForm.supplierId:", poForm.supplierId, "type:", typeof poForm.supplierId);
-        return s.id.toString() === poForm.supplierId.toString();
-      });
+      const supplier = suppliers.find(s => s.id.toString() === poForm.supplierId.toString());
       
-      console.log("Found supplier:", supplier);
       if (!supplier) {
         throw new Error("Không tìm thấy nhà cung cấp");
       }
@@ -287,8 +305,7 @@ export const usePurchaseOrderData = (currentUserId: string) => {
           
           const mappedItem = {
             MaSP: item.MaSP,
-            MaMau: item.MaMau,
-            MaKichThuoc: item.MaKichThuoc,
+            MaCTSP: item.MaCTSP,
             SoLuong: item.quantity,
             DonGia: item.unitPrice,
             ThanhTien: item.quantity * item.unitPrice,
@@ -298,18 +315,7 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         }),
       };
 
-      console.log("Final API data before sending:", apiData);
-      console.log("API data details:", JSON.stringify(apiData, null, 2));
-      
-      const token = localStorage.getItem("token");
-      console.log("Token exists:", !!token);
-      console.log("Token preview:", token ? `${token.substring(0, 20)}...` : "null");
-      console.log("API URL:", (import.meta as any).env?.VITE_API_URL);
-
-      console.log("=== CALLING createPurchaseOrderAPI ===");
       const result = await createPurchaseOrderAPI(apiData);
-      console.log("=== API CALL SUCCESS ===");
-      console.log("Result:", result);
       
       toast.success("Thành công", {
         description: "Phiếu đặt hàng đã được tạo thành công"
@@ -366,9 +372,6 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     setLoading(prev => ({ ...prev, updating: true }));
     
     try {
-      console.log("Updating purchase order with ID:", poId);
-      console.log("Form data:", poForm);
-      
       const supplier = suppliers.find(s => s.id.toString() === poForm.supplierId.toString());
       if (!supplier) {
         throw new Error("Không tìm thấy nhà cung cấp");
@@ -383,18 +386,14 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         GhiChu: poForm.notes || "",
         details: poForm.items.map(item => ({
           MaSP: item.MaSP,
-          MaMau: item.MaMau,
-          MaKichThuoc: item.MaKichThuoc,
+          MaCTSP: item.MaCTSP,
           SoLuong: item.quantity,
           DonGia: item.unitPrice,
           ThanhTien: item.quantity * item.unitPrice,
         })),
       };
 
-      console.log("Update API data:", apiData);
-      
       const result = await updatePurchaseOrderAPI(poId, apiData);
-      console.log("Update result:", result);
       
       toast.success("Thành công", {
         description: "Phiếu đặt hàng đã được cập nhật thành công"
@@ -432,47 +431,37 @@ export const usePurchaseOrderData = (currentUserId: string) => {
 
   // Download Excel file
   const downloadExcel = (excelFile: any) => {
-    console.log('Downloading excel file:', excelFile);
     const downloadUrl = `http://localhost:8080${excelFile.downloadUrl}`;
-    console.log('Download URL:', downloadUrl);
     window.open(downloadUrl, '_blank');
   };
 
   // Send purchase order
   const sendPurchaseOrder = async (poId: string) => {
-    console.log('=== SEND PURCHASE ORDER START ===', poId);
     // Add to sending loading state
     setActionLoading(prev => ({ ...prev, sending: [...prev.sending, poId] }));
     
     try {
       const response = await updatePurchaseOrderStatus(poId, 2); // Status 2 = sent
       
-      console.log('Send purchase order response:', response);
-      
       // Check if response contains excel file data
       if (response?.excelFile) {
-        console.log('Excel file found:', response.excelFile);
         downloadExcel(response.excelFile);
         toast.success("Đã gửi phiếu đặt hàng", {
           description: "Phiếu đặt hàng đã được gửi cho nhà cung cấp và file Excel đã được tải về"
         });
       } else if (response?.data?.excelFile) {
-        console.log('Excel file found in data:', response.data.excelFile);
         downloadExcel(response.data.excelFile);
         toast.success("Đã gửi phiếu đặt hàng", {
           description: "Phiếu đặt hàng đã được gửi cho nhà cung cấp và file Excel đã được tải về"
         });
       } else {
-        console.log('No excel file found in response');
         toast.success("Đã gửi phiếu đặt hàng", {
           description: "Phiếu đặt hàng đã được gửi cho nhà cung cấp"
         });
       }
       
-      console.log('=== UPDATING STATE INSTEAD OF RELOADING ===');
       // Refresh data from API instead of updating state
       await loadPurchaseOrders();
-      console.log('=== SEND PURCHASE ORDER END ===');
     } catch (error: any) {
       console.error("Error sending purchase order:", error);
       let errorMessage = "Không thể gửi phiếu đặt hàng";
@@ -559,20 +548,26 @@ export const usePurchaseOrderData = (currentUserId: string) => {
   // Initialize data on mount
   // Khi supplierId thay đổi, load lại products
   useEffect(() => {
-    console.log('=== COMPONENT MOUNT - Loading initial data ===');
     loadPurchaseOrders();
     loadSuppliers();
   }, []);
 
   useEffect(() => {
-    console.log('=== useEffect [suppliers, purchaseOrders] triggered ===');
     if (suppliers && suppliers.length > 0 && purchaseOrders) {
-      // Nếu có supplierId được chọn, load sản phẩm theo supplier
-      // Tìm supplierId từ purchase order form hoặc state nếu có
-      // Ở đây bạn cần truyền supplierId vào loadProducts khi cần
-      console.log('Suppliers and purchaseOrders changed, but not calling loadProducts');
+      // Không tự động load products ở đây, để component gọi handleSupplierChange khi cần
     }
   }, [suppliers, purchaseOrders]);
+
+  // Helper function to handle supplier selection and load products
+  const handleSupplierChange = async (supplierId: string | number) => {
+    if (!supplierId) {
+      setProducts([]);
+      return;
+    }
+    
+    // Load products for the selected supplier
+    await loadProducts(supplierId);
+  };
 
   // Export thêm loadProducts để component gọi khi chọn supplier
   return {
@@ -589,6 +584,7 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     loadPurchaseOrders,
     loadSuppliers,
     loadProducts,
+    handleSupplierChange, // Thêm hàm helper này
     createPurchaseOrder,
     updatePurchaseOrder,
     sendPurchaseOrder,

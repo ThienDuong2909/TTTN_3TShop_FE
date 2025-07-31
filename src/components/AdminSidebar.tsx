@@ -21,6 +21,15 @@ interface AdminSidebarProps {
   setActiveTab: (tab: string) => void;
 }
 
+interface NavigationItem {
+  name: string;
+  id: string;
+  icon: any;
+  permission: string;
+  route: string;
+  alternativePermissions?: string[];
+}
+
 export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
   const { state } = useApp();
   const navigate = useNavigate();
@@ -28,13 +37,14 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
   const userPermissions = state.user?.permissions || [];
   const isAdmin = state.user?.role === "admin";
 
-  const navigation = [
+  const navigation: NavigationItem[] = [
     {
       name: "Tổng quan",
       id: "overview",
       icon: BarChart3,
       permission: "admin.*",
       route: "/admin",
+      alternativePermissions: ["order.view_assigned", "order.view"],
     },
     {
       name: "Sản phẩm",
@@ -56,6 +66,7 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       icon: ShoppingCart,
       permission: "order.view",
       route: "/admin/orders",
+      alternativePermissions: ["order.view_assigned"],
     },
     {
       name: "Khách hàng",
@@ -74,7 +85,7 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
     {
       name: "Phiếu nhập hàng",
       id: "goods-receipt",
-      icon: Package,
+      icon: FileText,
       permission: "import.*",
       route: "/admin/goods-receipt",
     },
@@ -137,10 +148,14 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
   ];
 
   const filteredNavigation = navigation.filter((item) => {
-    return hasPermission(userPermissions, item.permission);
+    const hasMainPermission = hasPermission(userPermissions, item.permission);
+    const hasAlternativePermission = item.alternativePermissions?.some(perm => 
+      hasPermission(userPermissions, perm)
+    );
+    return hasMainPermission || hasAlternativePermission;
   });
 
-  const handleItemClick = (item: typeof navigation[0]) => {
+  const handleItemClick = (item: NavigationItem) => {
     navigate(item.route);
   };
 

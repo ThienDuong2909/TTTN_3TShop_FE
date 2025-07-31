@@ -34,7 +34,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     } else if (path.includes("/admin/products")) {
       setActiveTab("products");
     } else if (path.includes("/admin/categories")) {
-      setActiveTab("ctegories");
+      setActiveTab("categories");
     } else if (path.includes("/admin/orders")) {
       setActiveTab("orders");
     } else if (path.includes("/admin/purchase-orders")) {

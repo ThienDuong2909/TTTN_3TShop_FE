@@ -54,15 +54,29 @@ export default function Login() {
     const maVaiTro = res.data?.user?.TaiKhoan?.VaiTro?.MaVaiTro;
     const tenVaiTro = res.data?.user?.TaiKhoan?.VaiTro?.TenVaiTro;
     
-    // Map MaVaiTro to role name
+    // Map MaVaiTro to role name for User interface
     let role: "admin" | "staff" | "customer" = "customer"; // default
-    if (maVaiTro === 1 || tenVaiTro === "Admin") role = "admin";
-    else if (maVaiTro === 2 || tenVaiTro === "NhanVienCuaHang") role = "staff";
-    else if (maVaiTro === 3 || tenVaiTro === "NhanVienGiaoHang") role = "staff";
-    else if (maVaiTro === 4 || tenVaiTro === "KhachHang") role = "customer";
+    let roleName: "Admin" | "NhanVienCuaHang" | "NhanVienGiaoHang" | "KhachHang" = "KhachHang"; // for permissions
+    
+    if (maVaiTro === 1 || tenVaiTro === "Admin") {
+      role = "admin";
+      roleName = "Admin";
+    }
+    else if (maVaiTro === 2 || tenVaiTro === "NhanVienCuaHang") {
+      role = "staff";
+      roleName = "NhanVienCuaHang";
+    }
+    else if (maVaiTro === 3 || tenVaiTro === "NhanVienGiaoHang") {
+      role = "staff";
+      roleName = "NhanVienGiaoHang";
+    }
+    else if (maVaiTro === 4 || tenVaiTro === "KhachHang") {
+      role = "customer";
+      roleName = "KhachHang";
+    }
 
-    // Get permissions for the role
-    const permissions = getPermissionsForRole(role);
+    // Get permissions for the role using roleName
+    const permissions = getPermissionsForRole(roleName);
 
     // Extract user info
     const apiUser = res.data?.user;
@@ -86,11 +100,20 @@ export default function Login() {
     }
 
     setIsLoading(true);
+    setErrors({}); // Clear previous errors
 
     try {
       // Call real API
       const res = await api.login({ email, password });
       console.log("API LOGIN RESPONSE", res);
+      
+      // Check if API returned an error
+      if (res?.error) {
+        toast.error(res.message || "Đăng nhập thất bại");
+        setErrors({ email: res.message || "Đăng nhập thất bại" });
+        return;
+      }
+      
       if (res?.success && res.data?.token && res.data?.user) {
         // Save token
         localStorage.setItem("token", res.data.token);
@@ -101,12 +124,15 @@ export default function Login() {
         toast.success("Đăng nhập thành công!");
         navigate("/");
       } else {
-        toast.error(res?.error || res?.message || "Đăng nhập thất bại");
-        setErrors({ email: res?.error || res?.message || "Đăng nhập thất bại" });
+        const errorMessage = res?.error || res?.message || "Đăng nhập thất bại";
+        toast.error(errorMessage);
+        setErrors({ email: errorMessage });
       }
     } catch (error: any) {
-      toast.error(error.message || "Đăng nhập thất bại");
-      setErrors({ email: error.message || "Đăng nhập thất bại" });
+      console.error("Login error:", error);
+      const errorMessage = error?.response?.data?.message || error?.message || "Đăng nhập thất bại";
+      toast.error(errorMessage);
+      setErrors({ email: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -136,7 +162,14 @@ export default function Login() {
                     placeholder="Nhập email của bạn"
                     className="pl-10"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      // Clear error when user starts typing
+                      if (errors.email) {
+                        setErrors(prev => ({ ...prev, email: undefined }));
+                      }
+                    }}
+                    disabled={isLoading}
                   />
                 </div>
                 {errors.email && (
@@ -154,7 +187,14 @@ export default function Login() {
                     placeholder="Nhập mật khẩu"
                     className="pl-10 pr-10"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      // Clear error when user starts typing
+                      if (errors.password) {
+                        setErrors(prev => ({ ...prev, password: undefined }));
+                      }
+                    }}
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
@@ -194,13 +234,20 @@ export default function Login() {
                 </Link>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-brand-600 hover:bg-brand-700"
-                disabled={isLoading}
-              >
-                {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
-              </Button>
+                             <Button
+                 type="submit"
+                 className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                 disabled={isLoading}
+               >
+                 {isLoading ? (
+                   <div className="flex items-center justify-center">
+                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                     Đang đăng nhập...
+                   </div>
+                 ) : (
+                   "Đăng nhập"
+                 )}
+               </Button>
             </form>
 
             <div className="mt-6">
