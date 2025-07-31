@@ -19,6 +19,8 @@ import { getProductColorsSizes } from "../../../services/commonService";
 import { POForm, Supplier, Product, PurchaseOrderItem, ProductDetail } from "../types";
 import { useState, useEffect } from "react";
 import clsx from "clsx";
+import { toast } from "sonner";
+
 
 interface CreatePurchaseOrderFormProps {
   poForm: POForm;
@@ -41,6 +43,8 @@ export default function CreatePurchaseOrderForm({
   isLoading = false,
   loadProducts,
 }: CreatePurchaseOrderFormProps) {
+
+  
   // State for product details for each item
   const [itemProductDetails, setItemProductDetails] = useState<{ [key: number]: ProductDetail[] }>({});
   
@@ -52,43 +56,106 @@ export default function CreatePurchaseOrderForm({
   
   // Validate form
   const [touched, setTouched] = useState<{[key: string]: boolean}>({});
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  
   const isFieldInvalid = (field: string, value: any) => {
     if (!touched[field]) return false;
-    if (typeof value === 'string') return !value.trim();
-    if (typeof value === 'number') return value === 0;
-    return !value;
+    return !!errors[field];
+  };
+
+  const validateField = (field: string, value: any): string => {
+    switch (field) {
+      case 'supplierId':
+        return (!value || value.trim() === "") ? "Vui lòng chọn nhà cung cấp" : "";
+      case 'expectedDeliveryDate':
+        if (!value || value.trim() === "") {
+          return "Vui lòng nhập ngày giao dự kiến";
+        }
+        const deliveryDate = new Date(value);
+        const currentDate = new Date();
+        currentDate.setHours(0, 0, 0, 0);
+        if (deliveryDate <= currentDate) {
+          return "Ngày giao dự kiến phải lớn hơn ngày hiện tại";
+        }
+        return "";
+      default:
+        return "";
+    }
+  };
+
+  const validateItemField = (index: number, field: string, value: any): string => {
+    switch (field) {
+      case 'MaSP':
+        return (!value || value.toString().trim() === "") ? "Vui lòng chọn sản phẩm" : "";
+      case 'colorId':
+        return (!value || value === undefined) ? "Vui lòng chọn màu sắc" : "";
+      case 'sizeId':
+        return (!value || value === undefined) ? "Vui lòng chọn kích thước" : "";
+      case 'quantity':
+        return (!value || value <= 0) ? "Vui lòng nhập số lượng hợp lệ (lớn hơn 0)" : "";
+      case 'unitPrice':
+        return (!value || value <= 0) ? "Vui lòng nhập đơn giá hợp lệ (lớn hơn 0)" : "";
+      default:
+        return "";
+    }
+  };
+
+  const validateDuplicateItems = (): string[] => {
+    const duplicateErrors: string[] = [];
+    poForm.items.forEach((item, index) => {
+      const duplicateItem = poForm.items.find((otherItem, otherIndex) => 
+        otherIndex !== index && 
+        otherItem.MaSP === item.MaSP && 
+        otherItem.colorId === item.colorId && 
+        otherItem.sizeId === item.sizeId
+      );
+      
+      if (duplicateItem) {
+        duplicateErrors.push(`Sản phẩm ${index + 1}: Sản phẩm này với màu và kích thước đã được chọn trước đó`);
+      }
+    });
+    return duplicateErrors;
   };
   
-  // Filter products by supplier when supplier changes
-  useEffect(() => {
-    if (poForm.supplierId) {
-      const supplierProducts = products.filter((product: any) => {
-        const productSupplierId = product.MaNCC?.toString();
-        const selectedSupplierId = poForm.supplierId.toString();
-        return productSupplierId === selectedSupplierId;
-      });
-      
-      // Add currently selected products to filtered list to prevent reset
-      const selectedProducts = poForm.items
-        .map(item => item.MaSP)
-        .filter(id => id)
-        .map(id => products.find(p => p.id.toString() === id.toString()))
-        .filter(Boolean);
-      
-      const allProductsToShow = [...supplierProducts];
-      
-      // Add selected products that are not already in the filtered list
-      selectedProducts.forEach(selectedProduct => {
-        if (selectedProduct && !allProductsToShow.find(p => p.id === selectedProduct.id)) {
-          allProductsToShow.push(selectedProduct);
-        }
-      });
-      
-      setFilteredProducts(allProductsToShow);
-    } else {
-      setFilteredProducts([]);
-    }
-  }, [poForm.supplierId, products, poForm.items]);
+     // Filter products by supplier when supplier changes
+   useEffect(() => {
+     if (poForm.supplierId) {
+       const supplierProducts = products.filter((product: any) => {
+         const productSupplierId = product.MaNCC?.toString();
+         const selectedSupplierId = poForm.supplierId.toString();
+         return productSupplierId === selectedSupplierId;
+       });
+       
+       // Add currently selected products to filtered list to prevent reset
+       const selectedProducts = poForm.items
+         .map(item => item.MaSP)
+         .filter(id => id)
+         .map(id => products.find(p => p.id.toString() === id.toString()))
+         .filter(Boolean);
+       
+       const allProductsToShow = [...supplierProducts];
+       
+       // Add selected products that are not already in the filtered list
+       selectedProducts.forEach(selectedProduct => {
+         if (selectedProduct && !allProductsToShow.find(p => p.id === selectedProduct.id)) {
+           allProductsToShow.push(selectedProduct);
+         }
+       });
+       
+       setFilteredProducts(allProductsToShow);
+     } else {
+       setFilteredProducts([]);
+     }
+   }, [poForm.supplierId, products, poForm.items]);
+
+   // Load product details for existing items when component mounts or products change
+   useEffect(() => {
+     poForm.items.forEach((item, index) => {
+       if (item.MaSP && !itemProductDetails[index]) {
+         loadProductDetails(index, item.MaSP.toString());
+       }
+     });
+   }, [products, poForm.items]);
   
   // Check if a product detail is already selected (excluding current index)
   const isProductDetailSelected = (productDetailId: number, currentIndex: number) => {
@@ -105,51 +172,57 @@ export default function CreatePurchaseOrderForm({
     return filteredSuppliers;
   };
 
-  // Load product details (colors and sizes) for a product
-  const loadProductDetails = async (index: number, productId: string) => {
-    if (!productId || productId === "") {
-      return;
-    }
-    
-    // Set loading state
-    setLoadingProductDetails(prev => ({ ...prev, [index]: true }));
-    
-    try {
-      const response = await getProductColorsSizes(productId);
+     // Load product details (colors and sizes) for a product
+   const loadProductDetails = async (index: number, productId: string) => {
+     if (!productId || productId === "") {
+       return;
+     }
+     
+     console.log("DEBUG - Loading product details for:", { index, productId });
+     
+     // Set loading state
+      setLoadingProductDetails(prev => ({ ...prev, [index]: true }));
       
-      // Handle different API response formats
-      let productDetails: ProductDetail[] = [];
-      
-      // Try different response formats
-      if (Array.isArray(response)) {
-        productDetails = response;
-      } else if (response && response.success && Array.isArray(response.data)) {
-        productDetails = response.data;
-      } else if (response && Array.isArray(response.data)) {
-        productDetails = response.data;
-      } else if (response && typeof response === 'object') {
-        // Try to find array in common properties
-        const responseObj = response as any;
-        productDetails = responseObj.products || responseObj.items || responseObj.result || responseObj.data || [];
-      }
-      
-      setItemProductDetails(prev => ({
-        ...prev,
-        [index]: productDetails
-      }));
-      
-    } catch (error) {
-      console.error(`Error loading product details for product ${productId}:`, error);
-      // Set empty array on error
-      setItemProductDetails(prev => ({
-        ...prev,
-        [index]: []
-      }));
-    } finally {
-      // Clear loading state
-      setLoadingProductDetails(prev => ({ ...prev, [index]: false }));
-    }
-  };
+      try {
+        const response = await getProductColorsSizes(productId);
+        
+        console.log("DEBUG - Product details API response:", response);
+        
+        // Handle different API response formats
+        let productDetails: ProductDetail[] = [];
+        
+        // Try different response formats
+        if (Array.isArray(response)) {
+          productDetails = response;
+        } else if (response && response.success && Array.isArray(response.data)) {
+          productDetails = response.data;
+        } else if (response && Array.isArray(response.data)) {
+          productDetails = response.data;
+        } else if (response && typeof response === 'object') {
+          // Try to find array in common properties
+          const responseObj = response as any;
+          productDetails = responseObj.products || responseObj.items || responseObj.result || responseObj.data || [];
+        }
+       
+       console.log("DEBUG - Processed product details:", productDetails);
+       
+       setItemProductDetails(prev => ({
+         ...prev,
+         [index]: productDetails
+       }));
+       
+     } catch (error) {
+       console.error(`Error loading product details for product ${productId}:`, error);
+       // Set empty array on error
+       setItemProductDetails(prev => ({
+         ...prev,
+         [index]: []
+       }));
+     } finally {
+       // Clear loading state
+       setLoadingProductDetails(prev => ({ ...prev, [index]: false }));
+     }
+   };
 
   const addItemToPO = () => {
     setPOForm({
@@ -160,6 +233,10 @@ export default function CreatePurchaseOrderForm({
           MaSP: "",
           productName: "",
           MaCTSP: "",
+          colorId: undefined,
+          colorName: "",
+          sizeId: undefined,
+          sizeName: "",
           quantity: 1,
           unitPrice: 0,
         },
@@ -176,63 +253,77 @@ export default function CreatePurchaseOrderForm({
     const newItems = [...poForm.items];
     newItems[index] = { ...newItems[index], [field]: value };
 
-    // Auto-fill product name and price when product is selected
-    if (field === "MaSP") {
-      // Always search in all products first to ensure we can find the product
-      const product = products.find((p: any) => p.id.toString() === value.toString());
-      if (product) {
-        newItems[index].productName = product.name;
-        newItems[index].unitPrice = Math.floor(product.price * 0.6); // Wholesale price
-        // Reset product detail when product changes
-        newItems[index].MaCTSP = "";
-        newItems[index].colorName = "";
-        newItems[index].sizeName = "";
-        // Clear existing product details for this index first
-        setItemProductDetails(prev => ({
-          ...prev,
-          [index]: []
-        }));
-        // Clear loading state for this index
-        setLoadingProductDetails(prev => ({
-          ...prev,
-          [index]: false
-        }));
-        // Load product details for the new product immediately
-        loadProductDetails(index, value);
-      } else {
-        // Clear product details if no product selected
-        setItemProductDetails(prev => ({
-          ...prev,
-          [index]: []
-        }));
-        // Clear loading state
-        setLoadingProductDetails(prev => ({
-          ...prev,
-          [index]: false
-        }));
-      }
-    }
+         // Auto-fill product name and price when product is selected
+     if (field === "MaSP") {
+       // Always search in all products first to ensure we can find the product
+       const product = products.find((p: any) => p.id.toString() === value.toString());
+       if (product) {
+         newItems[index].productName = product.name;
+         newItems[index].unitPrice = Math.floor(product.price * 0.6); // Wholesale price
+         // Reset product detail when product changes
+         newItems[index].MaCTSP = "";
+         newItems[index].colorId = undefined;
+         newItems[index].colorName = "";
+         newItems[index].sizeId = undefined;
+         newItems[index].sizeName = "";
+         
+         // Clear existing product details for this index first
+         setItemProductDetails(prev => ({
+           ...prev,
+           [index]: []
+         }));
+         // Clear loading state for this index
+         setLoadingProductDetails(prev => ({
+           ...prev,
+           [index]: false
+         }));
+         
+         // Load product details for the new product immediately
+         loadProductDetails(index, value);
+       } else {
+         // Clear product details if no product selected
+         newItems[index].MaCTSP = "";
+         newItems[index].colorId = undefined;
+         newItems[index].colorName = "";
+         newItems[index].sizeId = undefined;
+         newItems[index].sizeName = "";
+         
+         setItemProductDetails(prev => ({
+           ...prev,
+           [index]: []
+         }));
+         // Clear loading state
+         setLoadingProductDetails(prev => ({
+           ...prev,
+           [index]: false
+         }));
+       }
+     }
 
-    // Auto-fill color and size names when product detail is selected
-    if (field === "MaCTSP") {
-      const productDetails = itemProductDetails[index] || [];
-      const selectedDetail = productDetails.find(detail => detail.MaCTSP === value);
-      if (selectedDetail) {
-        newItems[index].colorName = selectedDetail.Mau.TenMau;
-        newItems[index].sizeName = selectedDetail.KichThuoc.TenKichThuoc;
-      }
-    }
+         // Auto-fill color and size names when product detail is selected
+     if (field === "MaCTSP") {
+       const productDetails = itemProductDetails[index] || [];
+       const selectedDetail = productDetails.find(detail => detail.MaCTSP === value);
+       if (selectedDetail) {
+         newItems[index].colorId = selectedDetail.Mau.MaMau;
+         newItems[index].colorName = selectedDetail.Mau.TenMau;
+         newItems[index].sizeId = selectedDetail.KichThuoc.MaKichThuoc;
+         newItems[index].sizeName = selectedDetail.KichThuoc.TenKichThuoc;
+       }
+     }
 
-    // Check if the selected product detail is already used
-    if (field === "MaCTSP") {
-      const isAlreadySelected = isProductDetailSelected(value, index);
-      if (isAlreadySelected) {
-        // Clear the field to avoid duplicate
-        newItems[index][field] = "";
-        newItems[index].colorName = "";
-        newItems[index].sizeName = "";
-      }
-    }
+     // Check if the selected product detail is already used
+     if (field === "MaCTSP") {
+       const isAlreadySelected = isProductDetailSelected(value, index);
+       if (isAlreadySelected) {
+         // Clear the field to avoid duplicate
+         newItems[index][field] = "";
+         newItems[index].colorId = undefined;
+         newItems[index].colorName = "";
+         newItems[index].sizeId = undefined;
+         newItems[index].sizeName = "";
+       }
+     }
 
     setPOForm({ ...poForm, items: newItems });
   };
@@ -284,7 +375,80 @@ export default function CreatePurchaseOrderForm({
     }, 0);
   };
 
-  const handleSubmit = () => {
+    const handleSubmit = () => {
+    // Debug: Log the current form state
+    console.log("DEBUG - Form submission - poForm.items:", poForm.items);
+    console.log("DEBUG - Each item's colorId and sizeId:", poForm.items.map(item => ({
+      MaSP: item.MaSP,
+      colorId: item.colorId,
+      colorName: item.colorName,
+      sizeId: item.sizeId,
+      sizeName: item.sizeName
+    })));
+    
+    // Mark all fields as touched to show validation errors
+    setTouched({
+      supplierId: true,
+      expectedDeliveryDate: true,
+      ...poForm.items.reduce((acc, _, index) => ({
+        ...acc,
+        [`MaSP_${index}`]: true,
+        [`colorId_${index}`]: true,
+        [`sizeId_${index}`]: true,
+        [`quantity_${index}`]: true,
+        [`unitPrice_${index}`]: true,
+      }), {})
+    });
+
+    // Check if no products selected - this should show toast
+    if (poForm.items.length === 0) {
+      toast.error("Vui lòng chọn ít nhất 1 sản phẩm");
+      return;
+    }
+
+    // Validate form fields and update errors state
+    const newErrors: {[key: string]: string} = {};
+    const newErrorsItems: {[key: string]: string} = {};
+
+    // Validate supplier
+    newErrors.supplierId = validateField('supplierId', poForm.supplierId);
+
+    // Validate delivery date
+    newErrors.expectedDeliveryDate = validateField('expectedDeliveryDate', poForm.expectedDeliveryDate);
+
+    // Validate items
+    poForm.items.forEach((item, index) => {
+      newErrorsItems[`MaSP_${index}`] = validateItemField(index, 'MaSP', item.MaSP);
+      newErrorsItems[`colorId_${index}`] = validateItemField(index, 'colorId', item.colorId);
+      newErrorsItems[`sizeId_${index}`] = validateItemField(index, 'sizeId', item.sizeId);
+      newErrorsItems[`quantity_${index}`] = validateItemField(index, 'quantity', item.quantity);
+      newErrorsItems[`unitPrice_${index}`] = validateItemField(index, 'unitPrice', item.unitPrice);
+
+      // Check for duplicate product details (same product, color, size)
+      const duplicateItem = poForm.items.find((otherItem, otherIndex) => 
+        otherIndex !== index && 
+        otherItem.MaSP === item.MaSP && 
+        otherItem.colorId === item.colorId && 
+        otherItem.sizeId === item.sizeId
+      );
+      
+      if (duplicateItem) {
+        newErrorsItems[`duplicate_${index}`] = `Sản phẩm ${index + 1}: Sản phẩm này với màu và kích thước đã được chọn trước đó`;
+      }
+    });
+
+    // Update errors state
+    setErrors({ ...newErrors, ...newErrorsItems });
+
+    // Check if there are any validation errors
+    const allErrors = Object.values(newErrors).filter(Boolean);
+    const allErrorsItems = Object.values(newErrorsItems).filter(Boolean);
+
+    if (allErrors.length > 0 || allErrorsItems.length > 0) {
+      // Don't submit if there are validation errors - they will be shown as red borders
+      return;
+    }
+
     onSubmit();
   };
 
@@ -327,18 +491,25 @@ export default function CreatePurchaseOrderForm({
               })()}
             </SelectContent>
           </Select>
+          {isFieldInvalid('supplierId', poForm.supplierId) && (
+            <p className="text-sm text-red-500 mt-1">{errors.supplierId}</p>
+          )}
         </div>
         <div>
           <Label htmlFor="deliveryDate">Ngày giao dự kiến</Label>
           <Input
             id="deliveryDate"
             type="date"
-            className="w-full"
-            value={poForm.expectedDeliveryDate ? poForm.expectedDeliveryDate.slice(0, 10) : ""}
-            onChange={(e) =>
-              setPOForm({ ...poForm, expectedDeliveryDate: e.target.value })
-            }
+            className={clsx("w-full", isFieldInvalid('expectedDeliveryDate', poForm.expectedDeliveryDate) && 'border-red-500')}
+            value={poForm.expectedDeliveryDate || ""}
+            onChange={(e) => {
+              setPOForm({ ...poForm, expectedDeliveryDate: e.target.value });
+            }}
+            onBlur={() => setTouched(t => ({...t, expectedDeliveryDate: true}))}
           />
+          {isFieldInvalid('expectedDeliveryDate', poForm.expectedDeliveryDate) && (
+            <p className="text-sm text-red-500 mt-1">{errors.expectedDeliveryDate}</p>
+          )}
         </div>
       </div>
       <div>
@@ -359,7 +530,7 @@ export default function CreatePurchaseOrderForm({
               return (
                 <Card key={index}>
                   <CardContent className="pt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                                         <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
                     <div>
                       <Label>Sản phẩm</Label>
                       <Select
@@ -408,54 +579,158 @@ export default function CreatePurchaseOrderForm({
                           })()}
                         </SelectContent>
                       </Select>
+                      {isFieldInvalid(`MaSP_${index}`, item.MaSP) && (
+                        <p className="text-sm text-red-500 mt-1">{errors[`MaSP_${index}`]}</p>
+                      )}
                     </div>
-                    <div>
-                      <Label>Chi tiết sản phẩm</Label>
-                      <Select
-                        key={`product-detail-${index}`}
-                        value={item.MaCTSP ? item.MaCTSP.toString() : ""}
-                        onValueChange={(value) =>
-                          updatePOItem(index, "MaCTSP", parseInt(value) || "")
-                        }
-                        disabled={!item.MaSP}
-                      >
-                        <SelectTrigger
-                          className={clsx('focus:outline-none', isFieldInvalid(`MaCTSP_${index}`, item.MaCTSP) && 'border-red-500')}
-                          onBlur={() => setTouched(t => ({...t, [`MaCTSP_${index}`]: true}))}
-                        >
-                          <SelectValue placeholder={!item.MaSP ? "Chọn sản phẩm trước" : "Chọn màu và size"}>
-                            {item.colorName && item.sizeName ? `${item.colorName} - ${item.sizeName}` : "Chọn màu và size"}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(() => {
+                                         <div>
+                       <Label>Màu sắc</Label>
+                       <Select
+                         key={`color-${index}`}
+                         value={item.colorId ? item.colorId.toString() : ""}
+                                                   onValueChange={(value) => {
+                            const colorId = parseInt(value);
                             const productDetails = itemProductDetails[index] || [];
-                            const availableDetails = productDetails.filter(detail => 
-                              !isProductDetailSelected(detail.MaCTSP, index)
+                            const selectedColor = productDetails.find(detail => detail.Mau.MaMau === colorId);
+                            
+                            console.log("DEBUG - Color selected:", { colorId, selectedColor });
+                            
+                            if (selectedColor) {
+                              // Update the item directly without using updatePOItem to avoid conflicts
+                              const newItems = [...poForm.items];
+                              newItems[index] = {
+                                ...newItems[index],
+                                colorId: colorId,
+                                colorName: selectedColor.Mau.TenMau,
+                                sizeId: undefined,
+                                sizeName: "",
+                                MaCTSP: ""
+                              };
+                              setPOForm({ ...poForm, items: newItems });
+                              console.log("DEBUG - After color selection, item:", newItems[index]);
+                            }
+                          }}
+                         disabled={!item.MaSP}
+                       >
+                         <SelectTrigger
+                           className={clsx('focus:outline-none', isFieldInvalid(`colorId_${index}`, item.colorId) && 'border-red-500')}
+                           onBlur={() => setTouched(t => ({...t, [`colorId_${index}`]: true}))}
+                         >
+                           <SelectValue placeholder={!item.MaSP ? "Chọn sản phẩm trước" : "Chọn màu"}>
+                             {item.colorName || "Chọn màu"}
+                           </SelectValue>
+                         </SelectTrigger>
+                         <SelectContent>
+                           {(() => {
+                             const productDetails = itemProductDetails[index] || [];
+                             const colors = productDetails.reduce((acc, detail) => {
+                               const existingColor = acc.find(c => c.MaMau === detail.Mau.MaMau);
+                               if (!existingColor) {
+                                 acc.push(detail.Mau);
+                               }
+                               return acc;
+                             }, [] as any[]);
+                             
+                             return colors.length > 0 ? (
+                               colors.map((color) => (
+                                 <SelectItem key={color.MaMau} value={color.MaMau.toString()}>
+                                   <div className="flex items-center gap-2">
+                                     {color.MaHex && (
+                                       <div 
+                                         className="w-4 h-4 rounded border border-gray-300"
+                                         style={{ backgroundColor: color.MaHex }}
+                                       />
+                                     )}
+                                     {color.TenMau}
+                                   </div>
+                                 </SelectItem>
+                               ))
+                             ) : (
+                               <div className="px-2 py-1 text-sm text-muted-foreground">
+                                 Không có màu sắc nào
+                               </div>
+                             );
+                           })()}
+                         </SelectContent>
+                       </Select>
+                       {isFieldInvalid(`colorId_${index}`, item.colorId) && (
+                         <p className="text-sm text-red-500 mt-1">{errors[`colorId_${index}`]}</p>
+                       )}
+                     </div>
+                     <div>
+                       <Label>Kích thước</Label>
+                       <Select
+                         key={`size-${index}`}
+                         value={item.sizeId ? item.sizeId.toString() : ""}
+                                                   onValueChange={(value) => {
+                            const sizeId = parseInt(value);
+                            const productDetails = itemProductDetails[index] || [];
+                            const selectedSize = productDetails.find(detail => 
+                              detail.KichThuoc.MaKichThuoc === sizeId && 
+                              detail.Mau.MaMau === item.colorId
                             );
-                            return availableDetails.length > 0 ? (
-                              availableDetails.map((detail) => (
-                                <SelectItem key={detail.MaCTSP} value={detail.MaCTSP.toString()}>
-                                  <div className="flex items-center gap-2">
-                                    {detail.Mau.MaHex && (
-                                      <div 
-                                        className="w-4 h-4 rounded border border-gray-300"
-                                        style={{ backgroundColor: detail.Mau.MaHex }}
-                                      />
-                                    )}
-                                    {detail.Mau.TenMau} - {detail.KichThuoc.TenKichThuoc}
-                                  </div>
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <div className="px-2 py-1 text-sm text-muted-foreground">
-                                {productDetails.length > 0 ? "Tất cả chi tiết đã được chọn" : "Không có chi tiết sản phẩm"}
-                              </div>
-                            );
-                          })()}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                            
+                            console.log("DEBUG - Size selected:", { sizeId, selectedSize, itemColorId: item.colorId });
+                            
+                            if (selectedSize) {
+                              // Update the item directly without using updatePOItem to avoid conflicts
+                              const newItems = [...poForm.items];
+                              newItems[index] = {
+                                ...newItems[index],
+                                sizeId: sizeId,
+                                sizeName: selectedSize.KichThuoc.TenKichThuoc,
+                                MaCTSP: selectedSize.MaCTSP
+                              };
+                              setPOForm({ ...poForm, items: newItems });
+                              console.log("DEBUG - After size selection, item:", newItems[index]);
+                            }
+                          }}
+                         disabled={!item.MaSP || !item.colorId}
+                       >
+                         <SelectTrigger
+                           className={clsx('focus:outline-none', isFieldInvalid(`sizeId_${index}`, item.sizeId) && 'border-red-500')}
+                           onBlur={() => setTouched(t => ({...t, [`sizeId_${index}`]: true}))}
+                         >
+                           <SelectValue placeholder={!item.colorId ? "Chọn màu trước" : "Chọn size"}>
+                             {item.sizeName || "Chọn size"}
+                           </SelectValue>
+                         </SelectTrigger>
+                         <SelectContent>
+                           {(() => {
+                             if (!item.colorId) {
+                               return (
+                                 <div className="px-2 py-1 text-sm text-muted-foreground">
+                                   Vui lòng chọn màu trước
+                                 </div>
+                               );
+                             }
+                             
+                             const productDetails = itemProductDetails[index] || [];
+                             const availableSizes = productDetails
+                               .filter(detail => detail.Mau.MaMau === item.colorId)
+                               .map(detail => detail.KichThuoc)
+                               .filter((size, index, arr) => 
+                                 arr.findIndex(s => s.MaKichThuoc === size.MaKichThuoc) === index
+                               );
+                             
+                             return availableSizes.length > 0 ? (
+                               availableSizes.map((size) => (
+                                 <SelectItem key={size.MaKichThuoc} value={size.MaKichThuoc.toString()}>
+                                   {size.TenKichThuoc}
+                                 </SelectItem>
+                               ))
+                             ) : (
+                               <div className="px-2 py-1 text-sm text-muted-foreground">
+                                 Không có kích thước nào cho màu này
+                               </div>
+                             );
+                           })()}
+                         </SelectContent>
+                       </Select>
+                       {isFieldInvalid(`sizeId_${index}`, item.sizeId) && (
+                         <p className="text-sm text-red-500 mt-1">{errors[`sizeId_${index}`]}</p>
+                       )}
+                     </div>
                     <div>
                       <Label>Số lượng</Label>
                       <Input
@@ -478,6 +753,9 @@ export default function CreatePurchaseOrderForm({
                         className={clsx('focus:outline-none', isFieldInvalid(`quantity_${index}`, item.quantity) && 'border-red-500')}
                         onBlur={() => setTouched(t => ({...t, [`quantity_${index}`]: true}))}
                       />
+                      {isFieldInvalid(`quantity_${index}`, item.quantity) && (
+                        <p className="text-sm text-red-500 mt-1">{errors[`quantity_${index}`]}</p>
+                      )}
                     </div>
                     <div>
                       <Label>Đơn giá</Label>
@@ -501,6 +779,9 @@ export default function CreatePurchaseOrderForm({
                         className={clsx('focus:outline-none', isFieldInvalid(`unitPrice_${index}`, item.unitPrice) && 'border-red-500')}
                         onBlur={() => setTouched(t => ({...t, [`unitPrice_${index}`]: true}))}
                       />
+                      {isFieldInvalid(`unitPrice_${index}`, item.unitPrice) && (
+                        <p className="text-sm text-red-500 mt-1">{errors[`unitPrice_${index}`]}</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="text-sm font-medium">

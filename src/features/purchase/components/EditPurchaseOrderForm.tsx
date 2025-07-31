@@ -19,6 +19,9 @@ import { getProductColorsSizes, getProductsBySupplier } from "../../../services/
 import { POForm, Supplier, Product, PurchaseOrderItem, ProductDetail } from "../types";
 import { useState, useEffect } from "react";
 import clsx from "clsx";
+import { toast } from "sonner";
+
+
 
 // Define Color and Size types
 interface Color {
@@ -51,6 +54,8 @@ export default function EditPurchaseOrderForm({
   onCancel,
   isLoading = false,
 }: EditPurchaseOrderFormProps) {
+
+  
   // State for product details for each item
   const [itemProductDetails, setItemProductDetails] = useState<{ [key: number]: ProductDetail[] }>({});
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -59,11 +64,48 @@ export default function EditPurchaseOrderForm({
   const [itemColorsSizes, setItemColorsSizes] = useState<{ [key: number]: { colors: Color[], sizes: Size[] } }>({});
   // Validate form
   const [touched, setTouched] = useState<{[key: string]: boolean}>({});
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  
   const isFieldInvalid = (field: string, value: any) => {
     if (!touched[field]) return false;
-    if (typeof value === 'string') return !value.trim();
-    if (typeof value === 'number') return value === 0;
-    return !value;
+    return !!errors[field];
+  };
+
+  const validateField = (field: string, value: any): string => {
+    switch (field) {
+      case 'supplierId':
+        return (!value || value.trim() === "") ? "Vui lòng chọn nhà cung cấp" : "";
+      case 'expectedDeliveryDate':
+        if (!value || value.trim() === "") {
+          return "Vui lòng nhập ngày giao dự kiến";
+        }
+        const deliveryDate = new Date(value);
+        const currentDate = new Date();
+        currentDate.setHours(0, 0, 0, 0);
+        if (deliveryDate <= currentDate) {
+          return "Ngày giao dự kiến phải lớn hơn ngày hiện tại";
+        }
+        return "";
+      default:
+        return "";
+    }
+  };
+
+  const validateItemField = (index: number, field: string, value: any): string => {
+    switch (field) {
+      case 'MaSP':
+        return (!value || value.toString().trim() === "") ? "Vui lòng chọn sản phẩm" : "";
+      case 'colorId':
+        return (!value || value === undefined) ? "Vui lòng chọn màu sắc" : "";
+      case 'sizeId':
+        return (!value || value === undefined) ? "Vui lòng chọn kích thước" : "";
+      case 'quantity':
+        return (!value || value <= 0) ? "Vui lòng nhập số lượng hợp lệ (lớn hơn 0)" : "";
+      case 'unitPrice':
+        return (!value || value <= 0) ? "Vui lòng nhập đơn giá hợp lệ (lớn hơn 0)" : "";
+      default:
+        return "";
+    }
   };
 
   useEffect(() => {
@@ -298,10 +340,53 @@ export default function EditPurchaseOrderForm({
   };
 
   const handleSubmit = () => {
-    if (!poForm.supplierId || poForm.items.length === 0) {
-      alert("Vui lòng chọn nhà cung cấp và thêm ít nhất một sản phẩm");
+    // Mark all fields as touched to show validation errors
+    setTouched({
+      supplierId: true,
+      expectedDeliveryDate: true,
+      ...poForm.items.reduce((acc, _, index) => ({
+        ...acc,
+        [`MaSP_${index}`]: true,
+        [`MaCTSP_${index}`]: true,
+        [`quantity_${index}`]: true,
+        [`unitPrice_${index}`]: true,
+      }), {})
+    });
+
+    // Check if no products selected - this should show toast
+    if (poForm.items.length === 0) {
+      toast.error("Vui lòng chọn ít nhất 1 sản phẩm");
       return;
     }
+
+    // Validate form fields and update errors state
+    const newErrors: {[key: string]: string} = {};
+
+    // Validate supplier
+    newErrors.supplierId = validateField('supplierId', poForm.supplierId);
+
+    // Validate delivery date
+    newErrors.expectedDeliveryDate = validateField('expectedDeliveryDate', poForm.expectedDeliveryDate);
+
+    // Validate items
+    poForm.items.forEach((item, index) => {
+      newErrors[`MaSP_${index}`] = validateItemField(index, 'MaSP', item.MaSP);
+      newErrors[`MaCTSP_${index}`] = validateItemField(index, 'MaCTSP', item.MaCTSP);
+      newErrors[`quantity_${index}`] = validateItemField(index, 'quantity', item.quantity);
+      newErrors[`unitPrice_${index}`] = validateItemField(index, 'unitPrice', item.unitPrice);
+    });
+
+    // Update errors state
+    setErrors(newErrors);
+
+    // Check if there are any validation errors
+    const allErrors = Object.values(newErrors).filter(Boolean);
+
+    if (allErrors.length > 0) {
+      // Don't submit if there are validation errors - they will be shown as red borders
+      return;
+    }
+
     onSubmit();
   };
 
@@ -340,18 +425,25 @@ export default function EditPurchaseOrderForm({
               })()}
             </SelectContent>
           </Select>
+          {isFieldInvalid('supplierId', poForm.supplierId) && (
+            <p className="text-sm text-red-500 mt-1">{errors.supplierId}</p>
+          )}
         </div>
         <div>
           <Label htmlFor="deliveryDate">Ngày giao dự kiến</Label>
           <Input
             id="deliveryDate"
             type="date"
-            className="w-full"
-            value={poForm.expectedDeliveryDate ? poForm.expectedDeliveryDate.slice(0, 10) : ""}
-            onChange={(e) =>
-              setPOForm({ ...poForm, expectedDeliveryDate: e.target.value })
-            }
+            className={clsx("w-full", isFieldInvalid('expectedDeliveryDate', poForm.expectedDeliveryDate) && 'border-red-500')}
+            value={poForm.expectedDeliveryDate || ""}
+            onChange={(e) => {
+              setPOForm({ ...poForm, expectedDeliveryDate: e.target.value });
+            }}
+            onBlur={() => setTouched(t => ({...t, expectedDeliveryDate: true}))}
           />
+          {isFieldInvalid('expectedDeliveryDate', poForm.expectedDeliveryDate) && (
+            <p className="text-sm text-red-500 mt-1">{errors.expectedDeliveryDate}</p>
+          )}
         </div>
       </div>
       <div>
@@ -428,6 +520,9 @@ export default function EditPurchaseOrderForm({
                           })()}
                         </SelectContent>
                       </Select>
+                      {isFieldInvalid(`MaSP_${index}`, item.MaSP) && (
+                        <p className="text-sm text-red-500 mt-1">{errors[`MaSP_${index}`]}</p>
+                      )}
                     </div>
                     <div>
                       <Label>Chi tiết sản phẩm</Label>
@@ -475,6 +570,9 @@ export default function EditPurchaseOrderForm({
                           })()}
                         </SelectContent>
                       </Select>
+                      {isFieldInvalid(`MaCTSP_${index}`, item.MaCTSP) && (
+                        <p className="text-sm text-red-500 mt-1">{errors[`MaCTSP_${index}`]}</p>
+                      )}
                     </div>
                     <div>
                       <Label>Số lượng</Label>
@@ -498,6 +596,9 @@ export default function EditPurchaseOrderForm({
                         className={clsx('focus:outline-none', isFieldInvalid(`quantity_${index}`, item.quantity) && 'border-red-500')}
                         onBlur={() => setTouched(t => ({...t, [`quantity_${index}`]: true}))}
                       />
+                      {isFieldInvalid(`quantity_${index}`, item.quantity) && (
+                        <p className="text-sm text-red-500 mt-1">{errors[`quantity_${index}`]}</p>
+                      )}
                     </div>
                     <div>
                       <Label>Đơn giá</Label>
@@ -521,6 +622,9 @@ export default function EditPurchaseOrderForm({
                         className={clsx('focus:outline-none', isFieldInvalid(`unitPrice_${index}`, item.unitPrice) && 'border-red-500')}
                         onBlur={() => setTouched(t => ({...t, [`unitPrice_${index}`]: true}))}
                       />
+                      {isFieldInvalid(`unitPrice_${index}`, item.unitPrice) && (
+                        <p className="text-sm text-red-500 mt-1">{errors[`unitPrice_${index}`]}</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="text-sm font-medium">

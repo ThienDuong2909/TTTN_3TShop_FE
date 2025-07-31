@@ -140,6 +140,7 @@ export const createPurchaseOrder = async (data) => {
       MaNV: data.MaNV,
       MaNCC: data.MaNCC,
       MaTrangThai: data.MaTrangThai,
+      NgayKienNghiGiao: formatDateForApi(data.NgayKienNghiGiao),
       details: data.details.map((item) => {
         console.log("Processing item:", item);
         const mappedItem = {
@@ -191,6 +192,7 @@ export const updatePurchaseOrder = async (id, data) => {
       MaNCC: data.MaNCC,
       MaTrangThai: data.MaTrangThai || 1,
       GhiChu: data.GhiChu || "",
+      NgayKienNghiGiao: formatDateForApi(data.NgayKienNghiGiao),
       details: data.details.map((item) => {
         console.log("Processing item:", item);
         const mappedItem = {

@@ -2,10 +2,17 @@ import { useState } from "react";
 import { POForm, PurchaseOrder, PurchaseOrderFilters as PurchaseOrderFiltersType } from "../types";
 import { getPurchaseOrderById } from "../../../services/commonService";
 
+// Helper function to get tomorrow's date in YYYY-MM-DD format
+const getTomorrowDate = (): string => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().split('T')[0];
+};
+
 export const usePurchaseOrderForm = (currentUserId: string) => {
   const [poForm, setPOForm] = useState<POForm>({
     supplierId: "",
-    expectedDeliveryDate: "",
+    expectedDeliveryDate: getTomorrowDate(), // Set default to tomorrow
     notes: "",
     items: [],
   });
@@ -24,7 +31,7 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
   const resetForm = () => {
     setPOForm({
       supplierId: "",
-      expectedDeliveryDate: "",
+      expectedDeliveryDate: getTomorrowDate(), // Set default to tomorrow when resetting
       notes: "",
       items: [],
     });
@@ -45,7 +52,7 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
         
         setPOForm({
           supplierId: details.MaNCC ? details.MaNCC.toString() : po.supplierId.toString(),
-          expectedDeliveryDate: details.NgayGiao || po.expectedDeliveryDate || "",
+          expectedDeliveryDate: details.NgayKienNghiGiao || po.NgayKienNghiGiao || po.expectedDeliveryDate || "",
           notes: details.GhiChu || po.notes || "",
           items: details.CT_PhieuDatHangNCCs ? details.CT_PhieuDatHangNCCs.map((item: any) => {
             const ctsp = item.ChiTietSanPham || {};

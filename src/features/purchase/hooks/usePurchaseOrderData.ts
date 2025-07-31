@@ -43,6 +43,7 @@ const transformPurchaseOrderFromAPI = (apiPO: any): PurchaseOrder => {
     totalAmount,
     orderDate: apiPO.NgayDat || new Date().toISOString(),
     expectedDeliveryDate: apiPO.NgayGiaoHang || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    NgayKienNghiGiao: apiPO.NgayKienNghiGiao || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     notes: apiPO.GhiChu || "",
     createdBy: apiPO.MaNV || "",
   };
@@ -282,6 +283,17 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       return false;
     }
 
+    // Validate that all items have colorId and sizeId
+    const invalidItems = poForm.items.filter(item => !item.colorId || !item.sizeId);
+    if (invalidItems.length > 0) {
+      toast.error("Thông tin không đầy đủ", {
+        description: "Vui lòng chọn màu và kích thước cho tất cả sản phẩm"
+      });
+      return false;
+    }
+
+
+
     setLoading(prev => ({ ...prev, creating: true }));
     
     try {
@@ -300,12 +312,14 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         MaNV: 1,
         MaNCC: poForm.supplierId,
         MaTrangThai: 1, // Draft status
+        NgayKienNghiGiao: poForm.expectedDeliveryDate, // Add expected delivery date
         GhiChu: poForm.notes || "",
         details: poForm.items.map(item => {
           
           const mappedItem = {
             MaSP: item.MaSP,
-            MaCTSP: item.MaCTSP,
+            MaMau: item.colorId,
+            MaKichThuoc: item.sizeId,
             SoLuong: item.quantity,
             DonGia: item.unitPrice,
             ThanhTien: item.quantity * item.unitPrice,
@@ -314,6 +328,8 @@ export const usePurchaseOrderData = (currentUserId: string) => {
           return mappedItem;
         }),
       };
+
+      console.log("DEBUG - Final apiData:", apiData);
 
       const result = await createPurchaseOrderAPI(apiData);
       
@@ -369,6 +385,15 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       return false;
     }
 
+    // Validate that all items have colorId and sizeId
+    const invalidItems = poForm.items.filter(item => !item.colorId || !item.sizeId);
+    if (invalidItems.length > 0) {
+      toast.error("Thông tin không đầy đủ", {
+        description: "Vui lòng chọn màu và kích thước cho tất cả sản phẩm"
+      });
+      return false;
+    }
+
     setLoading(prev => ({ ...prev, updating: true }));
     
     try {
@@ -383,10 +408,12 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         MaNV: 1,
         MaNCC: poForm.supplierId,
         MaTrangThai: 1, // Keep as draft
+        NgayKienNghiGiao: poForm.expectedDeliveryDate, // Add expected delivery date
         GhiChu: poForm.notes || "",
         details: poForm.items.map(item => ({
           MaSP: item.MaSP,
-          MaCTSP: item.MaCTSP,
+          MaMau: item.colorId,
+          MaKichThuoc: item.sizeId,
           SoLuong: item.quantity,
           DonGia: item.unitPrice,
           ThanhTien: item.quantity * item.unitPrice,

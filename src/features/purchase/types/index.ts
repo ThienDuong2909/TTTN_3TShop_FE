@@ -2,7 +2,9 @@ export interface PurchaseOrderItem {
   MaSP: string | number;
   productName: string;
   MaCTSP: number | ""; // Product detail ID instead of separate color and size
+  colorId?: number;
   colorName?: string;
+  sizeId?: number;
   sizeName?: string;
   quantity: number;
   unitPrice: number;
@@ -18,6 +20,7 @@ export interface PurchaseOrder {
   totalAmount: number;
   orderDate: string;
   expectedDeliveryDate?: string;
+  NgayKienNghiGiao?: string;
   notes?: string;
   createdBy: string | number;
 }
