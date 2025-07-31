@@ -118,7 +118,6 @@ export const useGoodsReceiptData = (currentUserId: string) => {
     
     try {
       const response = await getGoodsReceipts();
-      console.log((response as any)?.data);
       // Extract data from response object or use response directly if it's already an array
       const receipts = ((response as any)?.data || response || []).map((r: any) => ({
         id: r.SoPN,
@@ -147,7 +146,6 @@ export const useGoodsReceiptData = (currentUserId: string) => {
         ),
         status: r.TrangThai || "completed",
       }));
-      console.log(receipts);
       setGoodsReceipts(receipts);
       
       // Calculate stats
@@ -181,7 +179,6 @@ export const useGoodsReceiptData = (currentUserId: string) => {
     
     try {
       const response = await getAvailablePurchaseOrders();
-      console.log(response);
       
       // Extract data from response object
       const orders = (response as any)?.data || []; 

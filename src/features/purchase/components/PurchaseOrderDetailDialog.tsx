@@ -73,10 +73,10 @@ export default function PurchaseOrderDetailDialog({
               <div>{formatDate(purchaseOrder.orderDate)}</div>
             </div>
             <div>
-              <Label>Ngày giao dự kiến</Label>
+              <Label>Ngày kiến nghị giao</Label>
               <div>
-                {purchaseOrder.expectedDeliveryDate
-                  ? formatDate(purchaseOrder.expectedDeliveryDate)
+                {purchaseOrder.NgayKienNghiGiao
+                  ? formatDate(purchaseOrder.NgayKienNghiGiao)
                   : "Chưa xác định"}
               </div>
             </div>

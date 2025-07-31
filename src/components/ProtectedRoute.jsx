@@ -1,7 +1,8 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
+import { hasAnyPermission, getRoutePermissions } from '../utils/permissions';
 
-const ProtectedRoute = ({ children, requireAdmin = false }) => {
+const ProtectedRoute = ({ children, requireAdmin = false, requiredPermissions = [] }) => {
   const { state } = useApp();
   const { user, isInitialized } = state;
   const location = useLocation();
@@ -20,9 +21,28 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Yêu cầu admin nhưng user không phải admin
+  // Kiểm tra quyền admin nếu yêu cầu
   if (requireAdmin && user.role !== 'admin') {
     return <Navigate to="/" replace />;
+  }
+
+  // Kiểm tra permissions cụ thể nếu có yêu cầu
+  if (requiredPermissions.length > 0) {
+    const userPermissions = user.permissions || [];
+    if (!hasAnyPermission(userPermissions, requiredPermissions)) {
+      return <Navigate to="/" replace />;
+    }
+  }
+
+  // Kiểm tra quyền truy cập route dựa trên pathname
+  const currentPath = location.pathname;
+  const routePermissions = getRoutePermissions(currentPath);
+  
+  if (routePermissions.length > 0) {
+    const userPermissions = user.permissions || [];
+    if (!hasAnyPermission(userPermissions, routePermissions)) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return children;

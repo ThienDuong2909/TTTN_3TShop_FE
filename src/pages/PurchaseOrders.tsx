@@ -32,7 +32,7 @@ export default function PurchaseOrders() {
   if (
     !state.user ||
     (state.user.role !== "admin" &&
-      !state.user.permissions?.includes("manage_inventory"))
+      !state.user.permissions?.includes("purchase.*"))
   ) {
     navigate("/admin");
     return null;

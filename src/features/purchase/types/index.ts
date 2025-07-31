@@ -1,9 +1,10 @@
 export interface PurchaseOrderItem {
   MaSP: string | number;
   productName: string;
-  MaMau: number | "";
-  MaKichThuoc: number | "";
+  MaCTSP: number | ""; // Product detail ID instead of separate color and size
+  colorId?: number;
   colorName?: string;
+  sizeId?: number;
   sizeName?: string;
   quantity: number;
   unitPrice: number;
@@ -19,6 +20,7 @@ export interface PurchaseOrder {
   totalAmount: number;
   orderDate: string;
   expectedDeliveryDate?: string;
+  NgayKienNghiGiao?: string;
   notes?: string;
   createdBy: string | number;
 }
@@ -85,4 +87,28 @@ export interface PurchaseOrderLoading {
 export interface PurchaseOrderFilters {
   searchQuery: string;
   statusFilter: string;
+}
+
+export interface ProductDetail {
+  MaCTSP: number;
+  MaSP: number;
+  MaKichThuoc: number;
+  MaMau: number;
+  SoLuongTon: number;
+  KichThuoc: {
+    MaKichThuoc: number;
+    TenKichThuoc: string;
+  };
+  Mau: {
+    MaMau: number;
+    TenMau: string;
+    MaHex: string;
+  };
+  SanPham: {
+    MaSP: number;
+    TenSP: string;
+    MaLoaiSP: number;
+    MaNCC: number;
+    MoTa: string;
+  };
 } 

@@ -44,6 +44,7 @@ import Reviews from './pages/Reviews';
 import Employees from './pages/EmployeeManagement';
 import Departments from './pages/Departments';
 import Colors from './pages/ColorManagement';
+import PermissionManagement from './pages/PermissionManagement';
 import AdminLayout from './layouts/AdminLayout';
 import CategoryPage from './pages/CategoryPage';
 import NewProducts from "./pages/NewProducts";
@@ -69,21 +70,21 @@ function App() {
         <Routes>
           {/* Admin Routes - Sử dụng AdminLayout với sidebar */}
           <Route path="/admin" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['admin.*', 'order.view_assigned', 'order.view']}>
               <AdminLayout>
                 <AdminDashboard />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/dashboard" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['admin.*', 'order.view_assigned', 'order.view']}>
               <AdminLayout>
                 <AdminDashboard />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/products" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredPermissions={['product.*']}>
               <AdminLayout>
                 <ProductManagement />
               </AdminLayout>
@@ -104,35 +105,35 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/categories" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['category.*']}>
               <AdminLayout>
                 <CategoriesManagement />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/purchase-orders" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['purchase.*']}>
               <AdminLayout>
                 <PurchaseOrders />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/goods-receipt" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['import.*']}>
               <AdminLayout>
                 <GoodsReceipt />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/orders" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['order.view', 'order.view_assigned']}>
               <AdminLayout>
                 <Orders />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/orders/:id" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['order.view', 'order.view_assigned']}>
               <AdminLayout>
                 <OrderDetail />
               </AdminLayout>
@@ -146,14 +147,14 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/suppliers" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['supplier.*']}>
               <AdminLayout>
                 <Suppliers />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/invoices" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['invoice.*']}>
               <AdminLayout>
                 <Invoices />
               </AdminLayout>
@@ -174,23 +175,30 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/employees" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['employee.*']}>
               <AdminLayout>
                 <Employees />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/departments" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['department.*']}>
               <AdminLayout>
                 <Departments />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/colors" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['color.*']}>
               <AdminLayout>
                 <Colors />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/permissions" element={
+            <ProtectedRoute requiredPermissions={['admin.*']}>
+              <AdminLayout>
+                <PermissionManagement />
               </AdminLayout>
             </ProtectedRoute>
           } />
