@@ -2,10 +2,17 @@ import { useState } from "react";
 import { POForm, PurchaseOrder, PurchaseOrderFilters as PurchaseOrderFiltersType } from "../types";
 import { getPurchaseOrderById } from "../../../services/commonService";
 
+// Helper function to get tomorrow's date in YYYY-MM-DD format
+const getTomorrowDate = (): string => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().split('T')[0];
+};
+
 export const usePurchaseOrderForm = (currentUserId: string) => {
   const [poForm, setPOForm] = useState<POForm>({
     supplierId: "",
-    expectedDeliveryDate: "",
+    expectedDeliveryDate: getTomorrowDate(), // Set default to tomorrow
     notes: "",
     items: [],
   });
@@ -24,7 +31,7 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
   const resetForm = () => {
     setPOForm({
       supplierId: "",
-      expectedDeliveryDate: "",
+      expectedDeliveryDate: getTomorrowDate(), // Set default to tomorrow when resetting
       notes: "",
       items: [],
     });
@@ -35,41 +42,27 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
   // Populate form with existing PO data for editing
   const populateFormForEdit = async (po: PurchaseOrder) => {
     try {
-      console.log("Loading PO details for edit:", po.id);
       setIsLoadingPODetails(true);
       
       // Gọi API lấy chi tiết phiếu đặt hàng
       const poDetails = await getPurchaseOrderById(po.id);
-      console.log("PO details loaded:", poDetails);
       
       if (poDetails && poDetails.data) {
         const details = poDetails.data;
         
         setPOForm({
           supplierId: details.MaNCC ? details.MaNCC.toString() : po.supplierId.toString(),
-          expectedDeliveryDate: details.NgayGiao || po.expectedDeliveryDate || "",
+          expectedDeliveryDate: details.NgayKienNghiGiao || po.NgayKienNghiGiao || po.expectedDeliveryDate || "",
           notes: details.GhiChu || po.notes || "",
           items: details.CT_PhieuDatHangNCCs ? details.CT_PhieuDatHangNCCs.map((item: any) => {
             const ctsp = item.ChiTietSanPham || {};
             const productName = ctsp.SanPham?.TenSP || ctsp.TenSP || item.SanPham?.TenSP || item.productName || `Sản phẩm ${ctsp.MaSP || item.MaSP || item.MaCTSP || ''}`;
             const colorName = ctsp.Mau?.TenMau || item.Mau?.TenMau || item.colorName || '';
             const sizeName = ctsp.KichThuoc?.TenKichThuoc || item.KichThuoc?.TenKichThuoc || item.sizeName || '';
-            console.log('Mapping item for edit form:', item);
-            console.log('Result:', {
-              MaSP: ctsp.MaSP || item.MaSP || item.MaCTSP || '',
-              productName,
-              MaMau: ctsp.MaMau || item.MaMau || '',
-              MaKichThuoc: ctsp.MaKichThuoc || item.MaKichThuoc || '',
-              colorName,
-              sizeName,
-              quantity: Number(item.SoLuong) || 0,
-              unitPrice: Number(item.DonGia) || 0,
-            });
             return {
               MaSP: ctsp.MaSP || item.MaSP || item.MaCTSP || '',
               productName,
-              MaMau: ctsp.MaMau || item.MaMau || '',
-              MaKichThuoc: ctsp.MaKichThuoc || item.MaKichThuoc || '',
+              MaCTSP: item.MaCTSP || ctsp.MaCTSP || '',
               colorName,
               sizeName,
               quantity: Number(item.SoLuong) || 0,
@@ -80,7 +73,6 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
         
         setIsEditMode(true);
         setEditingPO(po);
-        console.log("Form populated successfully");
       } else {
         console.error("No PO details found");
         // Fallback to basic PO data if API fails
@@ -88,16 +80,15 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
           supplierId: po.supplierId.toString(),
           expectedDeliveryDate: po.expectedDeliveryDate || "",
           notes: po.notes || "",
-          items: po.items.map(item => ({
-            MaSP: item.MaSP,
-            productName: item.productName,
-            MaMau: item.MaMau,
-            MaKichThuoc: item.MaKichThuoc,
-            colorName: item.colorName,
-            sizeName: item.sizeName,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-          })),
+                  items: po.items.map(item => ({
+          MaSP: item.MaSP,
+          productName: item.productName,
+          MaCTSP: item.MaCTSP,
+          colorName: item.colorName,
+          sizeName: item.sizeName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        })),
         });
         
         setIsEditMode(true);
@@ -113,8 +104,7 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
         items: po.items.map(item => ({
           MaSP: item.MaSP,
           productName: item.productName,
-          MaMau: item.MaMau,
-          MaKichThuoc: item.MaKichThuoc,
+          MaCTSP: item.MaCTSP,
           colorName: item.colorName,
           sizeName: item.sizeName,
           quantity: item.quantity,

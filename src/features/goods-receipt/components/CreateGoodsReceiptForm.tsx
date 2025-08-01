@@ -188,10 +188,7 @@ export default function CreateGoodsReceiptForm({
 
   // Function to check if a row has validation errors
   const getRowErrors = (index: number) => {
-    console.log('getRowErrors called with index:', index);
-    console.log('excelValidationErrors:', excelValidationErrors);
     const errors = excelValidationErrors.filter((error: any) => error.row === index + 2); // +2 because Excel rows start from 2
-    console.log('Found errors for row', index + 2, ':', errors);
     return errors;
   };
 
@@ -279,7 +276,6 @@ export default function CreateGoodsReceiptForm({
   const handlePOSelect = (poId: string) => {
     const po = availablePOs.find(po => po.MaPDH === poId || po.id === poId);
     if (po) {
-      console.log(po);
       setGRForm({
         ...grForm,
         purchaseOrderId: poId,
@@ -315,7 +311,7 @@ export default function CreateGoodsReceiptForm({
       if (grForm.purchaseOrderId) {
         try {
           const status = await getPurchaseOrderReceivedStatus(grForm.purchaseOrderId);
-          console.log('API /purchase-orders/:id/received-status response:', status);
+  
           setReceivedStatus(Array.isArray(status?.data) ? status.data : []);
         } catch (e) {
           setReceivedStatus([]);

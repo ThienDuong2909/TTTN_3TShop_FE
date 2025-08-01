@@ -100,7 +100,6 @@ export default function GoodsReceiptTable({
     );
   };
 
-  console.log(goodsReceipts);
   return (
     <Card>
       <CardHeader>

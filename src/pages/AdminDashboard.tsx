@@ -71,11 +71,12 @@ export default function AdminDashboard() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Check if user has permission to access admin
-  if (
-    !state.user ||
-    (state.user.role !== "admin" && state.user.role !== "staff")
-  ) {
+  // Check if user has permission to access admin dashboard
+  const hasAdminAccess = state.user?.permissions?.includes('admin.*');
+  const hasOrderAssignedAccess = state.user?.permissions?.includes('order.view_assigned');
+  const hasOrderViewAccess = state.user?.permissions?.includes('order.view');
+  
+  if (!state.user || (!hasAdminAccess && !hasOrderAssignedAccess && !hasOrderViewAccess)) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="text-center">
@@ -83,8 +84,7 @@ export default function AdminDashboard() {
             Không có quyền truy cập
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mb-8">
-            Bạn cần đăng nhập với tài khoản admin hoặc nhân viên để truy cập
-            trang này.
+            Bạn cần có quyền admin hoặc quyền xem đơn hàng để truy cập trang này.
           </p>
           <Link to="/login">
             <Button>Đăng nhập</Button>

@@ -10,7 +10,8 @@ const handleError = (error) => {
   const message =
     error.response?.data?.message || error.message || "Có lỗi xảy ra";
   console.error("API Error:", message);
-  throw new Error(message);
+  // Return error object instead of throwing to prevent page reload
+  return { error: true, message };
 };
 
 // Format date cho API
@@ -51,7 +52,6 @@ export const getCurrentEmployee = async () => {
 export const getSuppliers = async () => {
   try {
     const response = await api.get("/suppliers");
-    console.log(response.data);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -107,7 +107,6 @@ export const getProductDetails = async () => {
 export const getProductColorsSizes = async (productId) => {
   try {
     const response = await api.get(`/products/${productId}/colors-sizes`);
-    console.log("getProductColorsSizes response:", response.data);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -141,6 +140,7 @@ export const createPurchaseOrder = async (data) => {
       MaNV: data.MaNV,
       MaNCC: data.MaNCC,
       MaTrangThai: data.MaTrangThai,
+      NgayKienNghiGiao: formatDateForApi(data.NgayKienNghiGiao),
       details: data.details.map((item) => {
         console.log("Processing item:", item);
         const mappedItem = {
@@ -192,6 +192,7 @@ export const updatePurchaseOrder = async (id, data) => {
       MaNCC: data.MaNCC,
       MaTrangThai: data.MaTrangThai || 1,
       GhiChu: data.GhiChu || "",
+      NgayKienNghiGiao: formatDateForApi(data.NgayKienNghiGiao),
       details: data.details.map((item) => {
         console.log("Processing item:", item);
         const mappedItem = {
@@ -363,7 +364,7 @@ export const login = async (credentials) => {
     const response = await api.post("/auth/login", credentials);
     return response.data;
   } catch (error) {
-    handleError(error);
+    return handleError(error);
   }
 };
 

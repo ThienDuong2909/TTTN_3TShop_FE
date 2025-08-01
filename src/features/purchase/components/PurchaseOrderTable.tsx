@@ -100,7 +100,7 @@ export default function PurchaseOrderTable({
                   <TableHead className="whitespace-nowrap">Tổng tiền</TableHead>
                   <TableHead className="whitespace-nowrap">Trạng thái</TableHead>
                   <TableHead className="whitespace-nowrap">Ngày tạo</TableHead>
-                  <TableHead className="whitespace-nowrap">Ngày giao dự kiến</TableHead>
+                  <TableHead className="whitespace-nowrap">Ngày kiến nghị giao</TableHead>
                   <TableHead className="whitespace-nowrap">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
@@ -132,8 +132,8 @@ export default function PurchaseOrderTable({
                       <TableCell className="whitespace-nowrap">{getStatusBadge(po.status)}</TableCell>
                       <TableCell className="whitespace-nowrap">{formatDate(po.orderDate)}</TableCell>
                       <TableCell className="whitespace-nowrap">
-                        {po.expectedDeliveryDate
-                          ? formatDate(po.expectedDeliveryDate)
+                        {po.NgayKienNghiGiao
+                          ? formatDate(po.NgayKienNghiGiao)
                           : "Chưa xác định"}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">

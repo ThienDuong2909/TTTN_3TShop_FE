@@ -207,12 +207,10 @@ export default function ExcelImport({
       );
       
       if (matchedKeywords.length >= 3) {
-        console.log('Found table header at row', row + 1, 'with keywords:', matchedKeywords);
         return row + 1; // Data starts from next row
       }
     }
     
-    console.log('No table header found, using first row');
     return 1; // Default to first row if no header detected
   };
 
@@ -282,7 +280,6 @@ export default function ExcelImport({
           return true;
         });
       
-      console.log('Filtered table data:', processedData.length, 'rows');
       setRawExcelData(processedData);
       setSelectedSheet(sheetName);
     } else {

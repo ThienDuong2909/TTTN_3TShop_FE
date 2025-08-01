@@ -28,7 +28,7 @@ export default function GoodsReceipt() {
   if (
     !state.user ||
     (state.user.role !== "admin" &&
-      !state.user.permissions?.includes("manage_inventory"))
+      !state.user.permissions?.includes("import.*"))
   ) {
     navigate("/admin");
     return null;
