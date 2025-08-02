@@ -331,6 +331,13 @@ export default function CreateGoodsReceiptForm({
     }
   }, [grForm.items]);
 
+  // Debug: Theo dõi thay đổi của inputMethod
+  useEffect(() => {
+    console.log("=== INPUT METHOD CHANGED ===");
+    console.log("Current inputMethod:", inputMethod);
+    console.log("Current grForm.items:", grForm.items);
+  }, [inputMethod]);
+
   // Khi chọn phiếu đặt hàng, load trạng thái nhập hàng thực tế
   useEffect(() => {
     const fetchReceivedStatus = async () => {
@@ -464,27 +471,33 @@ export default function CreateGoodsReceiptForm({
           <Tabs
             value={inputMethod}
             onValueChange={(value: string) => {
+              console.log(`Tab changed from ${inputMethod} to ${value}`);
+              console.log("Current grForm.items before tab change:", grForm.items);
               setInputMethod(value as "manual" | "excel");
               if (value === "manual" && selectedPO) {
-                // Reset lại danh sách sản phẩm theo phiếu đặt hàng
-                const po = availablePOs.find(po => po.MaPDH === selectedPO.MaPDH || po.id === selectedPO.id);
-                if (po) {
+                console.log("Resetting to manual input mode");
+                console.log("Selected PO:", selectedPO);
+                // Sử dụng selectedPO trực tiếp thay vì tìm trong availablePOs
+                if (selectedPO) {
+                  const newItems = (selectedPO.CT_PhieuDatHangNCCs || []).map((ct: any) => ({
+                    purchaseOrderItemId: ct.MaCTSP,
+                    productId: ct.MaCTSP,
+                    productName: ct.ChiTietSanPham?.SanPham?.TenSP || ct.TenSP || "",
+                    selectedColor: ct.ChiTietSanPham?.Mau?.MaHex ? `#${ct.ChiTietSanPham.Mau.MaHex}` : (ct.Mau?.MaHex ? `#${ct.Mau.MaHex}` : ""),
+                    colorName: ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
+                    selectedSize: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ct.KichThuoc?.TenKichThuoc || "",
+                    orderedQuantity: ct.SoLuong,
+                    receivedQuantity: 0,
+                    unitPrice: parseFloat(ct.DonGia),
+                    condition: "good",
+                    notes: "",
+                  }));
+                  console.log("New items for manual mode:", newItems);
                   setGRForm({
                     ...grForm,
-                    items: (po.CT_PhieuDatHangNCCs || []).map((ct: any) => ({
-                      purchaseOrderItemId: ct.MaCTSP,
-                      productId: ct.MaCTSP,
-                      productName: ct.ChiTietSanPham?.SanPham?.TenSP || ct.TenSP || "",
-                      selectedColor: ct.ChiTietSanPham?.Mau?.MaHex ? `#${ct.ChiTietSanPham.Mau.MaHex}` : (ct.Mau?.MaHex ? `#${ct.Mau.MaHex}` : ""),
-                      colorName: ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
-                      selectedSize: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ct.KichThuoc?.TenKichThuoc || "",
-                      orderedQuantity: ct.SoLuong,
-                      receivedQuantity: 0,
-                      unitPrice: parseFloat(ct.DonGia),
-                      condition: "good",
-                      notes: "",
-                    }))
+                    items: newItems
                   });
+                  console.log("grForm updated with new items");
                 }
                 setHasExcelData(false);
                 setExcelData([]);
@@ -610,7 +623,7 @@ export default function CreateGoodsReceiptForm({
                     <Card>
                       <div className="p-4">
                         <div className="text-base font-semibold mb-2">Xem trước dữ liệu nhập kho</div>
-                                              <Table>
+                      <Table>
                         <TableHeader>
                           <TableRow>
                             <TableHead>STT</TableHead>
