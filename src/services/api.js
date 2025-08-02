@@ -253,7 +253,9 @@ export const getPurchaseOrderForReceipt = async (id) => {
 // Lấy trạng thái nhập hàng của từng sản phẩm trong phiếu đặt hàng NCC
 export const getPurchaseOrderReceivedStatus = async (purchaseOrderId) => {
   try {
-    const response = await api.get(`/purchase-orders/${purchaseOrderId}/received-status`);
+    const response = await api.get(
+      `/purchase-orders/${purchaseOrderId}/received-status`
+    );
     return response.data;
   } catch (error) {
     handleError(error);
@@ -577,6 +579,30 @@ export const getOrderDetail = async ({ maKH, maDDH }) => {
     return res.data?.data;
   } catch (error) {
     console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
+    throw error;
+  }
+};
+
+export const getRevenueReport = async (startDate, endDate) => {
+  try {
+    const response = await api.post(`/orders/revenue-report`, {
+      ngayBatDau: startDate,
+      ngayKetThuc: endDate,
+    });
+    console.log("Revenue Report Response:", response.data.data);
+
+    return response.data?.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const cancelOrder = async (maKH, maDDH) => {
+  try {
+    const response = await api.post("/orders/cancel", { maKH, maDDH });
+    return response.data;
+  } catch (error) {
+    handleError(error);
     throw error;
   }
 };

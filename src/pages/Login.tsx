@@ -56,7 +56,7 @@ export default function Login() {
     
     // Map MaVaiTro to role name for User interface
     let role: "admin" | "staff" | "customer" = "customer"; // default
-    let roleName: "Admin" | "NhanVienCuaHang" | "NhanVienGiaoHang" | "KhachHang" = "KhachHang"; // for permissions
+    let roleName: "Admin" | "NhanVienCuaHang" | "NhanVienGiaoHang" | "customer" = "customer"; // for permissions
     
     if (maVaiTro === 1 || tenVaiTro === "Admin") {
       role = "admin";
@@ -72,7 +72,7 @@ export default function Login() {
     }
     else if (maVaiTro === 4 || tenVaiTro === "KhachHang") {
       role = "customer";
-      roleName = "KhachHang";
+      roleName = "customer";
     }
 
     // Get permissions for the role using roleName
