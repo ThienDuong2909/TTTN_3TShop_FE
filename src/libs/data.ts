@@ -32,7 +32,7 @@ export interface User {
   avatar?: string;
   phone?: string;
   address?: string;
-  role: "CUSTOMER" | "staff" | "admin";
+  role: "customer" | "staff" | "admin";
   department?: string;
   permissions?: string[];
   dateOfBirth?: string;
