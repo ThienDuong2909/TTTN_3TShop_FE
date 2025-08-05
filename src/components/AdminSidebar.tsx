@@ -10,6 +10,7 @@ import {
   Building2,
   UserCheck,
   Shield,
+  RotateCcw,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useApp } from "../contexts/AppContext";
@@ -30,12 +31,15 @@ interface NavigationItem {
   alternativePermissions?: string[];
 }
 
-export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
+export default function AdminSidebar({
+  activeTab,
+  setActiveTab,
+}: AdminSidebarProps) {
   const { state } = useApp();
   const navigate = useNavigate();
 
   const userPermissions = state.user?.permissions || [];
-  const isAdmin = state.user?.role === "admin";
+  const isAdmin = state.user?.role === "Admin";
 
   const navigation: NavigationItem[] = [
     {
@@ -69,12 +73,19 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       alternativePermissions: ["order.view_assigned"],
     },
     {
-      name: "Khách hàng",
-      id: "customers",
-      icon: Users,
+      name: "Quản lý phiếu trả",
+      id: "return-management",
+      icon: RotateCcw,
       permission: "admin.*",
-      route: "/admin/customers",
+      route: "/admin/return-management",
     },
+    // {
+    //   name: "Khách hàng",
+    //   id: "customers",
+    //   icon: Users,
+    //   permission: "admin.*",
+    //   route: "/admin/customers",
+    // },
     {
       name: "Phiếu đặt hàng",
       id: "purchase-orders",
@@ -96,13 +107,13 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       permission: "supplier.*",
       route: "/admin/suppliers",
     },
-    {
-      name: "Hóa đơn",
-      id: "invoices",
-      icon: FileText,
-      permission: "invoice.*",
-      route: "/admin/invoices",
-    },
+    // {
+    //   name: "Hóa đơn",
+    //   id: "invoices",
+    //   icon: FileText,
+    //   permission: "invoice.*",
+    //   route: "/admin/invoices",
+    // },
     {
       name: "Giảm giá",
       id: "discounts",
@@ -110,13 +121,13 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       permission: "admin.*",
       route: "/admin/discounts",
     },
-    {
-      name: "Bình luận",
-      id: "reviews",
-      icon: MessageSquare,
-      permission: "admin.*",
-      route: "/admin/reviews",
-    },
+    // {
+    //   name: "Bình luận",
+    //   id: "reviews",
+    //   icon: MessageSquare,
+    //   permission: "admin.*",
+    //   route: "/admin/reviews",
+    // },
     {
       name: "Nhân viên",
       id: "staff",
@@ -149,7 +160,7 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
 
   const filteredNavigation = navigation.filter((item) => {
     const hasMainPermission = hasPermission(userPermissions, item.permission);
-    const hasAlternativePermission = item.alternativePermissions?.some(perm => 
+    const hasAlternativePermission = item.alternativePermissions?.some((perm) =>
       hasPermission(userPermissions, perm)
     );
     return hasMainPermission || hasAlternativePermission;
@@ -172,9 +183,7 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
                 Admin Panel
               </span>
               <div className="text-xs text-muted-foreground">
-                {state.user?.role === "admin"
-                  ? "Quản trị viên"
-                  : "Nhân viên"}
+                {state.user?.role === "Admin" ? "Quản trị viên" : "Nhân viên"}
               </div>
             </div>
           </div>
@@ -235,4 +244,4 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       </div>
     </div>
   );
-} 
+}

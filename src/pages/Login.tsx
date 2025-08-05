@@ -24,7 +24,7 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
-    {},
+    {}
   );
 
   const { setUser } = useApp();
@@ -53,25 +53,27 @@ export default function Login() {
     // Extract role from response
     const maVaiTro = res.data?.user?.TaiKhoan?.VaiTro?.MaVaiTro;
     const tenVaiTro = res.data?.user?.TaiKhoan?.VaiTro?.TenVaiTro;
-    
+
     // Map MaVaiTro to role name for User interface
-    let role: "admin" | "staff" | "customer" = "customer"; // default
-    let roleName: "Admin" | "NhanVienCuaHang" | "NhanVienGiaoHang" | "KhachHang" = "KhachHang"; // for permissions
-    
+    let role: "Admin" | "NhanVienCuaHang" | "NhanVienGiaoHang" | "KhachHang" =
+      "KhachHang"; // default
+    let roleName:
+      | "Admin"
+      | "NhanVienCuaHang"
+      | "NhanVienGiaoHang"
+      | "KhachHang" = "KhachHang"; // for permissions
+
     if (maVaiTro === 1 || tenVaiTro === "Admin") {
-      role = "admin";
+      role = "Admin";
       roleName = "Admin";
-    }
-    else if (maVaiTro === 2 || tenVaiTro === "NhanVienCuaHang") {
-      role = "staff";
+    } else if (maVaiTro === 2 || tenVaiTro === "NhanVienCuaHang") {
+      role = "NhanVienCuaHang";
       roleName = "NhanVienCuaHang";
-    }
-    else if (maVaiTro === 3 || tenVaiTro === "NhanVienGiaoHang") {
-      role = "staff";
+    } else if (maVaiTro === 3 || tenVaiTro === "NhanVienGiaoHang") {
+      role = "NhanVienGiaoHang";
       roleName = "NhanVienGiaoHang";
-    }
-    else if (maVaiTro === 4 || tenVaiTro === "KhachHang") {
-      role = "customer";
+    } else if (maVaiTro === 4 || tenVaiTro === "KhachHang") {
+      role = "KhachHang";
       roleName = "KhachHang";
     }
 
@@ -81,7 +83,11 @@ export default function Login() {
     // Extract user info
     const apiUser = res.data?.user;
     return {
-      id: apiUser?.MaKH || apiUser?.id || apiUser?.MaTK || apiUser?.TaiKhoan?.MaTK,
+      id:
+        apiUser?.MaKH ||
+        apiUser?.id ||
+        apiUser?.MaTK ||
+        apiUser?.TaiKhoan?.MaTK,
       email: apiUser?.TaiKhoan?.Email || apiUser?.Email || apiUser?.TenKH,
       name: apiUser?.TenKH || apiUser?.TaiKhoan?.Email || apiUser?.Email,
       role,
@@ -106,14 +112,14 @@ export default function Login() {
       // Call real API
       const res = await api.login({ email, password });
       console.log("API LOGIN RESPONSE", res);
-      
+
       // Check if API returned an error
       if (res?.error) {
         toast.error(res.message || "Đăng nhập thất bại");
         setErrors({ email: res.message || "Đăng nhập thất bại" });
         return;
       }
-      
+
       if (res?.success && res.data?.token && res.data?.user) {
         // Save token
         localStorage.setItem("token", res.data.token);
@@ -130,7 +136,10 @@ export default function Login() {
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      const errorMessage = error?.response?.data?.message || error?.message || "Đăng nhập thất bại";
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Đăng nhập thất bại";
       toast.error(errorMessage);
       setErrors({ email: errorMessage });
     } finally {
@@ -166,7 +175,7 @@ export default function Login() {
                       setEmail(e.target.value);
                       // Clear error when user starts typing
                       if (errors.email) {
-                        setErrors(prev => ({ ...prev, email: undefined }));
+                        setErrors((prev) => ({ ...prev, email: undefined }));
                       }
                     }}
                     disabled={isLoading}
@@ -191,7 +200,7 @@ export default function Login() {
                       setPassword(e.target.value);
                       // Clear error when user starts typing
                       if (errors.password) {
-                        setErrors(prev => ({ ...prev, password: undefined }));
+                        setErrors((prev) => ({ ...prev, password: undefined }));
                       }
                     }}
                     disabled={isLoading}
@@ -234,20 +243,20 @@ export default function Login() {
                 </Link>
               </div>
 
-                             <Button
-                 type="submit"
-                 className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                 disabled={isLoading}
-               >
-                 {isLoading ? (
-                   <div className="flex items-center justify-center">
-                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                     Đang đăng nhập...
-                   </div>
-                 ) : (
-                   "Đăng nhập"
-                 )}
-               </Button>
+              <Button
+                type="submit"
+                className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Đang đăng nhập...
+                  </div>
+                ) : (
+                  "Đăng nhập"
+                )}
+              </Button>
             </form>
 
             <div className="mt-6">

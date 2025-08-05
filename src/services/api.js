@@ -103,6 +103,36 @@ export const getProductDetails = async () => {
   }
 };
 
+// Lấy chi tiết sản phẩm theo ID (cho AdminProductDetail)
+export const getProductDetailById = async (id) => {
+  try {
+    const response = await api.get(`/products/${id}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Thêm chi tiết sản phẩm (variant)
+export const addProductDetail = async (data) => {
+  try {
+    const response = await api.post("/products/add-detail", data);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Cập nhật tồn kho sản phẩm
+export const updateProductStock = async (stockUpdates) => {
+  try {
+    const response = await api.post("/products/update-stock", stockUpdates);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
 // Lấy màu và kích thước theo sản phẩm
 export const getProductColorsSizes = async (productId) => {
   try {
@@ -355,6 +385,162 @@ export const getPurchaseOrderStatuses = async () => {
 };
 
 // ===================
+// ORDERS API
+// ===================
+
+// ===================
+// ORDER MANAGEMENT API
+// ===================
+
+// Lấy danh sách đơn hàng theo trạng thái
+export const getOrdersByStatus = async (status) => {
+  try {
+    const response = await api.get(`/orders/by-status?status=${status}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy thống kê đơn hàng
+export const getOrderStatistics = async () => {
+  try {
+    const response = await api.get("/orders/statistics");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy chi tiết đơn hàng theo ID
+export const getOrderById = async (orderId) => {
+  try {
+    const response = await api.get(`/orders/${orderId}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Cập nhật trạng thái đơn hàng đơn lẻ
+export const updateOrderStatus = async (orderId, statusData) => {
+  try {
+    const response = await api.put(`/orders/${orderId}/status`, statusData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Cập nhật trạng thái đơn hàng hàng loạt
+export const updateBatchOrderStatus = async (ordersData) => {
+  try {
+    const response = await api.put("/orders/batch/status", ordersData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy danh sách nhân viên giao hàng có sẵn
+export const getAvailableDeliveryStaff = async (address) => {
+  try {
+    const response = await api.post("/employees/delivery/available", { diaChi: address });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Cập nhật nhân viên giao hàng cho đơn hàng
+export const updateOrderDeliveryStaff = async (orderId, staffData) => {
+  try {
+    const response = await api.put(`/orders/${orderId}/delivery-staff`, staffData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Hoàn tất đơn hàng hàng loạt
+export const updateBatchOrderCompletion = async (orders) => {
+  try {
+    const response = await api.put("/orders/batch/status", { orders });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Hoàn tất đơn hàng đơn lẻ
+export const updateOrderCompletion = async (orderId, data) => {
+  try {
+    const response = await api.put(`/orders/${orderId}/status`, data);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy chi tiết đơn hàng cho admin
+export const getOrderDetailById = async (orderId) => {
+  try {
+    const response = await api.get(`/orders/${orderId}/detail`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// ===================
+// INVOICE API
+// ===================
+
+// Lấy chi tiết hóa đơn theo số hóa đơn
+export const getInvoiceDetail = async (invoiceNumber) => {
+  try {
+    const response = await api.get(`/invoices/detail/${invoiceNumber}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy hóa đơn theo mã đơn hàng
+export const getInvoiceByOrderId = async (orderId) => {
+  try {
+    const response = await api.get(`/invoices/order/${orderId}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Tạo hóa đơn mới
+export const createInvoice = async (invoiceData) => {
+  try {
+    const response = await api.post("/invoices", invoiceData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// ===================
+// RETURN REQUEST API
+// ===================
+
+// Tạo yêu cầu trả hàng
+export const createReturnRequest = async (returnData) => {
+  try {
+    const response = await api.post("/return/request", returnData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// ===================
 // AUTH API
 // ===================
 
@@ -578,5 +764,64 @@ export const getOrderDetail = async ({ maKH, maDDH }) => {
   } catch (error) {
     console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
     throw error;
+  }
+};
+
+// ===================
+// REVIEW/COMMENT API
+// ===================
+
+// Submit product review
+export const submitReview = async (reviewData) => {
+  try {
+    const response = await api.post("/binh-luan", {
+      maCTDonDatHang: reviewData.MaCTDonDatHang,
+      moTa: reviewData.MoTa,
+      soSao: reviewData.SoSao,
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Submit multiple product reviews
+export const submitMultipleReviews = async (reviewList) => {
+  try {
+    const response = await api.post("/binh-luan", {
+      binhLuanList: reviewList.map(review => ({
+        maCTDonDatHang: review.maCTDonDatHang,
+        moTa: review.moTa,
+        soSao: review.soSao,
+      }))
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Get product comments/reviews
+export const getProductComments = async (productId) => {
+  try {
+    const response = await api.get(`/comments/product/${productId}`);
+    return response.data?.data || { comments: [], summary: null };
+  } catch (error) {
+    console.error("Error fetching product comments:", error);
+    return { comments: [], summary: null };
+  }
+};
+
+// ===================
+// RETURN REQUESTS API
+// ===================
+
+// Lấy danh sách yêu cầu trả hàng
+export const getReturnRequests = async () => {
+  try {
+    const response = await api.get("/return/requests");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
   }
 };

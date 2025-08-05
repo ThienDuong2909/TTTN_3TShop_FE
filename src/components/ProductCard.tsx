@@ -22,7 +22,7 @@ export interface Product {
   colors?: string[];
   sizes?: string[];
   sizeMap?: Record<string, string[]>;
-  stockMap?: Record<string, number>; 
+  stockMap?: Record<string, number>;
 }
 
 interface ProductCardProps {
@@ -99,17 +99,18 @@ export function ProductCard({
                 <Badge className="bg-yellow-500 text-black shadow-sm">
                   Đã bán {product.totalSold}/tháng
                 </Badge>
-              ) : (product.discount ?? 0) > 0 && product.discount && (
-                <Badge className="bg-red-500 text-white shadow-sm">
-                  -{product.discount}%
-                </Badge>
+              ) : (
+                (product.discount ?? 0) > 0 &&
+                product.discount && (
+                  <Badge className="bg-red-500 text-white shadow-sm">
+                    -{product.discount}%
+                  </Badge>
+                )
               )}
               {product.isNew && (
                 <Badge className="bg-green-500 text-white shadow-sm">Mới</Badge>
               )}
             </div>
-
-            
 
             {/* Hover Actions */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
