@@ -23,6 +23,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     if (path.includes("/admin/reviews")) return "reviews";
     if (path.includes("/admin/staff")) return "staff";
     if (path.includes("/admin/departments")) return "departments";
+    if (path.includes("/admin/return-management")) return "return-management";
     return "overview";
   });
 
@@ -53,6 +54,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       setActiveTab("staff");
     } else if (path.includes("/admin/departments")) {
       setActiveTab("departments");
+    } else if (path.includes("return-management")) {
+      setActiveTab("return-management");
     } else {
       setActiveTab("overview");
     }
@@ -61,12 +64,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      
+
       {/* Main content */}
       <main className="lg:pl-52">
-        <div className="py-3 sm:px-2 lg:px-2">
-          {children}
-        </div>
+        <div className="py-3 sm:px-2 lg:px-2">{children}</div>
       </main>
       {/* <main className="lg:pl-48">
         <div className="py-3 sm:px-3 lg:px-4">
@@ -75,4 +76,4 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </main> */}
     </div>
   );
-} 
+}

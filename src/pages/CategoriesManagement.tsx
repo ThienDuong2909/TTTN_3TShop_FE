@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useState, useEffect, useRef } from "react";
 import { Toaster } from "sonner";
 
@@ -9,31 +9,50 @@ type Category = {
   HinhMinhHoa?: string;
 };
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { Edit2, Search, Trash2, Upload, X, Image as ImageIcon } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
+import {
+  Edit2,
+  Search,
+  Trash2,
+  Upload,
+  X,
+  Image as ImageIcon,
+} from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
 import { Progress } from "../components/ui/progress";
 import { toast } from "sonner";
 import { CLOUDINARY_CONFIG } from "../config/cloudinary";
 
 // Helper function to format date
- const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 export default function CategoriesManagement() {
   const [categories, setCategories] = useState<Category[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Fetch categories from API
   useEffect(() => {
     const fetchCategories = async () => {
@@ -64,7 +83,9 @@ export default function CategoriesManagement() {
     HinhMinhHoa: "",
   });
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+    null
+  );
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -72,41 +93,43 @@ export default function CategoriesManagement() {
   // Helper function to upload image to Cloudinary
   const uploadImageToCloudinary = async (file: File): Promise<string> => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', CLOUDINARY_CONFIG.UPLOAD_PRESET);
-    formData.append('cloud_name', CLOUDINARY_CONFIG.CLOUD_NAME);
-    
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_CONFIG.UPLOAD_PRESET);
+    formData.append("cloud_name", CLOUDINARY_CONFIG.CLOUD_NAME);
+
     try {
       const response = await fetch(CLOUDINARY_CONFIG.API_URL, {
-        method: 'POST',
+        method: "POST",
         body: formData,
       });
-      
+
       if (!response.ok) {
-        throw new Error('Upload failed');
+        throw new Error("Upload failed");
       }
-      
+
       const data = await response.json();
       return data.secure_url;
     } catch (error) {
-      console.error('Error uploading to Cloudinary:', error);
+      console.error("Error uploading to Cloudinary:", error);
       throw error;
     }
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Vui lòng chọn file ảnh hợp lệ!');
+    if (!file.type.startsWith("image/")) {
+      toast.error("Vui lòng chọn file ảnh hợp lệ!");
       return;
     }
 
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Kích thước file không được vượt quá 5MB!');
+      toast.error("Kích thước file không được vượt quá 5MB!");
       return;
     }
 
@@ -123,34 +146,34 @@ export default function CategoriesManagement() {
 
       // Simulate progress (Cloudinary doesn't provide real progress)
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 10, 90));
+        setUploadProgress((prev) => Math.min(prev + 10, 90));
       }, 200);
 
       const imageUrl = await uploadImageToCloudinary(file);
-      
+
       clearInterval(progressInterval);
       setUploadProgress(100);
-      
-      setFormData(prev => ({ ...prev, HinhMinhHoa: imageUrl }));
-      toast.success('Upload ảnh thành công!');
+
+      setFormData((prev) => ({ ...prev, HinhMinhHoa: imageUrl }));
+      toast.success("Upload ảnh thành công!");
     } catch (error) {
-      console.error('Upload failed:', error);
-      toast.error('Upload ảnh thất bại!');
+      console.error("Upload failed:", error);
+      toast.error("Upload ảnh thất bại!");
       setImagePreview("");
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
   };
 
   const removeImage = () => {
-    setFormData(prev => ({ ...prev, HinhMinhHoa: "" }));
+    setFormData((prev) => ({ ...prev, HinhMinhHoa: "" }));
     setImagePreview("");
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -163,7 +186,10 @@ export default function CategoriesManagement() {
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
-    setFormData({ TenLoai: category.TenLoai, HinhMinhHoa: category.HinhMinhHoa || "" });
+    setFormData({
+      TenLoai: category.TenLoai,
+      HinhMinhHoa: category.HinhMinhHoa || "",
+    });
     setImagePreview(category.HinhMinhHoa || "");
     setIsModalOpen(true);
   };
@@ -176,11 +202,16 @@ export default function CategoriesManagement() {
   const confirmDelete = async () => {
     if (categoryToDelete) {
       try {
-        const res = await fetch(`http://localhost:8080/api/category/${categoryToDelete.MaLoaiSP}`, {
-          method: "DELETE",
-        });
+        const res = await fetch(
+          `http://localhost:8080/api/category/${categoryToDelete.MaLoaiSP}`,
+          {
+            method: "DELETE",
+          }
+        );
         if (res.ok) {
-          setCategories((prev) => prev.filter((c) => c.MaLoaiSP !== categoryToDelete.MaLoaiSP));
+          setCategories((prev) =>
+            prev.filter((c) => c.MaLoaiSP !== categoryToDelete.MaLoaiSP)
+          );
           toast.success("Xóa thành công!");
         } else {
           toast.error("Xóa thất bại!");
@@ -199,16 +230,28 @@ export default function CategoriesManagement() {
     if (editingCategory) {
       // Update category
       try {
-        const res = await fetch(`http://localhost:8080/api/category/${editingCategory.MaLoaiSP}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ TenLoai: formData.TenLoai, HinhMinhHoa: formData.HinhMinhHoa }),
-        });
+        const res = await fetch(
+          `http://localhost:8080/api/category/${editingCategory.MaLoaiSP}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              TenLoai: formData.TenLoai,
+              HinhMinhHoa: formData.HinhMinhHoa,
+            }),
+          }
+        );
         if (res.ok) {
           toast.success("Cập nhật thành công!");
           setCategories((prev) =>
             prev.map((c) =>
-              c.MaLoaiSP === editingCategory.MaLoaiSP ? { ...c, TenLoai: formData.TenLoai, HinhMinhHoa: formData.HinhMinhHoa } : c
+              c.MaLoaiSP === editingCategory.MaLoaiSP
+                ? {
+                    ...c,
+                    TenLoai: formData.TenLoai,
+                    HinhMinhHoa: formData.HinhMinhHoa,
+                  }
+                : c
             )
           );
         } else {
@@ -223,7 +266,11 @@ export default function CategoriesManagement() {
         const res = await fetch("http://localhost:8080/api/category", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ TenLoai: formData.TenLoai, HinhMinhHoa: formData.HinhMinhHoa }),
+          body: JSON.stringify({
+            TenLoai: formData.TenLoai,
+            HinhMinhHoa: formData.HinhMinhHoa,
+            NgayTao: new Date(),
+          }),
         });
         if (res.ok) {
           const data = await res.json();
@@ -280,7 +327,10 @@ export default function CategoriesManagement() {
           </TableHeader>
           <TableBody>
             {filteredCategories.map((cat) => (
-              <TableRow key={cat.MaLoaiSP} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+              <TableRow
+                key={cat.MaLoaiSP}
+                className="hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              >
                 <TableCell>
                   <div className="flex items-center justify-center">
                     {cat.HinhMinhHoa ? (
@@ -288,7 +338,9 @@ export default function CategoriesManagement() {
                         src={cat.HinhMinhHoa}
                         alt={cat.TenLoai}
                         className="w-24 h-20 object-cover rounded border"
-                        onError={e => (e.currentTarget.src = '/default-category.png')}
+                        onError={(e) =>
+                          (e.currentTarget.src = "/default-category.png")
+                        }
                       />
                     ) : (
                       <img
@@ -300,10 +352,14 @@ export default function CategoriesManagement() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="font-semibold text-gray-900 dark:text-white text-base">{cat.TenLoai}</div>
+                  <div className="font-semibold text-gray-900 dark:text-white text-base">
+                    {cat.TenLoai}
+                  </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-gray-700 text-sm">{formatDate(cat.NgayTao)}</span>
+                  <span className="text-gray-700 text-sm">
+                    {formatDate(cat.NgayTao)}
+                  </span>
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex items-center justify-center gap-2">
@@ -332,7 +388,9 @@ export default function CategoriesManagement() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingCategory ? "Sửa danh mục" : "Thêm danh mục mới"}</DialogTitle>
+            <DialogTitle>
+              {editingCategory ? "Sửa danh mục" : "Thêm danh mục mới"}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-4">
@@ -341,17 +399,18 @@ export default function CategoriesManagement() {
                 <Input
                   id="TenLoai"
                   value={formData.TenLoai}
-                  onChange={(e) => setFormData({ ...formData, TenLoai: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, TenLoai: e.target.value })
+                  }
                   required
                   className="mt-2"
                 />
               </div>
-              
+
               {/* Image Upload Section */}
               <div>
                 <Label>Hình minh họa</Label>
                 <div className="mt-2 space-y-4">
-                  
                   {/* Upload from device */}
                   <div>
                     <input
@@ -369,7 +428,7 @@ export default function CategoriesManagement() {
                       className="w-full"
                     >
                       <Upload className="w-4 h-4 mr-2" />
-                      {isUploading ? 'Đang upload...' : 'Chọn ảnh từ thiết bị'}
+                      {isUploading ? "Đang upload..." : "Chọn ảnh từ thiết bị"}
                     </Button>
                   </div>
 
@@ -386,13 +445,21 @@ export default function CategoriesManagement() {
 
                   {/* Manual URL Input */}
                   <div className="space-y-2">
-                    <Label htmlFor="HinhMinhHoa" className="text-sm text-gray-600">Hoặc nhập URL ảnh:</Label>
+                    <Label
+                      htmlFor="HinhMinhHoa"
+                      className="text-sm text-gray-600"
+                    >
+                      Hoặc nhập URL ảnh:
+                    </Label>
                     <Input
                       id="HinhMinhHoa"
                       placeholder="https://example.com/image.jpg"
                       value={formData.HinhMinhHoa}
                       onChange={(e) => {
-                        setFormData({ ...formData, HinhMinhHoa: e.target.value });
+                        setFormData({
+                          ...formData,
+                          HinhMinhHoa: e.target.value,
+                        });
                         setImagePreview(e.target.value);
                       }}
                       className="w-full"
@@ -410,7 +477,10 @@ export default function CategoriesManagement() {
                           onError={() => {
                             setImagePreview("");
                             if (!imagePreview) {
-                              setFormData(prev => ({ ...prev, HinhMinhHoa: "" }));
+                              setFormData((prev) => ({
+                                ...prev,
+                                HinhMinhHoa: "",
+                              }));
                             }
                           }}
                         />
@@ -419,10 +489,11 @@ export default function CategoriesManagement() {
                             Xem trước hình ảnh
                           </div>
                           <div className="text-xs text-gray-500 break-all">
-                            {(imagePreview || formData.HinhMinhHoa).length > 50 
-                              ? `${(imagePreview || formData.HinhMinhHoa).substring(0, 50)}...`
-                              : (imagePreview || formData.HinhMinhHoa)
-                            }
+                            {(imagePreview || formData.HinhMinhHoa).length > 50
+                              ? `${(
+                                  imagePreview || formData.HinhMinhHoa
+                                ).substring(0, 50)}...`
+                              : imagePreview || formData.HinhMinhHoa}
                           </div>
                         </div>
                         <Button
@@ -442,17 +513,31 @@ export default function CategoriesManagement() {
                   {!imagePreview && !formData.HinhMinhHoa && (
                     <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
                       <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 dark:text-gray-400">Chưa có hình ảnh</p>
-                      <p className="text-sm text-gray-500 mt-1">Chọn ảnh từ thiết bị hoặc nhập URL</p>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Chưa có hình ảnh
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Chọn ảnh từ thiết bị hoặc nhập URL
+                      </p>
                     </div>
                   )}
                 </div>
               </div>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Hủy</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Hủy
+              </Button>
               <Button type="submit" disabled={isUploading}>
-                {isUploading ? 'Đang upload...' : (editingCategory ? "Cập nhật" : "Thêm mới")}
+                {isUploading
+                  ? "Đang upload..."
+                  : editingCategory
+                  ? "Cập nhật"
+                  : "Thêm mới"}
               </Button>
             </div>
           </form>
@@ -473,12 +558,19 @@ export default function CategoriesManagement() {
               {categoryToDelete?.TenLoai}
             </div>
             <div className="flex justify-evenly gap-4 mt-4">
-              <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>Hủy</Button>
-              <Button variant="destructive" onClick={confirmDelete}>Xóa</Button>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirmOpen(false)}
+              >
+                Hủy
+              </Button>
+              <Button variant="destructive" onClick={confirmDelete}>
+                Xóa
+              </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
     </div>
   );
-};
+}

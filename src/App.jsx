@@ -35,7 +35,7 @@ import CategoriesManagement from './pages/CategoriesManagement';
 import PurchaseOrders from './pages/PurchaseOrders';
 import GoodsReceipt from './pages/GoodsReceipt';
 import Orders from './pages/Orders';
-// import OrderDetail from './pages/OrderDetail';
+import AdminOrderDetail from './pages/AdminOrderDetail';
 import Customers from './pages/Customers';
 import Suppliers from './pages/SupplierManagement';
 import Invoices from './pages/Invoices';
@@ -45,6 +45,7 @@ import Employees from './pages/EmployeeManagement';
 import Departments from './pages/Departments';
 import Colors from './pages/ColorManagement';
 import PermissionManagement from './pages/PermissionManagement';
+import ReturnManagement from './pages/ReturnManagement';
 import AdminLayout from './layouts/AdminLayout';
 import CategoryPage from './pages/CategoryPage';
 import NewProducts from "./pages/NewProducts";
@@ -135,7 +136,15 @@ function App() {
           <Route path="/admin/orders/:id" element={
             <ProtectedRoute requiredPermissions={['order.view', 'order.view_assigned']}>
               <AdminLayout>
-                <OrderDetail />
+                <AdminOrderDetail
+                />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/return-management" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <ReturnManagement />
               </AdminLayout>
             </ProtectedRoute>
           } />
