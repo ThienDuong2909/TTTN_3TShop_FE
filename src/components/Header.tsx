@@ -43,7 +43,7 @@ function Header() {
 
   const NavLinks = ({ mobile = false }) => (
     <>
-      {navigation.map((item) => (
+      {navigation.map((item: any) => (
         <Link
           key={item.name}
           to={item.href}

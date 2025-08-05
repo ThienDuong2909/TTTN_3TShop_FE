@@ -115,3 +115,8 @@ export function getProductComments(productId: number): Promise<any>;
 export function login(credentials: { email: string; password: string }): Promise<any>;
 export function register(userData: { Email: string; Password: string; TenKH: string }): Promise<any>;
 
+export function getRevenueReport(startDate: string, endDate: string): Promise<any>;
+
+
+export function cancelOrder(maKH: number, maDDH: number): Promise<any>;
+

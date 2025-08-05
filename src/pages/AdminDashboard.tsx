@@ -54,6 +54,7 @@ import {
 import { useApp } from "../contexts/AppContext";
 import AdminHeader from "../components/AdminHeader";
 import AdminSidebar from "../components/AdminSidebar";
+import RevenueReport from '../pages/RevenueReport';
 import {
   products,
   orders,
@@ -197,6 +198,11 @@ export default function AdminDashboard() {
             <p className="text-xs text-muted-foreground">+23 khách hàng mới</p>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="flex gap-4 mb-6">
+        <RevenueReport />
+        {/* Add other action buttons here if needed */}
       </div>
 
       {/* Recent Orders */}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Edit, FileSpreadsheet, Save, Loader2, Eye } from "lucide-react";
+import { Edit, FileSpreadsheet, Save, Loader2, Eye, AlertCircle } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
 import { Card, CardContent } from "../../../components/ui/card";
@@ -37,9 +37,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../../components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../../../components/ui/tooltip";
 import { formatPrice, formatDate, getPurchaseOrderReceivedStatus } from "../../../services/api";
 import ExcelImport from "./ExcelImport";
 import clsx from "clsx";
+import { formatVietnameseCurrency } from "../../../lib/utils";
 
 interface GoodsReceiptItem {
   purchaseOrderItemId: string;
@@ -178,9 +185,8 @@ export default function CreateGoodsReceiptForm({
   };
 
   const calculateTotalReceived = () => {
-    // Tính tổng từ các dòng không có lỗi (nếu import Excel)
-    const itemsToCalculate = getFilteredItemsForSubmission();
-    return (itemsToCalculate || []).reduce(
+    // Tính tổng từ TẤT CẢ items, không lọc bỏ lỗi validation
+    return (grForm.items || []).reduce(
       (sum, item) => sum + item.receivedQuantity * item.unitPrice,
       0
     );
@@ -202,11 +208,17 @@ export default function CreateGoodsReceiptForm({
   };
 
   const handleExcelDataProcessed = (items: Omit<GoodsReceiptItem, "totalReceivedValue">[]) => {
+    console.log("=== HANDLE EXCEL DATA PROCESSED ===");
+    console.log("Received items:", items);
+    console.log("Items unitPrice values:", items.map(item => ({ productName: item.productName, unitPrice: item.unitPrice })));
+    
     setGRForm({
       ...grForm,
       items: items,
     });
     setHasExcelData(true);
+    
+    console.log("Updated grForm.items:", grForm.items);
   };
 
   // Function để lọc bỏ các dòng có lỗi trước khi gửi lên backend
@@ -304,6 +316,27 @@ export default function CreateGoodsReceiptForm({
   // State để lưu trạng thái nhập hàng thực tế của từng sản phẩm
   const [receivedStatus, setReceivedStatus] = useState<any[]>([]);
   const [quantityErrors, setQuantityErrors] = useState<{[key: number]: string}>({});
+
+  // Debug: Theo dõi thay đổi của grForm.items
+  useEffect(() => {
+    console.log("=== GRFORM.ITEMS CHANGED ===");
+    console.log("Current grForm.items:", grForm.items);
+    if (grForm.items && grForm.items.length > 0) {
+      console.log("Items unitPrice values:", grForm.items.map(item => ({ 
+        productName: item.productName, 
+        unitPrice: item.unitPrice,
+        receivedQuantity: item.receivedQuantity,
+        total: item.receivedQuantity * item.unitPrice
+      })));
+    }
+  }, [grForm.items]);
+
+  // Debug: Theo dõi thay đổi của inputMethod
+  useEffect(() => {
+    console.log("=== INPUT METHOD CHANGED ===");
+    console.log("Current inputMethod:", inputMethod);
+    console.log("Current grForm.items:", grForm.items);
+  }, [inputMethod]);
 
   // Khi chọn phiếu đặt hàng, load trạng thái nhập hàng thực tế
   useEffect(() => {
@@ -438,27 +471,33 @@ export default function CreateGoodsReceiptForm({
           <Tabs
             value={inputMethod}
             onValueChange={(value: string) => {
+              console.log(`Tab changed from ${inputMethod} to ${value}`);
+              console.log("Current grForm.items before tab change:", grForm.items);
               setInputMethod(value as "manual" | "excel");
               if (value === "manual" && selectedPO) {
-                // Reset lại danh sách sản phẩm theo phiếu đặt hàng
-                const po = availablePOs.find(po => po.MaPDH === selectedPO.MaPDH || po.id === selectedPO.id);
-                if (po) {
+                console.log("Resetting to manual input mode");
+                console.log("Selected PO:", selectedPO);
+                // Sử dụng selectedPO trực tiếp thay vì tìm trong availablePOs
+                if (selectedPO) {
+                  const newItems = (selectedPO.CT_PhieuDatHangNCCs || []).map((ct: any) => ({
+                    purchaseOrderItemId: ct.MaCTSP,
+                    productId: ct.MaCTSP,
+                    productName: ct.ChiTietSanPham?.SanPham?.TenSP || ct.TenSP || "",
+                    selectedColor: ct.ChiTietSanPham?.Mau?.MaHex ? `#${ct.ChiTietSanPham.Mau.MaHex}` : (ct.Mau?.MaHex ? `#${ct.Mau.MaHex}` : ""),
+                    colorName: ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
+                    selectedSize: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ct.KichThuoc?.TenKichThuoc || "",
+                    orderedQuantity: ct.SoLuong,
+                    receivedQuantity: 0,
+                    unitPrice: parseFloat(ct.DonGia),
+                    condition: "good",
+                    notes: "",
+                  }));
+                  console.log("New items for manual mode:", newItems);
                   setGRForm({
                     ...grForm,
-                    items: (po.CT_PhieuDatHangNCCs || []).map((ct: any) => ({
-                      purchaseOrderItemId: ct.MaCTSP,
-                      productId: ct.MaCTSP,
-                      productName: ct.ChiTietSanPham?.SanPham?.TenSP || ct.TenSP || "",
-                      selectedColor: ct.ChiTietSanPham?.Mau?.MaHex ? `#${ct.ChiTietSanPham.Mau.MaHex}` : (ct.Mau?.MaHex ? `#${ct.Mau.MaHex}` : ""),
-                      colorName: ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
-                      selectedSize: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ct.KichThuoc?.TenKichThuoc || "",
-                      orderedQuantity: ct.SoLuong,
-                      receivedQuantity: 0,
-                      unitPrice: parseFloat(ct.DonGia),
-                      condition: "good",
-                      notes: "",
-                    }))
+                    items: newItems
                   });
+                  console.log("grForm updated with new items");
                 }
                 setHasExcelData(false);
                 setExcelData([]);
@@ -534,7 +573,7 @@ export default function CreateGoodsReceiptForm({
                               )}
                             </TableCell>
                             <TableCell className="font-medium">
-                              {formatPrice(item.receivedQuantity * item.unitPrice)}
+                              {formatVietnameseCurrency(item.receivedQuantity * item.unitPrice)}
                             </TableCell>
                             <TableCell>
                               <Input
@@ -552,7 +591,7 @@ export default function CreateGoodsReceiptForm({
                     </Table>
                     <div className="p-4 text-right border-t">
                       <div className="text-lg font-bold">
-                        Tổng tiền nhận: {formatPrice(calculateTotalReceived())}
+                        Tổng tiền nhận: {formatVietnameseCurrency(calculateTotalReceived())}
                       </div>
                     </div>
                   </Card>
@@ -580,23 +619,11 @@ export default function CreateGoodsReceiptForm({
                 {/* Excel Data Summary + Chi tiết luôn hiển thị */}
                 {hasExcelData && excelData.length > 0 && (grForm.items || []).length > 0 && (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="text-sm text-gray-600">
-                          Đã import {grForm.items.length} sản phẩm từ Excel
-                          {excelValidationErrors.length > 0 && (
-                            <span className="text-red-600 ml-2">
-                              (có {excelValidationErrors.length} lỗi)
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
                     {/* Bảng chi tiết luôn hiển thị */}
                     <Card>
                       <div className="p-4">
                         <div className="text-base font-semibold mb-2">Xem trước dữ liệu nhập kho</div>
-                                              <Table>
+                      <Table>
                         <TableHeader>
                           <TableRow>
                             <TableHead>STT</TableHead>
@@ -607,13 +634,21 @@ export default function CreateGoodsReceiptForm({
                             <TableHead>SL Nhận</TableHead>
                             <TableHead>Đơn giá</TableHead>
                             <TableHead>Thành tiền</TableHead>
-                            <TableHead>Tình trạng</TableHead>
                           </TableRow>
                         </TableHeader>
                           <TableBody>
                             {(grForm.items || []).map((item, index) => {
                               const rowErrors = getRowErrors(index);
                               const hasErrors = rowErrors.length > 0;
+                              
+                              // Debug logging
+                              console.log(`Display Row ${index + 1}:`, {
+                                productName: item.productName,
+                                unitPrice: item.unitPrice,
+                                receivedQuantity: item.receivedQuantity,
+                                total: item.receivedQuantity * item.unitPrice
+                              });
+                              
                               return (
                                 <TableRow
                                   key={index}
@@ -661,15 +696,28 @@ export default function CreateGoodsReceiptForm({
                                   {item.receivedQuantity}
                                 </TableCell>
                                 <TableCell>
-                                  {formatPrice(item.unitPrice)}
+                                  {(() => {
+                                    const formattedPrice = formatVietnameseCurrency(item.unitPrice);
+                                    console.log(`Displaying unitPrice for ${item.productName}:`, {
+                                      rawValue: item.unitPrice,
+                                      formattedValue: formattedPrice,
+                                      type: typeof item.unitPrice
+                                    });
+                                    return formattedPrice;
+                                  })()}
                                 </TableCell>
                                 <TableCell className="font-medium">
-                                  {formatPrice(item.receivedQuantity * item.unitPrice)}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant="default" className="bg-green-100 text-green-800">
-                                    Tốt
-                                  </Badge>
+                                  {(() => {
+                                    const total = item.receivedQuantity * item.unitPrice;
+                                    const formattedTotal = formatVietnameseCurrency(total);
+                                    console.log(`Displaying total for ${item.productName}:`, {
+                                      receivedQuantity: item.receivedQuantity,
+                                      unitPrice: item.unitPrice,
+                                      total: total,
+                                      formattedTotal: formattedTotal
+                                    });
+                                    return formattedTotal;
+                                  })()}
                                 </TableCell>
                                 </TableRow>
                               );
@@ -678,7 +726,7 @@ export default function CreateGoodsReceiptForm({
                         </Table>
                         <div className="text-right mt-2">
                           <div className="text-lg font-bold">
-                            Tổng giá trị: {formatPrice(calculateTotalReceived())}
+                            Tổng giá trị: {formatVietnameseCurrency(calculateTotalReceived())}
                           </div>
                         </div>
                       </div>
@@ -703,6 +751,21 @@ export default function CreateGoodsReceiptForm({
         />
       </div>
 
+      {/* Error Summary */}
+      {inputMethod === "excel" && excelValidationErrors.length > 0 && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center gap-2 text-red-700">
+            <AlertCircle className="h-4 w-4" />
+            <span className="font-medium">
+              Không thể nhập kho: {excelValidationErrors.length} lỗi trong file Excel
+            </span>
+          </div>
+          <p className="text-sm text-red-600 mt-1">
+            Vui lòng sửa lỗi trong file Excel trước khi tiếp tục
+          </p>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex justify-end gap-2">
         <Button
@@ -712,23 +775,34 @@ export default function CreateGoodsReceiptForm({
         >
           Hủy
         </Button>
-        <Button
-          onClick={handleCreateGRWithFilter}
-          disabled={loading.creating}
-          className="bg-brand-600 hover:bg-brand-700"
-        >
-          {loading.creating ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Đang tạo...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              Xác nhận nhập kho
-            </>
-          )}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleCreateGRWithFilter}
+                disabled={loading.creating || (inputMethod === "excel" && excelValidationErrors.length > 0)}
+                className="bg-brand-600 hover:bg-brand-700"
+              >
+                {loading.creating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Đang tạo...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Xác nhận nhập kho
+                  </>
+                )}
+              </Button>
+            </TooltipTrigger>
+            {inputMethod === "excel" && excelValidationErrors.length > 0 && (
+              <TooltipContent>
+                <p>Vui lòng sửa lỗi trong file Excel trước khi nhập kho</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Preview Modal Dialog */}
