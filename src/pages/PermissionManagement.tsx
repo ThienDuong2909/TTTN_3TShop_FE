@@ -12,7 +12,7 @@ export default function PermissionManagement() {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
   // Kiểm tra quyền admin
-  if (!hasPermission('admin.*')) {
+  if (!hasPermission('toanquyen')) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">

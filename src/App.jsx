@@ -50,6 +50,7 @@ import AdminLayout from './layouts/AdminLayout';
 import CategoryPage from './pages/CategoryPage';
 import NewProducts from "./pages/NewProducts";
 import BestSellerProducts from "./pages/BestSellerProducts";
+import TestPage from "./pages/TestPage";
 
 // Wrapper component for main layout
 const MainLayout = ({ children }) => (
@@ -71,70 +72,70 @@ function App() {
         <Routes>
           {/* Admin Routes - Sử dụng AdminLayout với sidebar */}
           <Route path="/admin" element={
-            // <ProtectedRoute requiredPermissions={['admin.*', 'order.view_assigned', 'order.view']}>
+            <ProtectedRoute requiredPermissions={['toanquyen', 'donhang.xem_duoc_giao', 'donhang.xem']}>
               <AdminLayout>
                 <AdminDashboard />
               </AdminLayout>
-            // </ProtectedRoute>
+            </ProtectedRoute>
           } />
           <Route path="/admin/dashboard" element={
-            <ProtectedRoute requiredPermissions={['admin.*', 'order.view_assigned', 'order.view']}>
+            <ProtectedRoute requiredPermissions={['toanquyen', 'donhang.xem_duoc_giao', 'donhang.xem']}>
               <AdminLayout>
                 <AdminDashboard />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/products" element={
-            <ProtectedRoute requiredPermissions={['product.*']}>
+            <ProtectedRoute requiredPermissions={['sanpham.xem']}>
               <AdminLayout>
                 <ProductManagement />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/add-product" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['sanpham.tao']}>
               <AdminLayout>
                 <ProductAdd />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/products/:id" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['sanpham.xem']}>
               <AdminLayout>
                 <AdminProductDetail />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/categories" element={
-            <ProtectedRoute requiredPermissions={['category.*']}>
+            <ProtectedRoute requiredPermissions={['danhmuc.tao', 'danhmuc.sua', 'danhmuc.xoa']}>
               <AdminLayout>
                 <CategoriesManagement />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/purchase-orders" element={
-            <ProtectedRoute requiredPermissions={['purchase.*']}>
+            <ProtectedRoute requiredPermissions={['dathang.xem', 'dathang.tao', 'dathang.sua']}>
               <AdminLayout>
                 <PurchaseOrders />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/goods-receipt" element={
-            <ProtectedRoute requiredPermissions={['import.*']}>
+            <ProtectedRoute requiredPermissions={['nhaphang.xem', 'nhaphang.tao', 'nhaphang.sua']}>
               <AdminLayout>
                 <GoodsReceipt />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/orders" element={
-            <ProtectedRoute requiredPermissions={['order.view', 'order.view_assigned']}>
+            <ProtectedRoute requiredPermissions={['donhang.xem', 'donhang.xem_duoc_giao']}>
               <AdminLayout>
                 <Orders />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/orders/:id" element={
-            <ProtectedRoute requiredPermissions={['order.view', 'order.view_assigned']}>
+            <ProtectedRoute requiredPermissions={['donhang.xem', 'donhang.xem_duoc_giao']}>
               <AdminLayout>
                 <AdminOrderDetail
                 />
@@ -142,70 +143,80 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/return-management" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['thongtin.xem', 'toanquyen']}>
               <AdminLayout>
                 <ReturnManagement />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/customers" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['toanquyen']}>
               <AdminLayout>
                 <Customers />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/suppliers" element={
-            <ProtectedRoute requiredPermissions={['supplier.*']}>
+            <ProtectedRoute requiredPermissions={['nhacungcap.xem', 'nhacungcap.tao', 'nhacungcap.sua', 'nhacungcap.xoa']}>
               <AdminLayout>
                 <Suppliers />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/invoices" element={
-            <ProtectedRoute requiredPermissions={['invoice.*']}>
+            <ProtectedRoute requiredPermissions={['hoadon.xem', 'hoadon.tao']}>
               <AdminLayout>
                 <Invoices />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/discounts" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['toanquyen']}>
               <AdminLayout>
                 <Discounts />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/reviews" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute requiredPermissions={['toanquyen']}>
               <AdminLayout>
                 <Reviews />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/employees" element={
-            <ProtectedRoute requiredPermissions={['employee.*']}>
+            <ProtectedRoute requiredPermissions={['nhanvien.xem', 'nhanvien.phancong']}>
               <AdminLayout>
                 <Employees />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/departments" element={
-            <ProtectedRoute requiredPermissions={['department.*']}>
+            <ProtectedRoute requiredPermissions={['bophan.xem', 'toanquyen']}>
               <AdminLayout>
                 <Departments />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/colors" element={
-            <ProtectedRoute requiredPermissions={['color.*']}>
+            <ProtectedRoute requiredPermissions={['mausac.tao', 'mausac.sua', 'mausac.xoa']}>
               <AdminLayout>
                 <Colors />
               </AdminLayout>
             </ProtectedRoute>
           } />
+          <Route path="/admin/sizes" element={
+            <ProtectedRoute requiredPermissions={['kichthuoc.tao', 'kichthuoc.sua', 'kichthuoc.xoa']}>
+              <AdminLayout>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold mb-4">Quản lý kích thước</h1>
+                  <p className="text-gray-600">Trang quản lý kích thước sản phẩm</p>
+                </div>
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
           <Route path="/admin/permissions" element={
-            <ProtectedRoute requiredPermissions={['admin.*']}>
+            <ProtectedRoute requiredPermissions={['toanquyen']}>
               <AdminLayout>
                 <PermissionManagement />
               </AdminLayout>
@@ -223,24 +234,25 @@ function App() {
           <Route path="/search" element={<MainLayout><SearchResults /></MainLayout>} />
           <Route path="/new-products" element={<MainLayout><NewProducts /></MainLayout>} />
           <Route path="/bestseller-products" element={<MainLayout><BestSellerProducts /></MainLayout>} />
+          <Route path="/test" element={<MainLayout><TestPage /></MainLayout>} />
           {/* Protected User Routes */}
           <Route path="/profile" element={
             <MainLayout>
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermissions={['toanquyen']}>
                 <Profile />
               </ProtectedRoute>
             </MainLayout>
           } />
           <Route path="/cart" element={
             <MainLayout>
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermissions={['giohang.xem']}>
                 <Cart />
               </ProtectedRoute>
             </MainLayout>
           } />
           <Route path="/checkout" element={
             <MainLayout>
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermissions={['giohang.xem', 'donhang.tao']}>
                 <Checkout />
               </ProtectedRoute>
             </MainLayout>
@@ -248,16 +260,16 @@ function App() {
 
           <Route path="/orders" element={
             <MainLayout>
-              {/* <ProtectedRoute> */}
+              <ProtectedRoute requiredPermissions={['donhang.xem_cua_minh']}>
                 <OrderManagement />
-              {/* </ProtectedRoute> */}
+              </ProtectedRoute>
             </MainLayout>
               } />
               <Route path="/orders/:id" element={
             <MainLayout>
-              {/* <ProtectedRoute> */}
+              <ProtectedRoute requiredPermissions={['donhang.xem_cua_minh']}>
                 <OrderDetail />
-              {/* </ProtectedRoute> */}
+              </ProtectedRoute>
             </MainLayout>
           } />
           

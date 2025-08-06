@@ -284,30 +284,28 @@ export default function ProductManagement() {
   }, [pagination.page, pagination.pageSize, searchQuery, selectedCategory, fetchProducts]);
 
   // Check permissions
-  // if (
-  //   !state.user ||
-  //   (state.user.role !== "admin" && state.user.role !== "staff") ||
-  //   (!state.user.permissions?.includes("all") &&
-  //     !state.user.permissions?.includes("view_products"))
-  // ) {
-  //   navigate("/");
-  //   return null;
-  // }
+  if (
+    !state.user ||
+    !state.user.permissions?.includes("sanpham.xem") &&
+    !state.user.permissions?.includes("toanquyen")
+  ) {
+    navigate("/");
+    return null;
+  }
 
-  // useEffect(() => {
-  //   if (
-  //     !state.user ||
-  //     (state.user.role !== "admin" && state.user.role !== "staff") ||
-  //     (!state.user.permissions?.includes("all") &&
-  //       !state.user.permissions?.includes("view_products"))
-  //   ) {
-  //     navigate("/");
-  //   }
-  // }, [state.user, navigate]);
+  useEffect(() => {
+    if (
+      !state.user ||
+      !state.user.permissions?.includes("sanpham.xem") &&
+      !state.user.permissions?.includes("toanquyen")
+    ) {
+      navigate("/");
+    }
+  }, [state.user, navigate]);
   
-  const canEdit = true
-    // state.user.role === "admin" ||
-    // state.user.permissions?.includes("manage_products");
+  const canEdit = 
+    state.user?.permissions?.includes("sanpham.sua") ||
+    state.user?.permissions?.includes("toanquyen");
 
   // Helper function to get latest price
   const getLatestPrice = (product: ApiProduct) => {

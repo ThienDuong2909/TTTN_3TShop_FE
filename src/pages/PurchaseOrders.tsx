@@ -32,7 +32,8 @@ export default function PurchaseOrders() {
   if (
     !state.user ||
     (state.user.role !== "admin" &&
-      !state.user.permissions?.includes("purchase.*"))
+      !state.user.permissions?.includes("dathang.xem") &&
+    !state.user.permissions?.includes("toanquyen"))
   ) {
     navigate("/admin");
     return null;
