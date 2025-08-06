@@ -196,6 +196,8 @@ function Header() {
                         {state.user?.role === "Admin" && "Quản trị viên"}
                         {state.user?.role === "NhanVienCuaHang" &&
                           "Nhân viên cửa hàng"}
+                        {state.user?.role === "NhanVienGiaoHang" &&
+                          "Nhân viên giao hàng"}
                         {state.user?.role === "KhachHang" && "Khách hàng"}
                       </div>
                     </div>
@@ -203,7 +205,8 @@ function Header() {
                   <DropdownMenuSeparator />
 
                   {(state.user?.role === "Admin" ||
-                    state.user?.role === "NhanVienCuaHang") && (
+                    state.user?.role === "NhanVienCuaHang" ||
+                    state.user?.role === "NhanVienGiaoHang") && (
                     <>
                       <DropdownMenuItem>
                         <Link to="/admin">Bảng điều khiển</Link>

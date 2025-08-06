@@ -1,4 +1,4 @@
-// Hệ thống phân quyền 3TShop
+// Hệ thống phân quyền 3TShop - Cập nhật theo tài liệu mới
 export interface Permission {
   id: string;
   name: string;
@@ -12,130 +12,135 @@ export interface Role {
   permissions: string[];
 }
 
-// Định nghĩa tất cả permissions trong hệ thống
+// Định nghĩa tất cả permissions trong hệ thống theo tài liệu
 export const PERMISSIONS = {
-  // Product permissions
-  'product.view': 'Xem sản phẩm',
-  'product.create': 'Tạo sản phẩm',
-  'product.update': 'Cập nhật sản phẩm',
-  'product.delete': 'Xóa sản phẩm',
-  'product.*': 'Tất cả quyền sản phẩm',
+  // Product permissions (sanpham)
+  'sanpham.xem': 'Xem sản phẩm',
+  'sanpham.tao': 'Tạo sản phẩm',
+  'sanpham.sua': 'Cập nhật sản phẩm',
+  'sanpham.xoa': 'Xóa sản phẩm',
 
-  // Import permissions
-  'import.view': 'Xem nhập hàng',
-  'import.create': 'Tạo phiếu nhập hàng',
-  'import.update': 'Cập nhật phiếu nhập hàng',
-  'import.delete': 'Xóa phiếu nhập hàng',
-  'import.*': 'Tất cả quyền nhập hàng',
+  // Order permissions (donhang)
+  'donhang.xem': 'Xem tất cả đơn hàng',
+  'donhang.xem_cua_minh': 'Xem đơn hàng của mình',
+  'donhang.xem_duoc_giao': 'Xem đơn hàng được phân công giao',
+  'donhang.tao': 'Tạo đơn hàng',
+  'donhang.capnhat_trangthai': 'Cập nhật trạng thái đơn hàng',
+  'donhang.phancong_giaohang': 'Phân công giao hàng',
+  'donhang.xacnhan_giaohang': 'Xác nhận giao hàng',
 
-  // Purchase permissions
-  'purchase.view': 'Xem đặt hàng NCC',
-  'purchase.create': 'Tạo đơn đặt hàng NCC',
-  'purchase.update': 'Cập nhật đơn đặt hàng NCC',
-  'purchase.delete': 'Xóa đơn đặt hàng NCC',
-  'purchase.*': 'Tất cả quyền đặt hàng NCC',
+  // Comment permissions (binhluan)
+  'binhluan.tao': 'Tạo bình luận',
+  'binhluan.sua_cua_minh': 'Sửa bình luận của mình',
+  'binhluan.xoa_cua_minh': 'Xóa bình luận của mình',
+  'binhluan.kiemduyet': 'Kiểm duyệt bình luận',
 
-  // Supplier permissions
-  'supplier.view': 'Xem nhà cung cấp',
-  'supplier.create': 'Tạo nhà cung cấp',
-  'supplier.update': 'Cập nhật nhà cung cấp',
-  'supplier.delete': 'Xóa nhà cung cấp',
-  'supplier.*': 'Tất cả quyền nhà cung cấp',
+  // Cart permissions (giohang)
+  'giohang.xem': 'Xem giỏ hàng',
+  'giohang.them': 'Thêm vào giỏ hàng',
+  'giohang.xoa': 'Xóa khỏi giỏ hàng',
 
-  // Category permissions
-  'category.view': 'Xem loại sản phẩm',
-  'category.create': 'Tạo loại sản phẩm',
-  'category.update': 'Cập nhật loại sản phẩm',
-  'category.delete': 'Xóa loại sản phẩm',
-  'category.*': 'Tất cả quyền loại sản phẩm',
+  // Employee permissions (nhanvien)
+  'nhanvien.xem': 'Xem nhân viên',
+  'nhanvien.phancong': 'Phân công nhân viên',
 
-  // Color permissions
-  'color.view': 'Xem màu sắc',
-  'color.create': 'Tạo màu sắc',
-  'color.update': 'Cập nhật màu sắc',
-  'color.delete': 'Xóa màu sắc',
-  'color.*': 'Tất cả quyền màu sắc',
+  // Invoice permissions (hoadon)
+  'hoadon.xem': 'Xem hóa đơn',
+  'hoadon.tao': 'Tạo hóa đơn',
 
-  // Size permissions
-  'size.view': 'Xem kích thước',
-  'size.create': 'Tạo kích thước',
-  'size.update': 'Cập nhật kích thước',
-  'size.delete': 'Xóa kích thước',
-  'size.*': 'Tất cả quyền kích thước',
+  // Supplier permissions (nhacungcap)
+  'nhacungcap.xem': 'Xem nhà cung cấp',
+  'nhacungcap.tao': 'Tạo nhà cung cấp',
+  'nhacungcap.sua': 'Cập nhật nhà cung cấp',
+  'nhacungcap.xoa': 'Xóa nhà cung cấp',
 
-  // Order permissions
-  'order.view': 'Xem đơn hàng',
-  'order.view_own': 'Xem đơn hàng của mình',
-  'order.view_assigned': 'Xem đơn hàng được phân công',
-  'order.create': 'Tạo đơn hàng',
-  'order.update': 'Cập nhật đơn hàng',
-  'order.update_status': 'Cập nhật trạng thái đơn hàng',
-  'order.confirm_delivery': 'Xác nhận giao hàng',
-  'order.delete': 'Xóa đơn hàng',
+  // Category permissions (danhmuc)
+  'danhmuc.tao': 'Tạo danh mục',
+  'danhmuc.sua': 'Cập nhật danh mục',
+  'danhmuc.xoa': 'Xóa danh mục',
 
-  // Invoice permissions
-  'invoice.view': 'Xem hóa đơn',
-  'invoice.create': 'Tạo hóa đơn',
-  'invoice.update': 'Cập nhật hóa đơn',
-  'invoice.delete': 'Xóa hóa đơn',
-  'invoice.*': 'Tất cả quyền hóa đơn',
+  // Color permissions (mausac)
+  'mausac.tao': 'Tạo màu sắc',
+  'mausac.sua': 'Cập nhật màu sắc',
+  'mausac.xoa': 'Xóa màu sắc',
 
-  // Employee permissions
-  'employee.view': 'Xem thông tin nhân viên',
-  'employee.create': 'Tạo nhân viên',
-  'employee.update': 'Cập nhật nhân viên',
-  'employee.delete': 'Xóa nhân viên',
-  'employee.*': 'Tất cả quyền nhân viên',
+  // Size permissions (kichthuoc)
+  'kichthuoc.tao': 'Tạo kích thước',
+  'kichthuoc.sua': 'Cập nhật kích thước',
+  'kichthuoc.xoa': 'Xóa kích thước',
 
-  // Department permissions
-  'department.view': 'Xem thông tin bộ phận',
-  'department.create': 'Tạo bộ phận',
-  'department.update': 'Cập nhật bộ phận',
-  'department.delete': 'Xóa bộ phận',
-  'department.*': 'Tất cả quyền bộ phận',
+  // Import permissions (nhaphang)
+  'nhaphang.xem': 'Xem phiếu nhập hàng',
+  'nhaphang.tao': 'Tạo phiếu nhập hàng',
+  'nhaphang.sua': 'Cập nhật phiếu nhập hàng',
 
-  // Profile permissions
-  'profile.view': 'Xem thông tin cá nhân',
-  'profile.update': 'Cập nhật thông tin cá nhân',
+  // Purchase order permissions (dathang)
+  'dathang.xem': 'Xem đơn đặt hàng NCC',
+  'dathang.tao': 'Tạo đơn đặt hàng NCC',
+  'dathang.sua': 'Cập nhật đơn đặt hàng NCC',
+  'dathang.xoa': 'Xóa đơn đặt hàng NCC',
 
-  // Cart permissions
-  'cart.view': 'Xem giỏ hàng',
-  'cart.add': 'Thêm vào giỏ hàng',
-  'cart.update': 'Cập nhật giỏ hàng',
-  'cart.remove': 'Xóa khỏi giỏ hàng',
-  'cart.*': 'Tất cả quyền giỏ hàng',
+  // Department permissions (bophan)
+  'bophan.xem': 'Xem bộ phận',
 
-  // Admin permissions
-  'admin.*': 'Tất cả quyền trong hệ thống',
+  // Exchange rate permissions (tigia)
+  'tigia.xem': 'Xem tỷ giá',
+
+  // Order status permissions (trangthaidonhang)
+  'trangthaidonhang.xem': 'Xem trạng thái đơn hàng',
+
+  // Account permissions (taikhoan)
+  'taikhoan.tao': 'Tạo tài khoản',
+
+  // Return permissions (trahang)
+  'thongtin.xem': 'Xem thông tin trả hàng',
+
+  // Full access permission (toanquyen)
+  'toanquyen': 'Toàn quyền hệ thống',
 } as const;
 
-// Định nghĩa các vai trò
+// Định nghĩa các vai trò theo tài liệu
 export const ROLES: Record<string, Role> = {
   ADMIN: {
     id: 1,
     name: 'Admin',
     displayName: 'Quản trị viên',
-    permissions: ['admin.*'], // Tất cả quyền
+    permissions: ['toanquyen'], // Toàn quyền
   },
   STORE_STAFF: {
     id: 2,
     name: 'NhanVienCuaHang',
     displayName: 'Nhân viên cửa hàng',
     permissions: [
-      'product.*',
-      'import.*',
-      'purchase.*',
-      'supplier.*',
-      'category.*',
-      'color.*',
-      'size.*',
-      'order.view',
-      'order.update_status',
-      'invoice.*',
-      'employee.view',
-      'department.view',
-      'profile.view',
-      'profile.update',
+      'sanpham.xem',
+      'sanpham.tao',
+      'sanpham.sua',
+      'sanpham.xoa',
+      'donhang.xem',
+      'donhang.capnhat_trangthai',
+      'hoadon.xem',
+      'hoadon.tao',
+      'nhacungcap.xem',
+      'nhacungcap.tao',
+      'nhacungcap.sua',
+      'nhacungcap.xoa',
+      'danhmuc.tao',
+      'danhmuc.sua',
+      'danhmuc.xoa',
+      'mausac.tao',
+      'mausac.sua',
+      'mausac.xoa',
+      'kichthuoc.tao',
+      'kichthuoc.sua',
+      'kichthuoc.xoa',
+      'nhaphang.xem',
+      'nhaphang.tao',
+      'nhaphang.sua',
+      'dathang.xem',
+      'dathang.tao',
+      'dathang.sua',
+      'bophan.xem',
+      'trangthaidonhang.xem',
     ],
   },
   DELIVERY_STAFF: {
@@ -143,11 +148,12 @@ export const ROLES: Record<string, Role> = {
     name: 'NhanVienGiaoHang',
     displayName: 'Nhân viên giao hàng',
     permissions: [
-      'order.view_assigned',
-      'order.confirm_delivery',
-      'order.update_status',
-      'profile.view',
-      'profile.update',
+      'donhang.xem_duoc_giao',
+      'donhang.xacnhan_giaohang',
+      'donhang.capnhat_trangthai',
+      'nhanvien.xem',
+      'nhanvien.phancong',
+      'donhang.phancong_giaohang',
     ],
   },
   CUSTOMER: {
@@ -155,12 +161,16 @@ export const ROLES: Record<string, Role> = {
     name: 'KhachHang',
     displayName: 'Khách hàng',
     permissions: [
-      'product.view',
-      'order.create',
-      'order.view_own',
-      'cart.*',
-      'profile.view',
-      'profile.update',
+      'sanpham.xem',
+      'donhang.tao',
+      'donhang.xem_cua_minh',
+      'giohang.xem',
+      'giohang.them',
+      'giohang.xoa',
+      'binhluan.tao',
+      'binhluan.sua_cua_minh',
+      'binhluan.xoa_cua_minh',
+      'thongtin.xem',
     ],
   },
 };
@@ -172,12 +182,8 @@ export const hasPermission = (userPermissions: string[], requiredPermission: str
   // Kiểm tra quyền cụ thể
   if (userPermissions.includes(requiredPermission)) return true;
   
-  // Kiểm tra wildcard permissions
-  const wildcardPermission = requiredPermission.split('.')[0] + '.*';
-  if (userPermissions.includes(wildcardPermission)) return true;
-  
-  // Kiểm tra admin permission
-  if (userPermissions.includes('admin.*')) return true;
+  // Kiểm tra toàn quyền
+  if (userPermissions.includes('toanquyen')) return true;
   
   return false;
 };
@@ -205,34 +211,37 @@ export const getPermissionsForRole = (roleName: string): string[] => {
   return role?.permissions || [];
 };
 
-// Route permissions mapping
+// Route permissions mapping theo tài liệu
 export const ROUTE_PERMISSIONS = {
   // Admin routes
-  '/admin': ['admin.*', 'order.view_assigned', 'order.view'],
-  '/admin/dashboard': ['admin.*', 'order.view_assigned', 'order.view'],
-  '/admin/products': ['product.*'],
-  '/admin/add-product': ['product.create'],
-  '/admin/products/:id': ['product.view'],
-  '/admin/categories': ['category.*'],
-  '/admin/purchase-orders': ['purchase.*'],
-  '/admin/goods-receipt': ['import.*'],
-  '/admin/orders': ['order.view', 'order.view_assigned'],
-  '/admin/orders/:id': ['order.view', 'order.view_assigned'],
-  '/admin/customers': ['admin.*'],
-  '/admin/suppliers': ['supplier.*'],
-  '/admin/invoices': ['invoice.*'],
-  '/admin/discounts': ['admin.*'],
-  '/admin/reviews': ['admin.*'],
-  '/admin/employees': ['employee.*'],
-  '/admin/departments': ['department.*'],
-  '/admin/colors': ['color.*'],
+  '/admin': ['toanquyen', 'donhang.xem_duoc_giao', 'donhang.xem'],
+  '/admin/dashboard': ['toanquyen', 'donhang.xem_duoc_giao', 'donhang.xem'],
+  '/admin/products': ['sanpham.xem'],
+  '/admin/add-product': ['sanpham.tao'],
+  '/admin/products/:id': ['sanpham.xem'],
+  '/admin/categories': ['danhmuc.tao', 'danhmuc.sua', 'danhmuc.xoa'],
+  '/admin/purchase-orders': ['dathang.xem', 'dathang.tao', 'dathang.sua'],
+  '/admin/goods-receipt': ['nhaphang.xem', 'nhaphang.tao', 'nhaphang.sua'],
+  '/admin/orders': ['donhang.xem', 'donhang.xem_duoc_giao'],
+  '/admin/orders/:id': ['donhang.xem', 'donhang.xem_duoc_giao'],
+  '/admin/customers': ['toanquyen'],
+  '/admin/suppliers': ['nhacungcap.xem', 'nhacungcap.tao', 'nhacungcap.sua', 'nhacungcap.xoa'],
+  '/admin/invoices': ['hoadon.xem', 'hoadon.tao'],
+  '/admin/discounts': ['toanquyen'],
+  '/admin/reviews': ['toanquyen'],
+  '/admin/employees': ['nhanvien.xem', 'nhanvien.phancong'],
+  '/admin/departments': ['bophan.xem', 'toanquyen'],
+  '/admin/colors': ['mausac.tao', 'mausac.sua', 'mausac.xoa'],
+  '/admin/sizes': ['kichthuoc.tao', 'kichthuoc.sua', 'kichthuoc.xoa'],
+  '/admin/permissions': ['toanquyen'],
+  '/admin/return-management': ['thongtin.xem', 'toanquyen'],
 
   // User routes
-  '/profile': ['profile.view'],
-  '/cart': ['cart.view'],
-  '/checkout': ['cart.view', 'order.create'],
-  '/orders': ['order.view_own'],
-  '/orders/:id': ['order.view_own'],
+  '/profile': ['toanquyen'],
+  '/cart': ['giohang.xem'],
+  '/checkout': ['giohang.xem', 'donhang.tao'],
+  '/orders': ['donhang.xem_cua_minh'],
+  '/orders/:id': ['donhang.xem_cua_minh'],
 } as const;
 
 export const getRoutePermissions = (route: string): string[] => {

@@ -22,7 +22,7 @@ const ProtectedRoute = ({ children, requireAdmin = false, requiredPermissions = 
   }
 
   // Kiểm tra quyền admin nếu yêu cầu
-  if (requireAdmin && user.role !== 'Admin') {
+  if (requireAdmin && !user.permissions?.includes('toanquyen')) {
     return <Navigate to="/" replace />;
   }
 

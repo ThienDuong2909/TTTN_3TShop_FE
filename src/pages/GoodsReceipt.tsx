@@ -28,7 +28,8 @@ export default function GoodsReceipt() {
   if (
     !state.user ||
     (state.user.role !== "admin" &&
-      !state.user.permissions?.includes("import.*"))
+      !state.user.permissions?.includes("nhaphang.xem") &&
+    !state.user.permissions?.includes("toanquyen"))
   ) {
     navigate("/admin");
     return null;
