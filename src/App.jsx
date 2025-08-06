@@ -35,6 +35,7 @@ import CategoriesManagement from './pages/CategoriesManagement';
 import PurchaseOrders from './pages/PurchaseOrders';
 import GoodsReceipt from './pages/GoodsReceipt';
 import Orders from './pages/Orders';
+import DeliveryOrders from './pages/DeliveryOrders';
 import AdminOrderDetail from './pages/AdminOrderDetail';
 import Customers from './pages/Customers';
 import Suppliers from './pages/SupplierManagement';
@@ -139,6 +140,13 @@ function App() {
               <AdminLayout>
                 <AdminOrderDetail
                 />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/delivery-orders" element={
+            <ProtectedRoute requiredPermissions={['donhang.xem_duoc_giao']}>
+              <AdminLayout>
+                <DeliveryOrders />
               </AdminLayout>
             </ProtectedRoute>
           } />

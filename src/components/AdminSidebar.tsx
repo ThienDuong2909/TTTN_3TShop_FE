@@ -42,14 +42,14 @@ export default function AdminSidebar({
   const isAdmin = state.user?.role === "Admin";
 
   const navigation: NavigationItem[] = [
-    {
-      name: "Tổng quan",
-      id: "overview",
-      icon: BarChart3,
-      permission: "toanquyen",
-      route: "/admin",
-      alternativePermissions: ["donhang.xem_duoc_giao", "donhang.xem"],
-    },
+    // {
+    //   name: "Tổng quan",
+    //   id: "overview",
+    //   icon: BarChart3,
+    //   permission: "toanquyen",
+    //   route: "/admin",
+    //   alternativePermissions: ["donhang.xem_duoc_giao", "donhang.xem"],
+    // },
     {
       name: "Sản phẩm",
       id: "products",
