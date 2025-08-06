@@ -484,6 +484,37 @@ export const updateOrderCompletion = async (orderId, data) => {
   }
 };
 
+// ===================
+// DELIVERY STAFF API
+// ===================
+
+// Lấy đơn hàng được phân công cho nhân viên giao hàng
+export const getAssignedOrders = async (params = {}) => {
+  try {
+    const { page = 1, limit = 10, status } = params;
+    let url = `/orders/delivery/assigned?page=${page}&limit=${limit}`;
+    
+    if (status) {
+      url += `&status=${status}`;
+    }
+    
+    const response = await api.get(url);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Xác nhận hoàn thành giao hàng
+export const confirmOrderDelivery = async (orderId) => {
+  try {
+    const response = await api.put(`/orders/delivery/${orderId}/confirm`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
 // Lấy chi tiết đơn hàng cho admin
 export const getOrderDetailById = async (orderId) => {
   try {

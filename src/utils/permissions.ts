@@ -151,9 +151,9 @@ export const ROLES: Record<string, Role> = {
       'donhang.xem_duoc_giao',
       'donhang.xacnhan_giaohang',
       'donhang.capnhat_trangthai',
-      'nhanvien.xem',
-      'nhanvien.phancong',
-      'donhang.phancong_giaohang',
+      // 'nhanvien.xem',
+      // 'nhanvien.phancong',
+      // 'donhang.phancong_giaohang',
     ],
   },
   CUSTOMER: {

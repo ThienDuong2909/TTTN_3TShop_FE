@@ -26,7 +26,9 @@ const Departments = () => {
     try {
       const res = await fetch('http://localhost:8080/api/department', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
       });
       const result = await res.json();
       if (result.success && Array.isArray(result.data)) {
@@ -88,7 +90,9 @@ const confirmToggle = async () => {
   try {
     const res = await fetch(`http://localhost:8080/api/department/${confirmHideModal.department.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json',
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      },
       body: JSON.stringify({ TrangThai: newStatus }),
     });
     const result = await res.json();
@@ -129,7 +133,9 @@ const handleSubmit = async (e: React.FormEvent) => {
       // Update department
       const res = await fetch(`http://localhost:8080/api/department/${editingDepartment.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
         body: JSON.stringify(payload),
       });
       const result = await res.json();
@@ -151,7 +157,9 @@ const handleSubmit = async (e: React.FormEvent) => {
         // Add new department
         const res = await fetch('http://localhost:8080/api/department', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json',
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+          },
           body: JSON.stringify(payload),
         });
         const result = await res.json();

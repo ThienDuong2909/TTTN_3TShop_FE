@@ -58,7 +58,11 @@ export const SupplierManagement = () => {
     const fetchSuppliers = async () => {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:8080/api/suppliers?page=1");
+        const res = await fetch("http://localhost:8080/api/suppliers?page=1",{
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+          }
+        });
         const data = await res.json();
         if (data.success && data.data && Array.isArray(data.data.data)) {
           setSuppliers(data.data.data);
@@ -109,6 +113,9 @@ export const SupplierManagement = () => {
     try {
       const res = await fetch(`http://localhost:8080/api/suppliers/${supplierToDelete.MaNCC}`, {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
       });
       
       if (res.ok) {
@@ -135,6 +142,7 @@ export const SupplierManagement = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
           },
           body: JSON.stringify({
             TenNCC: formData.TenNCC,
@@ -142,6 +150,7 @@ export const SupplierManagement = () => {
             SDT: formData.SDT,
             Email: formData.Email,
           }),
+          
         });
         const data = await res.json();
         if (res.ok && data.success) {
@@ -166,6 +175,8 @@ export const SupplierManagement = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+
           },
           body: JSON.stringify({
             TenNCC: formData.TenNCC,

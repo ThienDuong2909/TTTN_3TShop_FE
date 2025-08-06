@@ -31,6 +31,10 @@ export function updateBatchOrderCompletion(orders: Array<{ id: number; maTTDH: n
 
 export function updateOrderCompletion(orderId: number, data: { maTTDH: number; maNVDuyet: number }): Promise<ApiResponse>;
 
+// Delivery Staff functions
+export function getAssignedOrders(params?: { page?: number; limit?: number; status?: string }): Promise<any>;
+export function confirmOrderDelivery(orderId: number): Promise<any>;
+
 // Goods Receipt functions
 export function getGoodsReceipts(): Promise<any[]>;
 export function createGoodsReceipt(data: any): Promise<any>;
