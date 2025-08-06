@@ -4,6 +4,17 @@ import { toast, Toaster } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { CLOUDINARY_CONFIG } from "../config/cloudinary";
 
+// Khai báo kiểu cho import.meta.env
+declare global {
+  interface ImportMetaEnv {
+    readonly VITE_OPENAI_API_KEY: string;
+  }
+  
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
+  }
+}
+
 interface ProductVariant {
   id: string;
   MaMau: number;
@@ -263,10 +274,15 @@ export const ProductAdd = () => {
       setIsAnalyzing(true);
       toast.info("Đang phân tích ảnh với AI...");
 
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error("OpenAI API key không được cấu hình. Vui lòng kiểm tra file .env");
+      }
+
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer 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`,
+          "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
