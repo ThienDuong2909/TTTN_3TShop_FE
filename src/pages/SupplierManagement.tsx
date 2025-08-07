@@ -1,17 +1,19 @@
 import React, { useState } from "react";
-import { DataTable, Column } from "../components/ui/DataTable";
-import { Modal } from "../components/ui/Modal";
 import {
   Building2,
   Phone,
   Mail,
   MapPin,
-  Users,
-  CheckCircle,
+  Plus,
+  Edit2,
+  Trash2,
+  Search,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { Modal } from "../components/ui/Modal";
 import {
   Card,
   CardContent,
@@ -19,6 +21,8 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { toast } from "sonner";
+import { Toaster } from "sonner";
+import AdminHeader from "../components/AdminHeader";
 
 // Based on SQL schema: nhacungcap table
 interface Supplier {
@@ -46,13 +50,19 @@ export const SupplierManagement = () => {
   });
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
 
   // Fetch suppliers from API
   React.useEffect(() => {
     const fetchSuppliers = async () => {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:8080/api/suppliers?page=1");
+        const res = await fetch("http://localhost:8080/api/suppliers?page=1",{
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+          }
+        });
         const data = await res.json();
         if (data.success && data.data && Array.isArray(data.data.data)) {
           setSuppliers(data.data.data);
@@ -92,20 +102,34 @@ export const SupplierManagement = () => {
     setIsModalOpen(true);
   };
 
-  const handleView = (supplier: Supplier) => {
-    setEditingSupplier(supplier);
-    setViewMode("details");
-    setIsModalOpen(true);
+  const handleDelete = (supplier: Supplier) => {
+    setSupplierToDelete(supplier);
+    setDeleteConfirmOpen(true);
   };
 
-  const handleDelete = (supplier: Supplier) => {
-    if (
-      window.confirm(
-        `Bạn có chắc chắn muốn xóa nhà cung cấp "${supplier.TenNCC}"?`,
-      )
-    ) {
-      setSuppliers((prev) => prev.filter((s) => s.MaNCC !== supplier.MaNCC));
+  const confirmDelete = async () => {
+    if (!supplierToDelete) return;
+    
+    try {
+      const res = await fetch(`http://localhost:8080/api/suppliers/${supplierToDelete.MaNCC}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      
+      if (res.ok) {
+        setSuppliers((prev) => prev.filter((s) => s.MaNCC !== supplierToDelete.MaNCC));
+        toast.success("Xóa nhà cung cấp thành công!");
+      } else {
+        toast.error("Xóa nhà cung cấp thất bại!");
+      }
+    } catch (error) {
+      toast.error("Có lỗi xảy ra khi xóa nhà cung cấp!");
     }
+    
+    setSupplierToDelete(null);
+    setDeleteConfirmOpen(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -118,6 +142,7 @@ export const SupplierManagement = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
           },
           body: JSON.stringify({
             TenNCC: formData.TenNCC,
@@ -125,6 +150,7 @@ export const SupplierManagement = () => {
             SDT: formData.SDT,
             Email: formData.Email,
           }),
+          
         });
         const data = await res.json();
         if (res.ok && data.success) {
@@ -149,6 +175,8 @@ export const SupplierManagement = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+
           },
           body: JSON.stringify({
             TenNCC: formData.TenNCC,
@@ -173,61 +201,6 @@ export const SupplierManagement = () => {
     setEditingSupplier(null);
   };
 
-  const generateSupplierId = () => {
-    const maxId = Math.max(...suppliers.map((s) => s.MaNCC), 0);
-    return maxId + 1;
-  };
-
-  const columns: Column[] = [
-    {
-      key: "info",
-      title: "Thông tin nhà cung cấp",
-      dataIndex: "TenNCC",
-      sortable: true,
-      render: (value, record) => (
-        <div className="flex items-center">
-          <div className="flex-shrink-0 h-12 w-12">
-            <div className="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
-              <Building2 className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-          <div className="ml-4">
-            <div className="font-medium text-gray-900">{value}</div>
-            <div className="text-sm text-gray-500">Mã NCC: {record.MaNCC}</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "address",
-      title: "Địa chỉ",
-      dataIndex: "DiaChi",
-      render: (value) => (
-        <div className="flex items-center text-sm">
-          <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-          {value || "Chưa cập nhật"}
-        </div>
-      ),
-    },
-    {
-      key: "contact",
-      title: "Liên hệ",
-      dataIndex: "SDT",
-      render: (value, record) => (
-        <div className="space-y-1">
-          <div className="flex items-center text-sm">
-            <Phone className="w-4 h-4 mr-2 text-gray-400" />
-            {value || "Chưa cập nhật"}
-          </div>
-          <div className="flex items-center text-sm">
-            <Mail className="w-4 h-4 mr-2 text-gray-400" />
-            {record.Email || "Chưa cập nhật"}
-          </div>
-        </div>
-      ),
-    },
-  ];
-
   // Calculate statistics
   const stats = {
     total: suppliers.length,
@@ -242,157 +215,203 @@ export const SupplierManagement = () => {
   );
 
   return (
-    <>
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-3 text-[13px]">
-        <Card className="shadow-none border border-[#825B32]/20">
-          <CardContent className="py-1.5 px-2 flex items-center gap-2">
-            <Building2 className="h-6 w-6 text-[#825B32]" />
-            <div>
-              <p className="text-[11px] font-medium text-gray-500">Tổng nhà cung cấp</p>
-              <p className="text-[15px] font-bold text-gray-900">{stats.total}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-none border border-[#825B32]/20">
-          <CardContent className="py-1.5 px-2 flex items-center gap-2">
-            <Phone className="h-6 w-6 text-[#825B32]" />
-            <div>
-              <p className="text-[11px] font-medium text-gray-500">Có số điện thoại</p>
-              <p className="text-[15px] font-bold text-gray-900">{stats.withPhone}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-none border border-[#825B32]/20">
-          <CardContent className="py-1.5 px-2 flex items-center gap-2">
-            <Mail className="h-6 w-6 text-[#825B32]" />
-            <div>
-              <p className="text-[11px] font-medium text-gray-500">Có email</p>
-              <p className="text-[15px] font-bold text-gray-900">{stats.withEmail}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-none border border-[#825B32]/20">
-          <CardContent className="py-1.5 px-2 flex items-center gap-2">
-            <MapPin className="h-6 w-6 text-[#825B32]" />
-            <div>
-              <p className="text-[11px] font-medium text-gray-500">Có địa chỉ</p>
-              <p className="text-[15px] font-bold text-gray-900">{stats.withAddress}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="max-w-max">
+      <Toaster position="top-center" richColors />
+      <AdminHeader title="Quản lý nhà cung cấp" />
 
-      <Card className="w-full mb-2 text-[13px]">
-        <CardHeader className="pb-1 px-2">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <CardTitle className="text-[15px] text-[#825B32]">Danh sách nhà cung cấp ({filteredSuppliers.length})</CardTitle>
-            <div className="flex items-center gap-2">
-              <Input
-                className="text-xs px-2 py-1 h-8 w-56 border-[#825B32] focus:ring-1 focus:ring-[#825B32] outline-none"
-                placeholder="Tìm kiếm theo tên nhà cung cấp..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-              <Button
-                className="bg-[#825B32] text-white text-xs px-3 h-8"
+      <main className="py-4">
+        <div className="px-1 sm:px-2 max-w-none w-full">
+          <div className="space-y-3">
+            {/* Header */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Quản lý nhà cung cấp
+                </h1>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Quản lý thông tin nhà cung cấp và đối tác
+                </p>
+              </div>
+              <Button 
+                className="bg-[#825B32] hover:bg-[#6B4423] text-white text-sm py-2 px-4"
                 onClick={handleAdd}
               >
+                <Plus className="h-4 w-4 mr-2" />
                 Thêm nhà cung cấp
               </Button>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="px-1 pt-1">
-          <div className="w-full overflow-x-auto">
-            <table className="w-full min-w-[900px] border-collapse">
-              <thead>
-                <tr className="bg-[#825B32]/10">
-                  <th className="text-xs font-semibold py-2 px-3 text-left w-[30%]">Thông tin nhà cung cấp</th>
-                  <th className="text-xs font-semibold py-2 px-3 text-left w-[30%]">Địa chỉ</th>
-                  <th className="text-xs font-semibold py-2 px-3 text-left w-[25%]">Liên hệ</th>
-                  <th className="text-xs font-semibold py-2 px-3 text-center w-[15%]">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={4} className="text-center py-8 text-sm text-gray-500">
-                      Đang tải dữ liệu...
-                    </td>
-                  </tr>
-                ) : filteredSuppliers.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="text-center py-8 text-sm text-gray-500">
-                      Không có nhà cung cấp nào.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredSuppliers.map((supplier) => (
-                    <tr
-                      key={supplier.MaNCC}
-                      className="border-b hover:bg-[#825B32]/5 transition-colors text-[12px]"
-                      style={{ height: 68 }}
-                    >
-                      <td className="py-4 px-2 align-middle">
-                        <div className="flex items-center gap-4">
-                          <div className="flex-shrink-0 h-8 w-8 rounded bg-blue-100 flex items-center justify-center">
-                            <Building2 className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div className="min-w-0 flex-1 space-y-1">
-                            <div className="font-medium text-xs truncate">{supplier.TenNCC}</div>
-                            <div className="text-[11px] text-gray-500">Mã NCC: {supplier.MaNCC}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-2 text-xs align-middle">
-                        <div className="flex items-center">
-                          <MapPin className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
-                          <span>{supplier.DiaChi || "Chưa cập nhật"}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-2 text-xs align-middle">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center">
-                            <Phone className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
-                            <span>{supplier.SDT || "Chưa cập nhật"}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Mail className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
-                            <span>{supplier.Email || "Chưa cập nhật"}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-2 text-center align-middle">
-                        <div className="flex gap-1 justify-center">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-6 p-0 border-[#825B32] text-[#825B32] hover:bg-[#825B32] hover:text-white"
-                            title="Chỉnh sửa nhà cung cấp"
-                            onClick={() => handleEdit(supplier)}
+
+            {/* Statistics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="border-[#825B32]/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[#825B32]/10 rounded-lg">
+                      <Building2 className="h-6 w-6 text-[#825B32]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng nhà cung cấp</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-[#825B32]/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[#825B32]/10 rounded-lg">
+                      <Phone className="h-6 w-6 text-[#825B32]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Có số điện thoại</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.withPhone}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-[#825B32]/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[#825B32]/10 rounded-lg">
+                      <Mail className="h-6 w-6 text-[#825B32]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Có email</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.withEmail}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-[#825B32]/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[#825B32]/10 rounded-lg">
+                      <MapPin className="h-6 w-6 text-[#825B32]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Có địa chỉ</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.withAddress}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Search and Filters */}
+            <Card className="w-full">
+              <CardHeader className="pb-2 px-2">
+                <CardTitle className="text-lg">Tìm kiếm nhà cung cấp</CardTitle>
+              </CardHeader>
+              <CardContent className="px-2 pt-2">
+                <div className="relative w-full max-w-xs">
+                  <Input
+                    placeholder="Tìm kiếm theo tên nhà cung cấp..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10 pr-2"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <Search className="w-5 h-5" />
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Suppliers Table */}
+            <Card className="w-full">
+              <CardHeader className="pb-2 px-2">
+                <CardTitle className="text-lg">
+                  Danh sách nhà cung cấp ({filteredSuppliers.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-2 pt-2">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[900px] border-collapse">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Thông tin nhà cung cấp</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Địa chỉ</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Liên hệ</th>
+                        <th className="text-center py-3 px-4 font-medium text-gray-900 dark:text-white">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loading ? (
+                        <tr>
+                          <td colSpan={4} className="text-center py-8 text-gray-500">
+                            Đang tải dữ liệu...
+                          </td>
+                        </tr>
+                      ) : filteredSuppliers.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="text-center py-8 text-gray-500">
+                            {suppliers.length === 0 ? "Chưa có nhà cung cấp nào" : "Không tìm thấy nhà cung cấp phù hợp"}
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredSuppliers.map((supplier) => (
+                          <tr
+                            key={supplier.MaNCC}
+                            className="border-b hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 10-4-4l-8 8v3zm0 0v3h3" /></svg>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-6 p-0 border-[#825B32] text-[#825B32] hover:bg-[#825B32] hover:text-white"
-                            title="Xóa nhà cung cấp"
-                            onClick={() => handleDelete(supplier)}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                            <td className="py-4 px-4">
+                              <div className="flex items-center gap-4">
+                                <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                                  <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-medium text-gray-900 dark:text-white text-base">{supplier.TenNCC}</div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">Mã NCC: {supplier.MaNCC}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                                <span>{supplier.DiaChi || "Chưa cập nhật"}</span>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="space-y-1">
+                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                  <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                                  <span>{supplier.SDT || "Chưa cập nhật"}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                  <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                                  <span>{supplier.Email || "Chưa cập nhật"}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => handleEdit(supplier)}
+                                  className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200 hover:shadow-md"
+                                  title="Sửa nhà cung cấp"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(supplier)}
+                                  className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-200 hover:shadow-md"
+                                  title="Xóa nhà cung cấp"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </main>
 
       <Modal
         isOpen={isModalOpen}
@@ -554,7 +573,41 @@ export const SupplierManagement = () => {
           </form>
         )}
       </Modal>
-    </>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-center">
+            <div className="mb-4 text-base">
+              Bạn có chắc chắn muốn xóa nhà cung cấp
+            </div>
+            <div className="mb-4 text-lg font-semibold text-red-600">
+              {supplierToDelete?.TenNCC}
+            </div>
+            <div className="text-sm text-gray-500 mb-6">
+              Hành động này không thể hoàn tác!
+            </div>
+            <div className="flex justify-center gap-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setDeleteConfirmOpen(false)}
+              >
+                Hủy
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={confirmDelete}
+              >
+                Xóa
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 

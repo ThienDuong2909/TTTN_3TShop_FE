@@ -43,11 +43,14 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "../components/ui/dialog";
 import { Separator } from "../components/ui/separator";
-
-// API interfaces
+import {
+  getProductDetailById,
+  addProductDetail,
+  getSizes,
+  getColors,
+} from "../services/api.js"; // API interfaces
 interface ApiProductVariant {
   MaCTSP: number;
   MaSP: number;
@@ -134,27 +137,84 @@ const AddProductDetailDialog: React.FC<{
 
   useEffect(() => {
     if (!open) return;
-    
+
     // Fetch sizes
-    fetch("http://localhost:8080/api/sizes")
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) setSizes(data.data);
-      })
-      .catch(console.error);
+    const fetchSizes = async () => {
+      try {
+        const result = await getSizes();
+        console.log("Sizes API result:", result);
+
+        if (result) {
+          // Check if result is an array or has a data property
+          let sizesArray;
+          if (Array.isArray(result)) {
+            sizesArray = result;
+          } else if (
+            (result as any).data &&
+            Array.isArray((result as any).data)
+          ) {
+            sizesArray = (result as any).data;
+          } else if (
+            (result as any).success &&
+            (result as any).data &&
+            Array.isArray((result as any).data)
+          ) {
+            sizesArray = (result as any).data;
+          } else {
+            console.error("Unexpected sizes response format:", result);
+            return;
+          }
+
+          console.log("Sizes array:", sizesArray);
+          setSizes(sizesArray);
+        }
+      } catch (error) {
+        console.error("Error fetching sizes:", error);
+      }
+    };
 
     // Fetch colors
-    fetch("http://localhost:8080/api/colors")
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) setColors(data.data.filter((c: Color) => c.TrangThai));
-      })
-      .catch(console.error);
+    const fetchColors = async () => {
+      try {
+        const result = await getColors();
+        console.log("Colors API result:", result);
+
+        if (result) {
+          // Check if result is an array or has a data property
+          let colorsArray;
+          if (Array.isArray(result)) {
+            colorsArray = result;
+          } else if (
+            (result as any).data &&
+            Array.isArray((result as any).data)
+          ) {
+            colorsArray = (result as any).data;
+          } else if (
+            (result as any).success &&
+            (result as any).data &&
+            Array.isArray((result as any).data)
+          ) {
+            colorsArray = (result as any).data;
+          } else {
+            console.error("Unexpected colors response format:", result);
+            return;
+          }
+
+          console.log("Colors array:", colorsArray);
+          setColors(colorsArray.filter((c: Color) => c.TrangThai));
+        }
+      } catch (error) {
+        console.error("Error fetching colors:", error);
+      }
+    };
+
+    fetchSizes();
+    fetchColors();
   }, [open]);
 
   const handleAdd = async () => {
     if (!selectedSize || !selectedColor || quantity < 1) return;
-    
+
     setLoading(true);
     try {
       const body = {
@@ -163,28 +223,34 @@ const AddProductDetailDialog: React.FC<{
         MaMau: selectedColor,
         SoLuongTon: quantity,
       };
-      
-      const res = await fetch("http://localhost:8080/api/products/add-detail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      
-      const result = await res.json();
-      
-      if (result.success) {
-        toast.success("Đã thêm biến thể sản phẩm thành công!");
+
+      const result = await addProductDetail(body);
+
+      if (result && result.success) {
+        toast.success("Đã thêm chi tiết sản phẩm thành công!");
         setOpen(false);
         setSelectedSize(null);
         setSelectedColor(null);
         setQuantity(1);
         onAdded();
       } else {
-        toast.error(result.message || "Thêm biến th��� thất bại");
+        toast.error(result?.message || "Thêm chi tiết sản phẩm thất bại");
       }
     } catch (error) {
       console.error("Error adding product detail:", error);
-      toast.error("Không thể kết nối đến server");
+
+      // Xử lý lỗi authentication
+      if ((error as any)?.message === "Authentication failed") {
+        // Error đã được xử lý bởi interceptor, không cần thông báo thêm
+        return;
+      }
+
+      // Xử lý các lỗi khác
+      if ((error as any)?.response?.status === 401) {
+        toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      } else {
+        toast.error("Không thể kết nối đến server");
+      }
     }
     setLoading(false);
   };
@@ -199,7 +265,8 @@ const AddProductDetailDialog: React.FC<{
           <DialogHeader>
             <DialogTitle>Thêm chi tiết sản phẩm</DialogTitle>
             <DialogDescription>
-              Chọn size, màu sắc và nhập số lượng để thêm biến thể mới cho sản phẩm.
+              Chọn size, màu sắc và nhập số lượng để thêm biến thể mới cho sản
+              phẩm.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -208,10 +275,10 @@ const AddProductDetailDialog: React.FC<{
               <select
                 className="w-full mt-1 p-2 border rounded text-sm"
                 value={selectedSize ?? ""}
-                onChange={e => setSelectedSize(Number(e.target.value))}
+                onChange={(e) => setSelectedSize(Number(e.target.value))}
               >
                 <option value="">Chọn kích thước</option>
-                {sizes.map(size => (
+                {sizes.map((size) => (
                   <option key={size.MaKichThuoc} value={size.MaKichThuoc}>
                     {size.TenKichThuoc}
                   </option>
@@ -223,10 +290,10 @@ const AddProductDetailDialog: React.FC<{
               <select
                 className="w-full mt-1 p-2 border rounded text-sm"
                 value={selectedColor ?? ""}
-                onChange={e => setSelectedColor(Number(e.target.value))}
+                onChange={(e) => setSelectedColor(Number(e.target.value))}
               >
                 <option value="">Chọn màu sắc</option>
-                {colors.map(color => (
+                {colors.map((color) => (
                   <option key={color.MaMau} value={color.MaMau}>
                     {color.TenMau}
                   </option>
@@ -236,18 +303,19 @@ const AddProductDetailDialog: React.FC<{
               {selectedColor && (
                 <div className="mt-2 flex items-center gap-2">
                   <span className="text-xs">Mã màu:</span>
-                  <span 
-                    style={{ 
-                      background: colors.find(c => c.MaMau === selectedColor)?.MaHex, 
-                      width: 24, 
-                      height: 24, 
-                      borderRadius: 6, 
-                      border: '1px solid #ccc', 
-                      display: 'inline-block' 
+                  <span
+                    style={{
+                      background: colors.find((c) => c.MaMau === selectedColor)
+                        ?.MaHex,
+                      width: 24,
+                      height: 24,
+                      borderRadius: 6,
+                      border: "1px solid #ccc",
+                      display: "inline-block",
                     }}
                   ></span>
                   <span className="text-xs">
-                    {colors.find(c => c.MaMau === selectedColor)?.MaHex}
+                    {colors.find((c) => c.MaMau === selectedColor)?.MaHex}
                   </span>
                 </div>
               )}
@@ -258,19 +326,25 @@ const AddProductDetailDialog: React.FC<{
                 type="number"
                 min={1}
                 value={quantity}
-                onChange={e => setQuantity(Number(e.target.value))}
+                onChange={(e) => setQuantity(Number(e.target.value))}
                 className="w-full mt-1"
               />
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+            <Button
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={loading}
+            >
               Hủy
             </Button>
-            <Button 
-              className="bg-[#825B32] text-white" 
-              onClick={handleAdd} 
-              disabled={loading || !selectedSize || !selectedColor || quantity < 1}
+            <Button
+              className="bg-[#825B32] text-white"
+              onClick={handleAdd}
+              disabled={
+                loading || !selectedSize || !selectedColor || quantity < 1
+              }
             >
               <Save className="w-4 h-4 mr-2" /> Thêm
             </Button>
@@ -300,16 +374,15 @@ export const AdminProductDetail: React.FC = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       if (!id) return;
-      
+
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:8080/api/products/${id}`);
-        const result = await response.json();
-        
-        if (result.success) {
+        const result = await getProductDetailById(id);
+
+        if (result && result.success) {
           setProduct(result.data);
         } else {
-          console.error("Error fetching product:", result.message);
+          console.error("Error fetching product:", result?.message);
           navigate("/admin/products");
         }
       } catch (error) {
@@ -323,30 +396,27 @@ export const AdminProductDetail: React.FC = () => {
     fetchProduct();
   }, [id, navigate]);
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString("vi-VN");
-  };
-
   // Helper function to get latest price
   const getLatestPrice = (product: ApiProductDetail) => {
     if (!product.ThayDoiGia || product.ThayDoiGia.length === 0) {
       return null;
     }
-    
+
     // Sort by NgayApDung descending to get the latest applicable price
-    const sortedPrices = [...product.ThayDoiGia].sort((a, b) => 
-      new Date(b.NgayApDung).getTime() - new Date(a.NgayApDung).getTime()
+    const sortedPrices = [...product.ThayDoiGia].sort(
+      (a, b) =>
+        new Date(b.NgayApDung).getTime() - new Date(a.NgayApDung).getTime()
     );
-    
+
     return sortedPrices[0];
   };
 
   // Helper function to format currency
   const formatCurrency = (amount: string | number) => {
-    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(numAmount);
   };
 
@@ -403,12 +473,12 @@ export const AdminProductDetail: React.FC = () => {
   //     });
 
   //     const result = await response.json();
-      
+
   //     if (result.success) {
   //       // Refresh product data
   //       const productResponse = await fetch(`http://localhost:8080/api/products/${id}`);
   //       const productResult = await productResponse.json();
-        
+
   //       if (productResult.success) {
   //         setProduct(productResult.data);
   //       }
@@ -443,11 +513,10 @@ export const AdminProductDetail: React.FC = () => {
 
   const refreshProductData = async () => {
     if (!id) return;
-    
+
     try {
-      const response = await fetch(`http://localhost:8080/api/products/${id}`);
-      const result = await response.json();
-      if (result.success) {
+      const result = await getProductDetailById(id);
+      if (result && result.success) {
         setProduct(result.data);
       }
     } catch (error) {
@@ -475,8 +544,12 @@ export const AdminProductDetail: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Không tìm thấy sản phẩm</h1>
-          <p className="text-gray-600 mb-4">Sản phẩm không tồn tại hoặc đã bị xóa</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Không tìm thấy sản phẩm
+          </h1>
+          <p className="text-gray-600 mb-4">
+            Sản phẩm không tồn tại hoặc đã bị xóa
+          </p>
           <Button onClick={() => navigate("/admin/products")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Quay lại danh sách
@@ -487,8 +560,10 @@ export const AdminProductDetail: React.FC = () => {
   }
 
   // Calculate totals from API data
-  const totalQuantity = product.ChiTietSanPhams.reduce((sum, variant) => sum + variant.SoLuongTon, 0);
-
+  const totalQuantity = product.ChiTietSanPhams.reduce(
+    (sum, variant) => sum + variant.SoLuongTon,
+    0
+  );
 
   return (
     <div className="space-y-6 p-6">
@@ -599,8 +674,12 @@ export const AdminProductDetail: React.FC = () => {
                     Tên sản phẩm
                   </h3>
                   <div className="bg-gradient-to-br from-[#825B32]/5 to-[#825B32]/10 rounded-lg p-3 border border-[#825B32]/20">
-                    <p className="font-bold text-base text-gray-800 leading-tight">{product.TenSP}</p>
-                    <p className="text-xs text-gray-600 mt-1">#{product.MaSP}</p>
+                    <p className="font-bold text-base text-gray-800 leading-tight">
+                      {product.TenSP}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      #{product.MaSP}
+                    </p>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -609,8 +688,12 @@ export const AdminProductDetail: React.FC = () => {
                     Danh mục
                   </h3>
                   <div className="bg-gray-50/50 rounded-lg p-3 border border-gray-200">
-                    <p className="font-bold text-sm text-gray-800">{product.LoaiSP.TenLoai}</p>
-                    <p className="text-xs text-gray-600 mt-1">Mã: #{product.MaLoaiSP}</p>
+                    <p className="font-bold text-sm text-gray-800">
+                      {product.LoaiSP.TenLoai}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Mã: #{product.MaLoaiSP}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -644,7 +727,12 @@ export const AdminProductDetail: React.FC = () => {
                         </p>
                         <div className="flex items-center mt-1 text-xs text-green-600">
                           <Calendar className="w-3 h-3 mr-1" />
-                          <span>Áp dụng: {new Date(latestPrice.NgayApDung).toLocaleDateString('vi-VN')}</span>
+                          <span>
+                            Áp dụng:{" "}
+                            {new Date(
+                              latestPrice.NgayApDung
+                            ).toLocaleDateString("vi-VN")}
+                          </span>
                         </div>
                       </div>
                     ) : (
@@ -664,31 +752,45 @@ export const AdminProductDetail: React.FC = () => {
                     <div className="w-1.5 h-1.5 rounded-full bg-[#825B32] mr-2"></div>
                     Trạng thái
                   </h3>
-                  <div className={`rounded-lg p-3 border ${
-                    product.TrangThai 
-                      ? 'bg-gradient-to-br from-green-50 to-green-100 border-green-200' 
-                      : 'bg-gradient-to-br from-red-50 to-red-100 border-red-200'
-                  }`}>
+                  <div
+                    className={`rounded-lg p-3 border ${
+                      product.TrangThai
+                        ? "bg-gradient-to-br from-green-50 to-green-100 border-green-200"
+                        : "bg-gradient-to-br from-red-50 to-red-100 border-red-200"
+                    }`}
+                  >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className={`font-bold text-sm ${
-                          product.TrangThai ? 'text-green-700' : 'text-red-700'
-                        }`}>
-                          {product.TrangThai ? "🟢 Đang hoạt động" : "🔴 Ngừng hoạt động"}
+                        <p
+                          className={`font-bold text-sm ${
+                            product.TrangThai
+                              ? "text-green-700"
+                              : "text-red-700"
+                          }`}
+                        >
+                          {product.TrangThai
+                            ? "🟢 Đang hoạt động"
+                            : "🔴 Ngừng hoạt động"}
                         </p>
-                        <p className={`text-xs mt-1 ${
-                          product.TrangThai ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {product.TrangThai 
-                            ? "Sản phẩm đang được bán" 
+                        <p
+                          className={`text-xs mt-1 ${
+                            product.TrangThai
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {product.TrangThai
+                            ? "Sản phẩm đang được bán"
                             : "Sản phẩm tạm ngừng bán"}
                         </p>
                       </div>
-                      <Badge className={`px-2 py-1 text-xs font-medium ${
-                        product.TrangThai
-                          ? "bg-green-100 text-green-800 border border-green-200"
-                          : "bg-red-100 text-red-800 border border-red-200"
-                      }`}>
+                      <Badge
+                        className={`px-2 py-1 text-xs font-medium ${
+                          product.TrangThai
+                            ? "bg-green-100 text-green-800 border border-green-200"
+                            : "bg-red-100 text-red-800 border border-red-200"
+                        }`}
+                      >
                         {product.TrangThai ? "ACTIVE" : "INACTIVE"}
                       </Badge>
                     </div>
@@ -706,12 +808,16 @@ export const AdminProductDetail: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center mb-2">
                         <User className="w-3 h-3 text-[#825B32] mr-2" />
-                        <p className="font-bold text-sm text-gray-800">{product.NhaCungCap.TenNCC}</p>
+                        <p className="font-bold text-sm text-gray-800">
+                          {product.NhaCungCap.TenNCC}
+                        </p>
                       </div>
                       <div className="space-y-1 text-xs text-gray-600">
                         <div className="flex items-start">
                           <MapPin className="w-3 h-3 text-gray-500 mr-2 mt-0.5 flex-shrink-0" />
-                          <span className="leading-tight">{product.NhaCungCap.DiaChi}</span>
+                          <span className="leading-tight">
+                            {product.NhaCungCap.DiaChi}
+                          </span>
                         </div>
                         <div className="flex items-center">
                           <Phone className="w-3 h-3 text-gray-500 mr-2 flex-shrink-0" />
@@ -725,7 +831,10 @@ export const AdminProductDetail: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-[#825B32] border-[#825B32] text-xs px-2">
+                    <Badge
+                      variant="outline"
+                      className="text-[#825B32] border-[#825B32] text-xs px-2"
+                    >
                       #{product.NhaCungCap.MaNCC}
                     </Badge>
                   </div>
@@ -734,7 +843,7 @@ export const AdminProductDetail: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Product Images */}
         <div className="flex-1 min-w-[220px] max-w-[340px] space-y-6">
           <Card className="overflow-hidden">
@@ -749,7 +858,10 @@ export const AdminProductDetail: React.FC = () => {
               <div className="relative">
                 <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden border-2 border-[#825B32]/10 shadow-inner">
                   <img
-                    src={product.AnhSanPhams[selectedImage]?.DuongDan || "/placeholder.svg"}
+                    src={
+                      product.AnhSanPhams[selectedImage]?.DuongDan ||
+                      "/placeholder.svg"
+                    }
                     alt={product.TenSP}
                     className="w-full h-full object-cover transition-all duration-300 hover:scale-105"
                   />
@@ -792,11 +904,13 @@ export const AdminProductDetail: React.FC = () => {
                           className="w-full h-full object-cover transition-all duration-200 group-hover:brightness-110"
                         />
                         {/* Thumbnail Overlay */}
-                        <div className={`absolute inset-0 transition-all duration-200 ${
-                          selectedImage === index
-                            ? "bg-[#825B32]/10 border border-[#825B32]/20"
-                            : "bg-black/0 group-hover:bg-black/5"
-                        }`} />
+                        <div
+                          className={`absolute inset-0 transition-all duration-200 ${
+                            selectedImage === index
+                              ? "bg-[#825B32]/10 border border-[#825B32]/20"
+                              : "bg-black/0 group-hover:bg-black/5"
+                          }`}
+                        />
                         {/* Main Image Indicator */}
                         {image.AnhChinh && (
                           <div className="absolute top-1 right-1">
@@ -804,11 +918,13 @@ export const AdminProductDetail: React.FC = () => {
                           </div>
                         )}
                         {/* Image Order */}
-                        <div className={`absolute bottom-1 left-1 text-xs font-medium px-1.5 py-0.5 rounded ${
-                          selectedImage === index
-                            ? "bg-[#825B32] text-white"
-                            : "bg-black/50 text-white opacity-0 group-hover:opacity-100"
-                        } transition-all duration-200`}>
+                        <div
+                          className={`absolute bottom-1 left-1 text-xs font-medium px-1.5 py-0.5 rounded ${
+                            selectedImage === index
+                              ? "bg-[#825B32] text-white"
+                              : "bg-black/50 text-white opacity-0 group-hover:opacity-100"
+                          } transition-all duration-200`}
+                        >
                           {index + 1}
                         </div>
                       </button>
@@ -831,7 +947,9 @@ export const AdminProductDetail: React.FC = () => {
                     Thứ tự
                   </Label>
                   <p className="text-gray-700 mt-1 font-semibold">
-                    #{product.AnhSanPhams[selectedImage]?.ThuTu || (selectedImage + 1)}
+                    #
+                    {product.AnhSanPhams[selectedImage]?.ThuTu ||
+                      selectedImage + 1}
                   </p>
                 </div>
               </div>
@@ -851,9 +969,9 @@ export const AdminProductDetail: React.FC = () => {
             <div className="flex items-center space-x-2">
               {/* Visualized action buttons group */}
               <div className="flex gap-2 items-center">
-                <AddProductDetailDialog 
-                  productId={product.MaSP} 
-                  onAdded={refreshProductData} 
+                <AddProductDetailDialog
+                  productId={product.MaSP}
+                  onAdded={refreshProductData}
                 />
                 {/* <Button
                   onClick={() => setIsEditing(true)}
@@ -935,9 +1053,7 @@ export const AdminProductDetail: React.FC = () => {
                       <div className="border-l-4 border-red-500 pl-4 py-2">
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-medium">
-                              Điều chỉnh kiểm kê
-                            </p>
+                            <p className="font-medium">Điều chỉnh kiểm kê</p>
                             <p className="text-sm text-gray-600">
                               Hiệu chỉnh sau kiểm kê định kỳ
                             </p>
@@ -945,9 +1061,7 @@ export const AdminProductDetail: React.FC = () => {
                               18/01/2024 16:30
                             </p>
                           </div>
-                          <Badge className="bg-red-100 text-red-800">
-                            -12
-                          </Badge>
+                          <Badge className="bg-red-100 text-red-800">-12</Badge>
                         </div>
                       </div>
                     </div>
@@ -965,7 +1079,7 @@ export const AdminProductDetail: React.FC = () => {
                 <TableHead>SKU</TableHead>
                 <TableHead>Tồn kho</TableHead>
                 <TableHead>Trạng thái</TableHead>
-                <TableHead>Cập nhật lần cuối</TableHead>
+                {/* <TableHead>Cập nhật lần cuối</TableHead> */}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -995,7 +1109,8 @@ export const AdminProductDetail: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                        {product.MaSP}-{variant.KichThuoc.TenKichThuoc}-{variant.Mau.TenMau}
+                        {product.MaSP}-{variant.KichThuoc.TenKichThuoc}-
+                        {variant.Mau.TenMau}
                       </code>
                     </TableCell>
                     <TableCell>
@@ -1040,9 +1155,7 @@ export const AdminProductDetail: React.FC = () => {
                           </Button>
                         </div>
                       ) : ( */}
-                        <span className="font-medium">
-                          {variant.SoLuongTon}
-                        </span>
+                      <span className="font-medium">{variant.SoLuongTon}</span>
                       {/* )} */}
                     </TableCell>
                     <TableCell>
@@ -1050,11 +1163,11 @@ export const AdminProductDetail: React.FC = () => {
                         {stockStatus.label}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       <span className="text-sm text-gray-500">
                         {formatDateTime(variant.Mau.NgayTao)}
                       </span>
-                    </TableCell>
+                    </TableCell> */}
                   </TableRow>
                 );
               })}
@@ -1075,65 +1188,88 @@ export const AdminProductDetail: React.FC = () => {
               Toàn bộ lịch sử các lần thay đổi giá của sản phẩm {product.TenSP}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {product.ThayDoiGia && product.ThayDoiGia.length > 0 ? (
               <div className="space-y-3">
-                {product.ThayDoiGia
-                  .sort((a, b) => new Date(b.NgayApDung).getTime() - new Date(a.NgayApDung).getTime())
-                  .map((priceChange, index) => (
-                    <div 
-                      key={`${priceChange.NgayThayDoi}-${index}`}
-                      className={`relative p-4 rounded-lg border transition-all hover:shadow-sm ${
-                        index === 0 
-                          ? 'bg-gradient-to-r from-[#825B32]/5 to-[#825B32]/10 border-[#825B32]/20' 
-                          : 'bg-gray-50/50 border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-full ${
-                              index === 0 ? 'bg-[#825B32] text-white' : 'bg-gray-200 text-gray-600'
-                            }`}>
-                              <TrendingUp className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <p className={`font-bold text-lg ${
-                                index === 0 ? 'text-[#825B32]' : 'text-gray-700'
-                              }`}>
-                                {formatCurrency(priceChange.Gia)}
-                              </p>
-                              <div className="flex items-center gap-4 text-sm text-gray-600">
-                                <span>Thay đổi: {new Date(priceChange.NgayThayDoi).toLocaleDateString('vi-VN')}</span>
-                                <span>•</span>
-                                <span>Áp dụng: {new Date(priceChange.NgayApDung).toLocaleDateString('vi-VN')}</span>
-                              </div>
+                {product.ThayDoiGia.sort(
+                  (a, b) =>
+                    new Date(b.NgayApDung).getTime() -
+                    new Date(a.NgayApDung).getTime()
+                ).map((priceChange, index) => (
+                  <div
+                    key={`${priceChange.NgayThayDoi}-${index}`}
+                    className={`relative p-4 rounded-lg border transition-all hover:shadow-sm ${
+                      index === 0
+                        ? "bg-gradient-to-r from-[#825B32]/5 to-[#825B32]/10 border-[#825B32]/20"
+                        : "bg-gray-50/50 border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`p-2 rounded-full ${
+                              index === 0
+                                ? "bg-[#825B32] text-white"
+                                : "bg-gray-200 text-gray-600"
+                            }`}
+                          >
+                            <TrendingUp className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p
+                              className={`font-bold text-lg ${
+                                index === 0 ? "text-[#825B32]" : "text-gray-700"
+                              }`}
+                            >
+                              {formatCurrency(priceChange.Gia)}
+                            </p>
+                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                              <span>
+                                Thay đổi:{" "}
+                                {new Date(
+                                  priceChange.NgayThayDoi
+                                ).toLocaleDateString("vi-VN")}
+                              </span>
+                              <span>•</span>
+                              <span>
+                                Áp dụng:{" "}
+                                {new Date(
+                                  priceChange.NgayApDung
+                                ).toLocaleDateString("vi-VN")}
+                              </span>
                             </div>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-2">
-                          {index === 0 && (
-                            <Badge className="bg-[#825B32] hover:bg-[#825B32]/90">
-                              Giá hiện tại
-                            </Badge>
-                          )}
-                          {index > 0 && (
-                            <Badge variant="outline" className="text-gray-600 border-gray-300">
-                              #{product.ThayDoiGia.length - index}
-                            </Badge>
-                          )}
-                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        {index === 0 && (
+                          <Badge className="bg-[#825B32] hover:bg-[#825B32]/90">
+                            Giá hiện tại
+                          </Badge>
+                        )}
+                        {index > 0 && (
+                          <Badge
+                            variant="outline"
+                            className="text-gray-600 border-gray-300"
+                          >
+                            #{product.ThayDoiGia.length - index}
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                  ))}
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="text-center py-12">
                 <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                   <TrendingUp className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có lịch sử giá</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Chưa có lịch sử giá
+                </h3>
                 <p className="text-gray-500 text-sm">
                   Sản phẩm này chưa có thông tin về các lần thay đổi giá
                 </p>

@@ -3,6 +3,8 @@ import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Separator } from "./ui/separator";
 import { toast } from "sonner";
+// @ts-ignore
+import api from "../services/fetch";
 
 interface InvoiceViewProps {
   isOpen: boolean;
@@ -80,27 +82,23 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
 
   const fetchInvoiceDetail = async () => {
     if (!invoiceNumber) return;
-    
+
     try {
       setIsLoading(true);
       setError(null);
-      
-      const response = await fetch(`http://localhost:8080/api/invoices/detail/${invoiceNumber}`);
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.message || 'Lỗi khi tải thông tin hóa đơn');
-      }
-      
+
+      const response = await api.get(`/invoices/detail/${invoiceNumber}`);
+      const result = response.data;
+
       if (result.success && result.data) {
         setInvoiceData(result.data);
       } else {
-        throw new Error(result.message || 'Không tìm thấy thông tin hóa đơn');
+        throw new Error(result.message || "Không tìm thấy thông tin hóa đơn");
       }
     } catch (err) {
-      console.error('Error fetching invoice detail:', err);
-      setError(err instanceof Error ? err.message : 'Lỗi không xác định');
-      toast.error('Không thể tải thông tin hóa đơn');
+      console.error("Error fetching invoice detail:", err);
+      setError(err instanceof Error ? err.message : "Lỗi không xác định");
+      toast.error("Không thể tải thông tin hóa đơn");
     } finally {
       setIsLoading(false);
     }
@@ -132,8 +130,8 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
 
   const handlePrint = () => {
     // Create a clean print-only element
-    const printElement = document.createElement('div');
-    printElement.id = 'print-only-invoice';
+    const printElement = document.createElement("div");
+    printElement.id = "print-only-invoice";
     printElement.innerHTML = `
       <style>
         @media print {
@@ -354,15 +352,21 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
             <div class="section-title">Thông tin hóa đơn</div>
             <div class="info-row">
               <span class="info-label">Số hóa đơn:</span>
-              <span class="info-value">${invoiceData?.ThongTinHoaDon.SoHD}</span>
+              <span class="info-value">${
+                invoiceData?.ThongTinHoaDon.SoHD
+              }</span>
             </div>
             <div class="info-row">
               <span class="info-label">Ngày lập:</span>
-              <span class="info-value">${formatDateTime(invoiceData?.ThongTinHoaDon.NgayLap || '')}</span>
+              <span class="info-value">${formatDateTime(
+                invoiceData?.ThongTinHoaDon.NgayLap || ""
+              )}</span>
             </div>
             <div class="info-row">
               <span class="info-label">Nhân viên lập:</span>
-              <span class="info-value">${invoiceData?.ThongTinHoaDon.NhanVienLap.TenNV}</span>
+              <span class="info-value">${
+                invoiceData?.ThongTinHoaDon.NhanVienLap.TenNV
+              }</span>
             </div>
           </div>
           
@@ -370,15 +374,22 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
             <div class="section-title">Thông tin đơn hàng</div>
             <div class="info-row">
               <span class="info-label">Mã đơn hàng:</span>
-              <span class="info-value">#${invoiceData?.ThongTinDonHang.MaDDH}</span>
+              <span class="info-value">#${
+                invoiceData?.ThongTinDonHang.MaDDH
+              }</span>
             </div>
             <div class="info-row">
               <span class="info-label">Ngày đặt hàng:</span>
-              <span class="info-value">${formatDateTime(invoiceData?.ThongTinDonHang.NgayDat || '')}</span>
+              <span class="info-value">${formatDateTime(
+                invoiceData?.ThongTinDonHang.NgayDat || ""
+              )}</span>
             </div>
             <div class="info-row">
               <span class="info-label">Nhân viên giao hàng:</span>
-              <span class="info-value">${invoiceData?.ThongTinDonHang.NhanVienGiao?.TenNV || 'Chưa phân công'}</span>
+              <span class="info-value">${
+                invoiceData?.ThongTinDonHang.NhanVienGiao?.TenNV ||
+                "Chưa phân công"
+              }</span>
             </div>
           </div>
         </div>
@@ -389,15 +400,21 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
             <div class="section-title">Khách hàng</div>
             <div class="info-row">
               <span class="info-label">Họ và tên:</span>
-              <span class="info-value">${invoiceData?.ThongTinKhachHang.TenKH}</span>
+              <span class="info-value">${
+                invoiceData?.ThongTinKhachHang.TenKH
+              }</span>
             </div>
             <div class="info-row">
               <span class="info-label">Số điện thoại:</span>
-              <span class="info-value">${invoiceData?.ThongTinKhachHang.SDT}</span>
+              <span class="info-value">${
+                invoiceData?.ThongTinKhachHang.SDT
+              }</span>
             </div>
             <div class="info-row">
               <span class="info-label">Địa chỉ:</span>
-              <span class="info-value">${invoiceData?.ThongTinKhachHang.DiaChi}</span>
+              <span class="info-value">${
+                invoiceData?.ThongTinKhachHang.DiaChi
+              }</span>
             </div>
           </div>
           
@@ -405,15 +422,21 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
             <div class="section-title">Người nhận hàng</div>
             <div class="info-row">
               <span class="info-label">Họ và tên:</span>
-              <span class="info-value">${invoiceData?.ThongTinNguoiNhan.HoTen}</span>
+              <span class="info-value">${
+                invoiceData?.ThongTinNguoiNhan.HoTen
+              }</span>
             </div>
             <div class="info-row">
               <span class="info-label">Số điện thoại:</span>
-              <span class="info-value">${invoiceData?.ThongTinNguoiNhan.SDT}</span>
+              <span class="info-value">${
+                invoiceData?.ThongTinNguoiNhan.SDT
+              }</span>
             </div>
             <div class="info-row">
               <span class="info-label">Địa chỉ giao hàng:</span>
-              <span class="info-value">${invoiceData?.ThongTinNguoiNhan.DiaChi}</span>
+              <span class="info-value">${
+                invoiceData?.ThongTinNguoiNhan.DiaChi
+              }</span>
             </div>
           </div>
         </div>
@@ -433,7 +456,8 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
             </tr>
           </thead>
           <tbody>
-            ${invoiceData?.DanhSachSanPham.map((item, index) => `
+            ${invoiceData?.DanhSachSanPham.map(
+              (item, index) => `
               <tr>
                 <td class="text-center">${index + 1}</td>
                 <td class="text-bold">${item.TenSanPham}</td>
@@ -441,9 +465,12 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
                 <td class="text-center">${item.KichThuoc}</td>
                 <td class="text-center">${item.SoLuong}</td>
                 <td class="text-right">${formatCurrency(item.DonGia)}</td>
-                <td class="text-right text-bold">${formatCurrency(item.ThanhTien)}</td>
+                <td class="text-right text-bold">${formatCurrency(
+                  item.ThanhTien
+                )}</td>
               </tr>
-            `).join('')}
+            `
+            ).join("")}
           </tbody>
         </table>
         
@@ -453,7 +480,9 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
             TỔNG CỘNG: ${formatCurrency(invoiceData?.TongGiaTri.TongTien || 0)}
           </div>
           <div style="font-size: 11px; border-top: 1px solid #000; padding-top: 5px; margin-top: 5px;">
-            <strong>Bằng chữ:</strong> ${numberToWords(invoiceData?.TongGiaTri.TongTien || 0)} đồng
+            <strong>Bằng chữ:</strong> ${numberToWords(
+              invoiceData?.TongGiaTri.TongTien || 0
+            )} đồng
           </div>
         </div>
         
@@ -466,7 +495,9 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
           <div>
             <div class="signature-title">Nhân viên bán hàng</div>
             <div class="signature-note">(Ký và ghi rõ họ tên)</div>
-            <div style="font-weight: bold;">${invoiceData?.ThongTinHoaDon.NhanVienLap.TenNV}</div>
+            <div style="font-weight: bold;">${
+              invoiceData?.ThongTinHoaDon.NhanVienLap.TenNV
+            }</div>
           </div>
         </div>
         
@@ -477,16 +508,16 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
         </div>
       </div>
     `;
-    
+
     // Add to body temporarily
     document.body.appendChild(printElement);
-    
+
     // Show print element and hide everything else for printing
-    printElement.style.display = 'block';
-    
+    printElement.style.display = "block";
+
     // Print
     window.print();
-    
+
     // Clean up
     setTimeout(() => {
       document.body.removeChild(printElement);
@@ -501,7 +532,9 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#825B32] mx-auto"></div>
-              <p className="mt-4 text-gray-600">Đang tải thông tin hóa đơn...</p>
+              <p className="mt-4 text-gray-600">
+                Đang tải thông tin hóa đơn...
+              </p>
             </div>
           </div>
         </DialogContent>
@@ -515,10 +548,16 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md">
           <div className="text-center py-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Có lỗi xảy ra</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Có lỗi xảy ra
+            </h3>
             <p className="text-gray-600 mb-4">{error}</p>
             <div className="flex gap-3">
-              <Button onClick={fetchInvoiceDetail} variant="outline" className="flex-1">
+              <Button
+                onClick={fetchInvoiceDetail}
+                variant="outline"
+                className="flex-1"
+              >
                 Thử lại
               </Button>
               <Button onClick={onClose} className="flex-1">
@@ -537,8 +576,12 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md">
           <div className="text-center py-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Không tìm thấy hóa đơn</h3>
-            <p className="text-gray-600 mb-4">Hóa đơn không tồn tại hoặc đã bị xóa.</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Không tìm thấy hóa đơn
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Hóa đơn không tồn tại hoặc đã bị xóa.
+            </p>
             <Button onClick={onClose}>Đóng</Button>
           </div>
         </DialogContent>
@@ -560,9 +603,15 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
         {/* Invoice Content */}
         <div className="invoice-print-content space-y-4 text-xs print:space-y-3 print:text-xs relative">
           {/* Watermark - Paid Stamp */}
-          <div className="print-watermark absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ zIndex: -1, opacity: 0.15 }}>
+          <div
+            className="print-watermark absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ zIndex: -1, opacity: 0.15 }}
+          >
             <div className="print-watermark-circle w-36 h-36 border-2 border-red-600 rounded-full flex items-center justify-center bg-white/30 transform rotate-12 print:w-32 print:h-32">
-              <div className="print-watermark-text text-center" style={{ opacity: 0.7 }}>
+              <div
+                className="print-watermark-text text-center"
+                style={{ opacity: 0.7 }}
+              >
                 <div className="text-red-600 font-bold text-xl uppercase tracking-wider print:text-lg">
                   ĐÃ
                 </div>
@@ -640,7 +689,8 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
                 <div className="print-info-item flex justify-between text-xs">
                   <span className="text-gray-600">Nhân viên giao hàng:</span>
                   <span className="font-medium text-gray-900">
-                    {invoiceData.ThongTinDonHang.NhanVienGiao?.TenNV || 'Chưa phân công'}
+                    {invoiceData.ThongTinDonHang.NhanVienGiao?.TenNV ||
+                      "Chưa phân công"}
                   </span>
                 </div>
               </div>
@@ -757,7 +807,11 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
                   {invoiceData.DanhSachSanPham.map((item, index) => (
                     <tr
                       key={index}
-                      className={index % 2 === 0 ? "bg-gray-50 print:bg-gray-100" : "bg-white"}
+                      className={
+                        index % 2 === 0
+                          ? "bg-gray-50 print:bg-gray-100"
+                          : "bg-white"
+                      }
                     >
                       <td className="border border-gray-300 px-2 py-2 text-center print:px-1 print:py-1">
                         {index + 1}

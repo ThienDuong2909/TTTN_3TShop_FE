@@ -10,6 +10,7 @@ import {
   Building2,
   UserCheck,
   Shield,
+  RotateCcw,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useApp } from "../contexts/AppContext";
@@ -30,126 +31,153 @@ interface NavigationItem {
   alternativePermissions?: string[];
 }
 
-export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
+export default function AdminSidebar({
+  activeTab,
+  setActiveTab,
+}: AdminSidebarProps) {
   const { state } = useApp();
   const navigate = useNavigate();
 
   const userPermissions = state.user?.permissions || [];
-  const isAdmin = state.user?.role === "admin";
+  const isAdmin = state.user?.role === "Admin";
 
   const navigation: NavigationItem[] = [
-    {
-      name: "Tổng quan",
-      id: "overview",
-      icon: BarChart3,
-      permission: "admin.*",
-      route: "/admin",
-      alternativePermissions: ["order.view_assigned", "order.view"],
-    },
+    // {
+    //   name: "Tổng quan",
+    //   id: "overview",
+    //   icon: BarChart3,
+    //   permission: "toanquyen",
+    //   route: "/admin",
+    //   alternativePermissions: ["donhang.xem_duoc_giao", "donhang.xem"],
+    // },
     {
       name: "Sản phẩm",
       id: "products",
       icon: Package,
-      permission: "product.*",
+      permission: "sanpham.xem",
       route: "/admin/products",
     },
     {
       name: "Loại sản phẩm",
       id: "categories",
       icon: Package,
-      permission: "category.*",
+      permission: "danhmuc.tao",
       route: "/admin/categories",
+      alternativePermissions: ["danhmuc.sua", "danhmuc.xoa"],
     },
     {
       name: "Đơn hàng",
       id: "orders",
       icon: ShoppingCart,
-      permission: "order.view",
+      permission: "donhang.xem",
       route: "/admin/orders",
-      alternativePermissions: ["order.view_assigned"],
+      alternativePermissions: ["donhang.xem_duoc_giao"],
     },
     {
-      name: "Khách hàng",
-      id: "customers",
-      icon: Users,
-      permission: "admin.*",
-      route: "/admin/customers",
+      name: "Quản lý phiếu trả",
+      id: "return-management",
+      icon: RotateCcw,
+      permission: "toanquyen",
+      route: "/admin/return-management",
+      alternativePermissions: ["thongtin.xem"],
     },
+    // {
+    //   name: "Khách hàng",
+    //   id: "customers",
+    //   icon: Users,
+    //   permission: "toanquyen",
+    //   route: "/admin/customers",
+    // },
     {
       name: "Phiếu đặt hàng",
       id: "purchase-orders",
       icon: FileText,
-      permission: "purchase.*",
+      permission: "dathang.xem",
       route: "/admin/purchase-orders",
+      alternativePermissions: ["dathang.tao", "dathang.sua"],
     },
     {
       name: "Phiếu nhập hàng",
       id: "goods-receipt",
       icon: FileText,
-      permission: "import.*",
+      permission: "nhaphang.xem",
       route: "/admin/goods-receipt",
+      alternativePermissions: ["nhaphang.tao", "nhaphang.sua"],
     },
     {
       name: "Nhà cung cấp",
       id: "suppliers",
       icon: Truck,
-      permission: "supplier.*",
+      permission: "nhacungcap.xem",
       route: "/admin/suppliers",
+      alternativePermissions: ["nhacungcap.tao", "nhacungcap.sua", "nhacungcap.xoa"],
     },
-    {
-      name: "Hóa đơn",
-      id: "invoices",
-      icon: FileText,
-      permission: "invoice.*",
-      route: "/admin/invoices",
-    },
+    // {
+    //   name: "Hóa đơn",
+    //   id: "invoices",
+    //   icon: FileText,
+    //   permission: "hoadon.xem",
+    //   route: "/admin/invoices",
+    //   alternativePermissions: ["hoadon.tao"],
+    // },
     {
       name: "Giảm giá",
       id: "discounts",
       icon: Tags,
-      permission: "admin.*",
+      permission: "toanquyen",
       route: "/admin/discounts",
     },
-    {
-      name: "Bình luận",
-      id: "reviews",
-      icon: MessageSquare,
-      permission: "admin.*",
-      route: "/admin/reviews",
-    },
+    // {
+    //   name: "Bình luận",
+    //   id: "reviews",
+    //   icon: MessageSquare,
+    //   permission: "toanquyen",
+    //   route: "/admin/reviews",
+    // },
     {
       name: "Nhân viên",
       id: "staff",
       icon: UserCheck,
-      permission: "employee.*",
+      permission: "nhanvien.xem",
       route: "/admin/employees",
+      alternativePermissions: ["nhanvien.phancong"],
     },
     {
       name: "Bộ phận",
       id: "departments",
       icon: Building2,
-      permission: "department.*",
+      permission: "bophan.xem",
       route: "/admin/departments",
+      alternativePermissions: ["toanquyen"],
     },
     {
       name: "Màu sắc",
       id: "colors",
       icon: Building2,
-      permission: "color.*",
+      permission: "mausac.tao",
       route: "/admin/colors",
+      alternativePermissions: ["mausac.sua", "mausac.xoa"],
+    },
+    {
+      name: "Kích thước",
+      id: "sizes",
+      icon: Building2,
+      permission: "kichthuoc.tao",
+      route: "/admin/sizes",
+      alternativePermissions: ["kichthuoc.sua", "kichthuoc.xoa"],
     },
     {
       name: "Phân quyền",
       id: "permissions",
       icon: Shield,
-      permission: "admin.*",
+      permission: "toanquyen",
       route: "/admin/permissions",
     },
   ];
 
   const filteredNavigation = navigation.filter((item) => {
     const hasMainPermission = hasPermission(userPermissions, item.permission);
-    const hasAlternativePermission = item.alternativePermissions?.some(perm => 
+    const hasAlternativePermission = item.alternativePermissions?.some((perm) =>
       hasPermission(userPermissions, perm)
     );
     return hasMainPermission || hasAlternativePermission;
@@ -172,9 +200,7 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
                 Admin Panel
               </span>
               <div className="text-xs text-muted-foreground">
-                {state.user?.role === "admin"
-                  ? "Quản trị viên"
-                  : "Nhân viên"}
+                {state.user?.role === "Admin" ? "Quản trị viên" : "Nhân viên"}
               </div>
             </div>
           </div>
@@ -235,4 +261,4 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
       </div>
     </div>
   );
-} 
+}

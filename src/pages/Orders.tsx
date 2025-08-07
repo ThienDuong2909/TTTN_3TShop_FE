@@ -19,7 +19,12 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { Badge } from "../components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
 import {
   Search,
   Check,
@@ -36,8 +41,23 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Eye,
+  Truck,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  getOrdersByStatus,
+  getOrderStatistics,
+  updateOrderStatus,
+  updateBatchOrderStatus,
+  getAvailableDeliveryStaff,
+  updateOrderDeliveryStaff,
+  updateBatchOrderCompletion,
+  updateOrderCompletion,
+  getAssignedOrders,
+  confirmOrderDelivery,
+} from "../services/api";
+import { useApp } from "../contexts/AppContext";
 import {
   Dialog,
   DialogContent,
@@ -137,65 +157,73 @@ interface Order {
 }
 
 // Memoized SearchInput component to prevent focus loss
-const SearchInput = memo(({ 
-  value, 
-  onChange, 
-  disabled, 
-  placeholder 
-}: {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  disabled: boolean;
-  placeholder: string;
-}) => {
-  return (
-    <div className="flex items-center gap-2 flex-1 max-w-md">
-      <Search className="h-4 w-4 text-muted-foreground" />
-      <Input
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        disabled={disabled}
-        className="text-sm focus:outline-none focus:ring-0"
-      />
-    </div>
-  );
-});
+const SearchInput = memo(
+  ({
+    value,
+    onChange,
+    disabled,
+    placeholder,
+  }: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    disabled: boolean;
+    placeholder: string;
+  }) => {
+    return (
+      <div className="flex items-center gap-2 flex-1 max-w-md">
+        <Search className="h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          className="text-sm focus:outline-none focus:ring-0"
+        />
+      </div>
+    );
+  }
+);
 
-SearchInput.displayName = 'SearchInput';
+SearchInput.displayName = "SearchInput";
 
 // Utility function to normalize Vietnamese text for search
 const normalizeVietnameseText = (text: string): string => {
-  if (!text) return '';
-  
+  if (!text) return "";
+
   // Convert to lowercase
   let normalized = text.toLowerCase();
-  
+
   // Remove Vietnamese diacritics
   normalized = normalized
-    .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
-    .replace(/[èéẹẻẽêềếệểễ]/g, 'e')
-    .replace(/[ìíịỉĩ]/g, 'i')
-    .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, 'o')
-    .replace(/[ùúụủũưừứựửữ]/g, 'u')
-    .replace(/[ỳýỵỷỹ]/g, 'y')
-    .replace(/[đ]/g, 'd')
-    .replace(/[ÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴ]/g, 'a')
-    .replace(/[ÈÉẸẺẼÊỀẾỆỂỄ]/g, 'e')
-    .replace(/[ÌÍỊỈĨ]/g, 'i')
-    .replace(/[ÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠ]/g, 'o')
-    .replace(/[ÙÚỤỦŨƯỪỨỰỬỮ]/g, 'u')
-    .replace(/[ỲÝỴỶỸ]/g, 'y')
-    .replace(/[Đ]/g, 'd');
-    
+    .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, "a")
+    .replace(/[èéẹẻẽêềếệểễ]/g, "e")
+    .replace(/[ìíịỉĩ]/g, "i")
+    .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, "o")
+    .replace(/[ùúụủũưừứựửữ]/g, "u")
+    .replace(/[ỳýỵỷỹ]/g, "y")
+    .replace(/[đ]/g, "d")
+    .replace(/[ÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴ]/g, "a")
+    .replace(/[ÈÉẸẺẼÊỀẾỆỂỄ]/g, "e")
+    .replace(/[ÌÍỊỈĨ]/g, "i")
+    .replace(/[ÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠ]/g, "o")
+    .replace(/[ÙÚỤỦŨƯỪỨỰỬỮ]/g, "u")
+    .replace(/[ỲÝỴỶỸ]/g, "y")
+    .replace(/[Đ]/g, "d");
+
   // Remove extra spaces and trim
-  normalized = normalized.replace(/\s+/g, ' ').trim();
-  
+  normalized = normalized.replace(/\s+/g, " ").trim();
+
   return normalized;
 };
 
 export default function Orders() {
   const navigate = useNavigate();
+  const { state } = useApp();
+  const currentUser = state.user;
+  
+  // Check if user is delivery staff
+  const isDeliveryStaff = currentUser?.role === "NhanVienGiaoHang";
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("1");
   const [sortBy, setSortBy] = useState<string | null>(null); // null means no sorting
@@ -209,22 +237,22 @@ export default function Orders() {
     totalItems: 0,
     itemsPerPage: 10,
   });
-  
+
   // Approval states
   const [selectedOrders, setSelectedOrders] = useState<Set<number>>(new Set());
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [approvingOrders, setApprovingOrders] = useState(false);
-  
+
   // Cancel order states
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
   const [cancellingOrder, setCancellingOrder] = useState(false);
-  
+
   // Single order approval states
   const [showSingleApprovalModal, setShowSingleApprovalModal] = useState(false);
   const [orderToApprove, setOrderToApprove] = useState<number | null>(null);
   const [approvingSingleOrder, setApprovingSingleOrder] = useState(false);
-  
+
   // Delivery assignment states
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
   const [orderToAssign, setOrderToAssign] = useState<Order | null>(null);
@@ -232,20 +260,20 @@ export default function Orders() {
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [assigningOrder, setAssigningOrder] = useState(false);
-  
+
   // Complete order states
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [completingOrders, setCompletingOrders] = useState(false);
   const [showSingleCompleteModal, setShowSingleCompleteModal] = useState(false);
   const [orderToComplete, setOrderToComplete] = useState<number | null>(null);
   const [completingSingleOrder, setCompletingSingleOrder] = useState(false);
-  
+
   // Statistics state
   const [stats, setStats] = useState({
     total: 0,
-    placed: 0,    // Đã đặt (status 1)
-    approved: 0,  // Đã duyệt (status 2) 
-    shipping: 0,  // Đang giao hàng (status 3)
+    placed: 0, // Đã đặt (status 1)
+    approved: 0, // Đã duyệt (status 2)
+    shipping: 0, // Đang giao hàng (status 3)
     completed: 0, // Hoàn tất (status 4)
     cancelled: 0, // Hủy (status 5)
   });
@@ -260,110 +288,142 @@ export default function Orders() {
   };
 
   // Process orders on client-side (search, sort, filter)
-  const processOrders = useCallback((ordersToProcess: Order[], searchTerm: string, sortField: string | null, sortDirection: "asc" | "desc" | null, currentPage: number = 1) => {
-    let processed = [...ordersToProcess];
+  const processOrders = useCallback(
+    (
+      ordersToProcess: Order[],
+      searchTerm: string,
+      sortField: string | null,
+      sortDirection: "asc" | "desc" | null,
+      currentPage: number = 1
+    ) => {
+      let processed = [...ordersToProcess];
 
-    // Apply search filter
-    if (searchTerm.trim()) {
-      const normalizedSearchTerm = normalizeVietnameseText(searchTerm);
-      processed = processed.filter(order => {
-        // Normalize all searchable fields
-        const normalizedOrderId = normalizeVietnameseText(order.MaDDH?.toString() || '');
-        const normalizedRecipientName = normalizeVietnameseText(order.NguoiNhan || '');
-        const normalizedPhone = normalizeVietnameseText(order.SDT || '');
-        const normalizedCustomerName = normalizeVietnameseText(order.KhachHang?.TenKH || '');
-        
-        // Check if search term matches any of the normalized fields
-        return (
-          normalizedOrderId.includes(normalizedSearchTerm) ||
-          normalizedRecipientName.includes(normalizedSearchTerm) ||
-          normalizedPhone.includes(normalizedSearchTerm) ||
-          normalizedCustomerName.includes(normalizedSearchTerm)
-        );
-      });
-    }
+      // Apply search filter
+      if (searchTerm.trim()) {
+        const normalizedSearchTerm = normalizeVietnameseText(searchTerm);
+        processed = processed.filter((order) => {
+          // Normalize all searchable fields
+          const normalizedOrderId = normalizeVietnameseText(
+            order.MaDDH?.toString() || ""
+          );
+          const normalizedRecipientName = normalizeVietnameseText(
+            order.NguoiNhan || ""
+          );
+          const normalizedPhone = normalizeVietnameseText(order.SDT || "");
+          const normalizedCustomerName = normalizeVietnameseText(
+            order.KhachHang?.TenKH || ""
+          );
 
-    // Apply sorting only if sortField and sortDirection are provided
-    if (sortField && sortDirection) {
-      processed.sort((a, b) => {
-        let aValue: any;
-        let bValue: any;
+          // Check if search term matches any of the normalized fields
+          return (
+            normalizedOrderId.includes(normalizedSearchTerm) ||
+            normalizedRecipientName.includes(normalizedSearchTerm) ||
+            normalizedPhone.includes(normalizedSearchTerm) ||
+            normalizedCustomerName.includes(normalizedSearchTerm)
+          );
+        });
+      }
 
-        switch (sortField) {
-          case 'MaDDH':
-            aValue = a.MaDDH || 0;
-            bValue = b.MaDDH || 0;
-            break;
-          case 'NgayTao':
-            aValue = new Date(a.NgayTao);
-            bValue = new Date(b.NgayTao);
-            break;
-          case 'TongTien':
-            aValue = Number(a.TongTien) || 0;
-            bValue = Number(b.TongTien) || 0;
-            break;
-          case 'NguoiNhan':
-            aValue = a.NguoiNhan || '';
-            bValue = b.NguoiNhan || '';
-            break;
-          case 'SoLuong':
-            aValue = a.CT_DonDatHangs?.reduce((total, item) => total + item.SoLuong, 0) || 0;
-            bValue = b.CT_DonDatHangs?.reduce((total, item) => total + item.SoLuong, 0) || 0;
-            break;
-          default:
-            return 0; // No sorting for unknown fields
-        }
+      // Apply sorting only if sortField and sortDirection are provided
+      if (sortField && sortDirection) {
+        processed.sort((a, b) => {
+          let aValue: any;
+          let bValue: any;
 
-        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
+          switch (sortField) {
+            case "MaDDH":
+              aValue = a.MaDDH || 0;
+              bValue = b.MaDDH || 0;
+              break;
+            case "NgayTao":
+              aValue = new Date(a.NgayTao);
+              bValue = new Date(b.NgayTao);
+              break;
+            case "TongTien":
+              aValue = Number(a.TongTien) || 0;
+              bValue = Number(b.TongTien) || 0;
+              break;
+            case "NguoiNhan":
+              aValue = a.NguoiNhan || "";
+              bValue = b.NguoiNhan || "";
+              break;
+            case "SoLuong":
+              aValue =
+                a.CT_DonDatHangs?.reduce(
+                  (total, item) => total + item.SoLuong,
+                  0
+                ) || 0;
+              bValue =
+                b.CT_DonDatHangs?.reduce(
+                  (total, item) => total + item.SoLuong,
+                  0
+                ) || 0;
+              break;
+            default:
+              return 0; // No sorting for unknown fields
+          }
 
-    // Store filtered result for reference (no need to set state)
-    // setFilteredOrders(processed);
+          if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+          if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+          return 0;
+        });
+      }
 
-    // Apply pagination
-    const totalItems = processed.length;
-    const totalPages = Math.ceil(totalItems / pagination.itemsPerPage);
-    const startIndex = (currentPage - 1) * pagination.itemsPerPage;
-    const endIndex = startIndex + pagination.itemsPerPage;
-    const paginatedOrders = processed.slice(startIndex, endIndex);
+      // Store filtered result for reference (no need to set state)
+      // setFilteredOrders(processed);
 
-    setOrders(paginatedOrders);
-    setPagination(prev => ({
-      ...prev,
-      totalItems,
-      totalPages: Math.max(totalPages, 1),
-      currentPage: Math.min(currentPage, Math.max(totalPages, 1))
-    }));
-  }, [pagination.itemsPerPage]);
+      // Apply pagination
+      const totalItems = processed.length;
+      const totalPages = Math.ceil(totalItems / pagination.itemsPerPage);
+      const startIndex = (currentPage - 1) * pagination.itemsPerPage;
+      const endIndex = startIndex + pagination.itemsPerPage;
+      const paginatedOrders = processed.slice(startIndex, endIndex);
+
+      setOrders(paginatedOrders);
+      setPagination((prev) => ({
+        ...prev,
+        totalItems,
+        totalPages: Math.max(totalPages, 1),
+        currentPage: Math.min(currentPage, Math.max(totalPages, 1)),
+      }));
+    },
+    [pagination.itemsPerPage]
+  );
 
   // Fetch orders by status (simplified - no server-side processing)
   const fetchOrdersByStatus = useCallback(async (status: string) => {
     try {
       setLoading(true);
+
+      let result;
       
-      const endpoint = `http://localhost:8080/api/orders/by-status?status=${status}`;
-      const response = await fetch(endpoint);
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          const fetchedOrders = data.data.orders || data.data || [];
-          setAllOrders(fetchedOrders);
-          // Clear current orders while loading new data
-          setOrders([]);
-          // Let useEffect handle the processing
-        } else {
-          setAllOrders([]);
-          setOrders([]);
-          setPagination(prev => ({ ...prev, totalItems: 0, totalPages: 1, currentPage: 1 }));
-        }
+      // If user is delivery staff, use assigned orders API
+      if (isDeliveryStaff) {
+        result = await getAssignedOrders({
+          page: pagination.currentPage,
+          limit: pagination.itemsPerPage,
+          status: status
+        });
       } else {
-        toast.error("Không thể tải danh sách đơn hàng");
+        // For admin and store staff, use regular orders API
+        result = await getOrdersByStatus(status);
+      }
+
+      if (result && result.success && result.data) {
+        const fetchedOrders = result.data.orders || result.data || [];
+        setAllOrders(fetchedOrders);
+        // Clear current orders while loading new data
+        setOrders([]);
+        // Let useEffect handle the processing
+      } else {
         setAllOrders([]);
         setOrders([]);
+        setPagination((prev) => ({
+          ...prev,
+          totalItems: 0,
+          totalPages: 1,
+          currentPage: 1,
+        }));
       }
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -373,24 +433,21 @@ export default function Orders() {
     } finally {
       setLoading(false);
     }
-  }, []); // Remove processOrders dependency
+  }, [isDeliveryStaff, pagination.currentPage, pagination.itemsPerPage]); // Add dependencies
 
   // Fetch statistics for all order statuses
   const fetchOrderStatistics = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/orders/statistics');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setStats({
-            total: data.data.total || 0,
-            placed: data.data[1] || 0,
-            approved: data.data[2] || 0,
-            shipping: data.data[3] || 0,
-            completed: data.data[4] || 0,
-            cancelled: data.data[5] || 0,
-          });
-        }
+      const result = await getOrderStatistics();
+      if (result && result.success && result.data) {
+        setStats({
+          total: result.data.total || 0,
+          placed: result.data[1] || 0,
+          approved: result.data[2] || 0,
+          shipping: result.data[3] || 0,
+          completed: result.data[4] || 0,
+          cancelled: result.data[5] || 0,
+        });
       }
     } catch (error) {
       console.error("Error fetching order statistics:", error);
@@ -413,21 +470,37 @@ export default function Orders() {
     setSearchTerm("");
     setSortBy(null);
     setSortOrder(null);
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
     // Don't call fetchOrdersByStatus here, let useEffect handle it
   };
 
-  // Re-process orders when pagination currentPage changes  
+  // Re-process orders when pagination currentPage changes
   useEffect(() => {
     if (allOrders.length > 0) {
       // Filter orders by current active tab status
       const statusId = parseInt(activeTab);
-      const filteredByStatus = allOrders.filter(order => order.MaTTDH === statusId);
-      
+      const filteredByStatus = allOrders.filter(
+        (order) => order.MaTTDH === statusId
+      );
+
       // Process the filtered orders
-      processOrders(filteredByStatus, searchTerm, sortBy, sortOrder?.toLowerCase() as "asc" | "desc" | null, pagination.currentPage);
+      processOrders(
+        filteredByStatus,
+        searchTerm,
+        sortBy,
+        sortOrder?.toLowerCase() as "asc" | "desc" | null,
+        pagination.currentPage
+      );
     }
-  }, [pagination.currentPage, processOrders, activeTab, allOrders, searchTerm, sortBy, sortOrder]);
+  }, [
+    pagination.currentPage,
+    processOrders,
+    activeTab,
+    allOrders,
+    searchTerm,
+    sortBy,
+    sortOrder,
+  ]);
 
   // Handle search with debounce (only for searchTerm changes)
   useEffect(() => {
@@ -435,11 +508,19 @@ export default function Orders() {
       if (allOrders.length > 0) {
         // Filter orders by current active tab status
         const statusId = parseInt(activeTab);
-        const filteredByStatus = allOrders.filter(order => order.MaTTDH === statusId);
-        
+        const filteredByStatus = allOrders.filter(
+          (order) => order.MaTTDH === statusId
+        );
+
         // Process the filtered orders
-        processOrders(filteredByStatus, searchTerm, sortBy, sortOrder?.toLowerCase() as "asc" | "desc" | null, 1);
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
+        processOrders(
+          filteredByStatus,
+          searchTerm,
+          sortBy,
+          sortOrder?.toLowerCase() as "asc" | "desc" | null,
+          1
+        );
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
       }
     }, 300);
 
@@ -451,11 +532,19 @@ export default function Orders() {
     if (allOrders.length > 0) {
       // Filter orders by current active tab status
       const statusId = parseInt(activeTab);
-      const filteredByStatus = allOrders.filter(order => order.MaTTDH === statusId);
-      
+      const filteredByStatus = allOrders.filter(
+        (order) => order.MaTTDH === statusId
+      );
+
       // Process the filtered orders
-      processOrders(filteredByStatus, searchTerm, sortBy, sortOrder?.toLowerCase() as "asc" | "desc" | null, 1);
-      setPagination(prev => ({ ...prev, currentPage: 1 }));
+      processOrders(
+        filteredByStatus,
+        searchTerm,
+        sortBy,
+        sortOrder?.toLowerCase() as "asc" | "desc" | null,
+        1
+      );
+      setPagination((prev) => ({ ...prev, currentPage: 1 }));
     }
   }, [sortBy, sortOrder]); // Only trigger on sort changes
 
@@ -464,21 +553,37 @@ export default function Orders() {
     if (allOrders.length > 0) {
       // Filter orders by current active tab status
       const statusId = parseInt(activeTab);
-      const filteredByStatus = allOrders.filter(order => order.MaTTDH === statusId);
-      
+      const filteredByStatus = allOrders.filter(
+        (order) => order.MaTTDH === statusId
+      );
+
       // Process the filtered orders
-      processOrders(filteredByStatus, searchTerm, sortBy, sortOrder?.toLowerCase() as "asc" | "desc" | null, 1);
+      processOrders(
+        filteredByStatus,
+        searchTerm,
+        sortBy,
+        sortOrder?.toLowerCase() as "asc" | "desc" | null,
+        1
+      );
     } else {
       // If no orders, clear the display
       setOrders([]);
-      setPagination(prev => ({ ...prev, totalItems: 0, totalPages: 1, currentPage: 1 }));
+      setPagination((prev) => ({
+        ...prev,
+        totalItems: 0,
+        totalPages: 1,
+        currentPage: 1,
+      }));
     }
   }, [allOrders]); // Only trigger on allOrders changes
 
   // Handle search input change
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  }, []);
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchTerm(e.target.value);
+    },
+    []
+  );
 
   // Handle sort change with 3 states: ASC -> DESC -> null (no sort)
   const handleSortChange = (field: string) => {
@@ -495,7 +600,7 @@ export default function Orders() {
       setSortBy(field);
       setSortOrder("ASC");
     }
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
   };
 
   // Render sort icon for table headers
@@ -503,24 +608,24 @@ export default function Orders() {
     if (sortBy !== field) {
       return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
     }
-    
+
     if (sortOrder === "ASC") {
       return <ArrowUp className="h-4 w-4 text-primary" />;
     } else if (sortOrder === "DESC") {
       return <ArrowDown className="h-4 w-4 text-primary" />;
     }
-    
+
     return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
   };
 
   // Handle page change
   const handlePageChange = (newPage: number) => {
-    setPagination(prev => ({ ...prev, currentPage: newPage }));
+    setPagination((prev) => ({ ...prev, currentPage: newPage }));
   };
 
   // Handle order selection for approval
   const handleOrderSelection = (orderId: number, checked: boolean) => {
-    setSelectedOrders(prev => {
+    setSelectedOrders((prev) => {
       const newSelection = new Set(prev);
       if (checked) {
         newSelection.add(orderId);
@@ -535,8 +640,8 @@ export default function Orders() {
   const handleSelectAllOrders = (checked: boolean) => {
     if (checked) {
       const orderIds = orders
-        .filter(order => order.MaTTDH === 1) // Only orders with status "Đã đặt"
-        .map(order => order.MaDDH);
+        .filter((order) => order.MaTTDH === 1) // Only orders with status "Đã đặt"
+        .map((order) => order.MaDDH);
       setSelectedOrders(new Set(orderIds));
     } else {
       setSelectedOrders(new Set());
@@ -556,45 +661,35 @@ export default function Orders() {
   const confirmApproveOrders = async () => {
     try {
       setApprovingOrders(true);
-      
+
       // Get user info from localStorage or context (assuming user ID is 1 for now)
       const userId = 1; // You should get this from your auth context
-      
-      const ordersToApprove = Array.from(selectedOrders).map(orderId => ({
+
+      const ordersToApprove = Array.from(selectedOrders).map((orderId) => ({
         id: orderId,
         maTTDH: 2, // Status "Đã duyệt"
-        maNVDuyet: userId
+        maNVDuyet: userId,
       }));
-
 
       console.log("Approving orders:", ordersToApprove);
 
-      const response = await fetch('http://localhost:8080/api/orders/batch/status', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': `Bearer ${token}`, // Add your JWT token here
-        },
-        body: JSON.stringify({ orders: ordersToApprove })
-      });
+      const result = await updateBatchOrderStatus({ orders: ordersToApprove });
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (result && result.success) {
         toast.success(`Đã duyệt thành công ${result.data.success} đơn hàng`);
-        
+
         if (result.data.failed > 0) {
           toast.warning(`${result.data.failed} đơn hàng duyệt thất bại`);
         }
-        
+
         // Refresh data
         await fetchOrderStatistics();
         await fetchOrdersByStatus(activeTab);
-        
+
         // Clear selection
         setSelectedOrders(new Set());
       } else {
-        toast.error(result.message || "Có lỗi xảy ra khi duyệt đơn hàng");
+        toast.error(result?.message || "Có lỗi xảy ra khi duyệt đơn hàng");
       }
     } catch (error) {
       console.error("Error approving orders:", error);
@@ -614,35 +709,26 @@ export default function Orders() {
 
   const confirmCancelOrder = async () => {
     if (!orderToCancel) return;
-    
+
     try {
       setCancellingOrder(true);
-      
+
       // Get user info from localStorage or context (assuming user ID is 1 for now)
       const userId = 1; // You should get this from your auth context
-      
-      const response = await fetch(`http://localhost:8080/api/orders/${orderToCancel}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': `Bearer ${token}`, // Add your JWT token here
-        },
-        body: JSON.stringify({ 
-          maTTDH: 5, // Status "Hủy"
-          maNVDuyet: userId
-        })
+
+      const result = await updateOrderStatus(orderToCancel, {
+        maTTDH: 5, // Status "Hủy"
+        maNVDuyet: userId,
       });
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (result && result.success) {
         toast.success("Đã hủy đơn hàng thành công");
-        
+
         // Refresh data
         await fetchOrderStatistics();
         await fetchOrdersByStatus(activeTab);
       } else {
-        toast.error(result.message || "Có lỗi xảy ra khi hủy đơn hàng");
+        toast.error(result?.message || "Có lỗi xảy ra khi hủy đơn hàng");
       }
     } catch (error) {
       console.error("Error cancelling order:", error);
@@ -669,35 +755,26 @@ export default function Orders() {
   // Confirm single order approval
   const confirmApproveOrder = async () => {
     if (!orderToApprove) return;
-    
+
     try {
       setApprovingSingleOrder(true);
-      
+
       // Get user info from localStorage or context (assuming user ID is 1 for now)
       const userId = 1; // You should get this from your auth context
-      
-      const response = await fetch(`http://localhost:8080/api/orders/${orderToApprove}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': `Bearer ${token}`, // Add your JWT token here
-        },
-        body: JSON.stringify({ 
-          maTTDH: 2, // Status "Đã duyệt"
-          maNVDuyet: userId
-        })
+
+      const result = await updateOrderStatus(orderToApprove, {
+        maTTDH: 2, // Status "Đã duyệt"
+        maNVDuyet: userId,
       });
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (result && result.success) {
         toast.success("Đã duyệt đơn hàng thành công");
-        
+
         // Refresh data
         await fetchOrderStatistics();
         await fetchOrdersByStatus(activeTab);
       } else {
-        toast.error(result.message || "Có lỗi xảy ra khi duyệt đơn hàng");
+        toast.error(result?.message || "Có lỗi xảy ra khi duyệt đơn hàng");
       }
     } catch (error) {
       console.error("Error approving order:", error);
@@ -710,34 +787,29 @@ export default function Orders() {
   };
 
   // Handle delivery assignment - Show delivery staff modal
-  const handleAssignDelivery = async (order: Order, event: React.MouseEvent) => {
+  const handleAssignDelivery = async (
+    order: Order,
+    event: React.MouseEvent
+  ) => {
     event.stopPropagation(); // Prevent row click
     setOrderToAssign(order);
     setShowDeliveryModal(true);
-    
+
     // Fetch available delivery staff
     try {
       setLoadingStaff(true);
-      const response = await fetch('http://localhost:8080/api/employees/delivery/available', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          diaChi: order.DiaChiGiao 
-        })
-      });
+      const result = await getAvailableDeliveryStaff(order.DiaChiGiao);
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (result && result.success) {
         setDeliveryStaff(result.data || []);
         // Pre-select current delivery staff if exists
         if (order.MaNV_Giao) {
           setSelectedStaff(order.MaNV_Giao);
         }
       } else {
-        toast.error(result.message || "Không thể tải danh sách nhân viên giao hàng");
+        toast.error(
+          result?.message || "Không thể tải danh sách nhân viên giao hàng"
+        );
         setDeliveryStaff([]);
       }
     } catch (error) {
@@ -752,39 +824,31 @@ export default function Orders() {
   // Confirm delivery assignment
   const confirmAssignDelivery = async () => {
     if (!orderToAssign || !selectedStaff) return;
-    
+
     try {
       setAssigningOrder(true);
-      
-      const response = await fetch(`http://localhost:8080/api/orders/${orderToAssign.MaDDH}/delivery-staff`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          maNVGiao: selectedStaff
-        })
+
+      const result = await updateOrderDeliveryStaff(orderToAssign.MaDDH, {
+        maNVGiao: selectedStaff,
       });
 
-      const result = await response.json();
-
-      if (result.success) {
-        const message = orderToAssign.MaNV_Giao 
+      if (result && result.success) {
+        const message = orderToAssign.MaNV_Giao
           ? "Đã thay đổi nhân viên giao hàng thành công"
           : "Đã phân công nhân viên giao hàng thành công";
         toast.success(message);
-        
+
         // Refresh data
         await fetchOrderStatistics();
         await fetchOrdersByStatus(activeTab);
-        
+
         // Close modal and reset states
         setShowDeliveryModal(false);
         setOrderToAssign(null);
         setSelectedStaff(null);
         setDeliveryStaff([]);
       } else {
-        toast.error(result.message || "Có lỗi xảy ra khi phân công nhân viên");
+        toast.error(result?.message || "Có lỗi xảy ra khi phân công nhân viên");
       }
     } catch (error) {
       console.error("Error assigning delivery staff:", error);
@@ -807,43 +871,74 @@ export default function Orders() {
   const confirmCompleteOrders = async () => {
     try {
       setCompletingOrders(true);
-      
-      // Get user info from localStorage or context (assuming user ID is 1 for now)
-      const userId = 1; // You should get this from your auth context
-      
-      const ordersToComplete = Array.from(selectedOrders).map(orderId => ({
-        id: orderId,
-        maTTDH: 4, // Status "Hoàn tất"
-        maNVDuyet: userId
-      }));
 
-      console.log("Completing orders:", ordersToComplete);
+      let result;
 
-      const response = await fetch('http://localhost:8080/api/orders/batch/status', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ orders: ordersToComplete })
-      });
+      if (isDeliveryStaff) {
+        // For delivery staff, confirm each order individually
+        const orderIds = Array.from(selectedOrders);
+        let successCount = 0;
+        let failedCount = 0;
 
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success(`Đã hoàn tất thành công ${result.data.success} đơn hàng`);
-        
-        if (result.data.failed > 0) {
-          toast.warning(`${result.data.failed} đơn hàng hoàn tất thất bại`);
+        for (const orderId of orderIds) {
+          try {
+            const confirmResult = await confirmOrderDelivery(orderId);
+            if (confirmResult && confirmResult.success) {
+              successCount++;
+            } else {
+              failedCount++;
+            }
+          } catch (error) {
+            console.error(`Error confirming delivery for order ${orderId}:`, error);
+            failedCount++;
+          }
         }
-        
+
+        if (successCount > 0) {
+          toast.success(`Đã xác nhận giao hàng thành công ${successCount} đơn hàng`);
+        }
+
+        if (failedCount > 0) {
+          toast.warning(`${failedCount} đơn hàng xác nhận thất bại`);
+        }
+
         // Refresh data
         await fetchOrderStatistics();
         await fetchOrdersByStatus(activeTab);
-        
+
         // Clear selection
         setSelectedOrders(new Set());
       } else {
-        toast.error(result.message || "Có lỗi xảy ra khi hoàn tất đơn hàng");
+        // For admin and store staff, use batch completion API
+        // Get user info from localStorage or context (assuming user ID is 1 for now)
+        const userId = 1; // You should get this from your auth context
+
+        const ordersToComplete = Array.from(selectedOrders).map((orderId) => ({
+          id: orderId,
+          maTTDH: 4, // Status "Hoàn tất"
+          maNVDuyet: userId,
+        }));
+
+        console.log("Completing orders:", ordersToComplete);
+
+        result = await updateBatchOrderCompletion(ordersToComplete);
+
+        if (result && result.success) {
+          toast.success(`Đã hoàn tất thành công ${result.data.success} đơn hàng`);
+
+          if (result.data.failed > 0) {
+            toast.warning(`${result.data.failed} đơn hàng hoàn tất thất bại`);
+          }
+
+          // Refresh data
+          await fetchOrderStatistics();
+          await fetchOrdersByStatus(activeTab);
+
+          // Clear selection
+          setSelectedOrders(new Set());
+        } else {
+          toast.error(result?.message || "Có lỗi xảy ra khi hoàn tất đơn hàng");
+        }
       }
     } catch (error) {
       console.error("Error completing orders:", error);
@@ -864,34 +959,37 @@ export default function Orders() {
   // Confirm single order completion
   const confirmCompleteOrder = async () => {
     if (!orderToComplete) return;
-    
+
     try {
       setCompletingSingleOrder(true);
+
+      let result;
       
-      // Get user info from localStorage or context (assuming user ID is 1 for now)
-      const userId = 1; // You should get this from your auth context
-      
-      const response = await fetch(`http://localhost:8080/api/orders/${orderToComplete}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
+      // If user is delivery staff, use confirm delivery API
+      if (isDeliveryStaff) {
+        result = await confirmOrderDelivery(orderToComplete);
+      } else {
+        // For admin and store staff, use regular completion API
+        // Get user info from localStorage or context (assuming user ID is 1 for now)
+        const userId = 1; // You should get this from your auth context
+
+        result = await updateOrderCompletion(orderToComplete, {
           maTTDH: 4, // Status "Hoàn tất"
-          maNVDuyet: userId
-        })
-      });
+          maNVDuyet: userId,
+        });
+      }
 
-      const result = await response.json();
+      if (result && result.success) {
+        const message = isDeliveryStaff 
+          ? "Đã xác nhận giao hàng thành công"
+          : "Đã hoàn tất đơn hàng thành công";
+        toast.success(message);
 
-      if (result.success) {
-        toast.success("Đã hoàn tất đơn hàng thành công");
-        
         // Refresh data
         await fetchOrderStatistics();
         await fetchOrdersByStatus(activeTab);
       } else {
-        toast.error(result.message || "Có lỗi xảy ra khi hoàn tất đơn hàng");
+        toast.error(result?.message || "Có lỗi xảy ra khi hoàn tất đơn hàng");
       }
     } catch (error) {
       console.error("Error completing order:", error);
@@ -909,18 +1007,27 @@ export default function Orders() {
   }, [activeTab]);
 
   const getStatusBadge = (statusId: number) => {
-    const status = ORDER_STATUSES[statusId.toString() as keyof typeof ORDER_STATUSES];
+    const status =
+      ORDER_STATUSES[statusId.toString() as keyof typeof ORDER_STATUSES];
     if (!status) return <Badge variant="secondary">Không xác định</Badge>;
-    
+
     switch (statusId) {
       case 1:
         return <Badge variant="secondary">{status.label}</Badge>;
       case 2:
         return <Badge variant="default">{status.label}</Badge>;
       case 3:
-        return <Badge variant="default" className="bg-blue-600">{status.label}</Badge>;
+        return (
+          <Badge variant="default" className="bg-blue-600">
+            {status.label}
+          </Badge>
+        );
       case 4:
-        return <Badge variant="outline" className="text-green-600 border-green-600">{status.label}</Badge>;
+        return (
+          <Badge variant="outline" className="text-green-600 border-green-600">
+            {status.label}
+          </Badge>
+        );
       case 5:
         return <Badge variant="destructive">{status.label}</Badge>;
       default:
@@ -937,17 +1044,20 @@ export default function Orders() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("vi-VN", {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   // Calculate total items in order
   const getTotalItems = (order: Order) => {
-    return order.CT_DonDatHangs?.reduce((total, item) => total + item.SoLuong, 0) || 0;
+    return (
+      order.CT_DonDatHangs?.reduce((total, item) => total + item.SoLuong, 0) ||
+      0
+    );
   };
 
   const statisticsCards = [
@@ -991,40 +1101,49 @@ export default function Orders() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminHeader title="Quản lý đơn hàng" />
+      <AdminHeader title={isDeliveryStaff ? "Đơn hàng được phân công" : "Quản lý đơn hàng"} />
 
       <main className="py-6">
         <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           {/* Statistics */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-            {statisticsCards.map((stat, index) => (
-              <Card key={index} className="shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1">
-                        {stat.title}
-                      </p>
-                      <p className="text-xl font-bold">{stat.value}</p>
+              {statisticsCards.map((stat, index) => (
+                <Card key={index} className="shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                          {stat.title}
+                        </p>
+                        <p className="text-xl font-bold">{stat.value}</p>
+                      </div>
+                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
                     </div>
-                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
           {/* Orders Management */}
           <Card className="shadow-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Danh sách đơn hàng</CardTitle>
+              <CardTitle className="text-lg">
+                {isDeliveryStaff ? "Đơn hàng được phân công" : "Danh sách đơn hàng"}
+              </CardTitle>
               <CardDescription>
-                Quản lý tất cả đơn hàng trong hệ thống theo trạng thái
+                {isDeliveryStaff 
+                  ? "Xem và xác nhận các đơn hàng được phân công cho bạn"
+                  : "Quản lý tất cả đơn hàng trong hệ thống theo trạng thái"
+                }
               </CardDescription>
             </CardHeader>
             <CardContent>
               {/* Order Status Tabs */}
-              <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+              <Tabs
+                value={activeTab}
+                onValueChange={handleTabChange}
+                className="w-full"
+              >
                 <TabsList className="grid w-full grid-cols-5 mb-6">
                   <TabsTrigger value="1" className="text-xs">
                     Đã đặt ({stats.placed})
@@ -1058,7 +1177,9 @@ export default function Orders() {
                   <TabsContent key={statusId} value={statusId}>
                     {loading ? (
                       <div className="flex justify-center items-center py-12">
-                        <div className="text-sm text-muted-foreground">Đang tải dữ liệu...</div>
+                        <div className="text-sm text-muted-foreground">
+                          Đang tải dữ liệu...
+                        </div>
                       </div>
                     ) : orders.length === 0 ? (
                       <div className="flex justify-center items-center py-12">
@@ -1068,22 +1189,34 @@ export default function Orders() {
                       </div>
                     ) : (
                       <>
-                        {/* Approval Actions - Only show for "Đã đặt" tab */}
-                        {activeTab === "1" && (
+                        {/* Approval Actions - Only show for "Đã đặt" tab and not for delivery staff */}
+                        {activeTab === "1" && !isDeliveryStaff && (
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                               <Checkbox
-                                checked={selectedOrders.size > 0 && selectedOrders.size === orders.filter(order => order.MaTTDH === 1).length}
+                                checked={
+                                  selectedOrders.size > 0 &&
+                                  selectedOrders.size ===
+                                    orders.filter((order) => order.MaTTDH === 1)
+                                      .length
+                                }
                                 onCheckedChange={handleSelectAllOrders}
                                 disabled={loading}
                               />
                               <span className="text-sm text-muted-foreground">
-                                Chọn tất cả ({orders.filter(order => order.MaTTDH === 1).length} đơn hàng)
+                                Chọn tất cả (
+                                {
+                                  orders.filter((order) => order.MaTTDH === 1)
+                                    .length
+                                }{" "}
+                                đơn hàng)
                               </span>
                             </div>
                             <Button
                               onClick={handleApproveOrders}
-                              disabled={selectedOrders.size === 0 || approvingOrders}
+                              disabled={
+                                selectedOrders.size === 0 || approvingOrders
+                              }
                               className="bg-[#825B32] hover:bg-[#825B32]/90 text-white"
                             >
                               <CheckCircle className="w-4 h-4 mr-2" />
@@ -1097,12 +1230,17 @@ export default function Orders() {
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                               <Checkbox
-                                checked={selectedOrders.size > 0 && selectedOrders.size === orders.filter(order => order.MaTTDH === 3).length}
+                                checked={
+                                  selectedOrders.size > 0 &&
+                                  selectedOrders.size ===
+                                    orders.filter((order) => order.MaTTDH === 3)
+                                      .length
+                                }
                                 onCheckedChange={(checked) => {
                                   if (checked) {
                                     const orderIds = orders
-                                      .filter(order => order.MaTTDH === 3) // Only orders with status "Đang giao"
-                                      .map(order => order.MaDDH);
+                                      .filter((order) => order.MaTTDH === 3) // Only orders with status "Đang giao"
+                                      .map((order) => order.MaDDH);
                                     setSelectedOrders(new Set(orderIds));
                                   } else {
                                     setSelectedOrders(new Set());
@@ -1111,16 +1249,23 @@ export default function Orders() {
                                 disabled={loading}
                               />
                               <span className="text-sm text-muted-foreground">
-                                Chọn tất cả ({orders.filter(order => order.MaTTDH === 3).length} đơn hàng)
+                                Chọn tất cả (
+                                {
+                                  orders.filter((order) => order.MaTTDH === 3)
+                                    .length
+                                }{" "}
+                                đơn hàng)
                               </span>
                             </div>
                             <Button
                               onClick={handleCompleteOrders}
-                              disabled={selectedOrders.size === 0 || completingOrders}
+                              disabled={
+                                selectedOrders.size === 0 || completingOrders
+                              }
                               className="bg-green-600 hover:bg-green-700 text-white"
                             >
                               <CheckCircle className="w-4 h-4 mr-2" />
-                              Hoàn tất đơn hàng ({selectedOrders.size})
+                              {isDeliveryStaff ? "Xác nhận giao hàng" : "Hoàn tất đơn hàng"} ({selectedOrders.size})
                             </Button>
                           </div>
                         )}
@@ -1139,7 +1284,7 @@ export default function Orders() {
                                     /> */}
                                   </TableHead>
                                 )}
-                                <TableHead 
+                                <TableHead
                                   className="text-xs font-semibold cursor-pointer hover:bg-muted/50 select-none"
                                   onClick={() => handleSortChange("MaDDH")}
                                 >
@@ -1148,7 +1293,7 @@ export default function Orders() {
                                     {renderSortIcon("MaDDH")}
                                   </div>
                                 </TableHead>
-                                <TableHead 
+                                <TableHead
                                   className="text-xs font-semibold cursor-pointer hover:bg-muted/50 select-none"
                                   onClick={() => handleSortChange("KhachHang")}
                                 >
@@ -1157,7 +1302,7 @@ export default function Orders() {
                                     {renderSortIcon("KhachHang")}
                                   </div>
                                 </TableHead>
-                                <TableHead 
+                                <TableHead
                                   className="text-xs font-semibold cursor-pointer hover:bg-muted/50 select-none"
                                   onClick={() => handleSortChange("SoLuong")}
                                 >
@@ -1166,7 +1311,7 @@ export default function Orders() {
                                     {renderSortIcon("SoLuong")}
                                   </div>
                                 </TableHead>
-                                <TableHead 
+                                <TableHead
                                   className="text-xs font-semibold cursor-pointer hover:bg-muted/50 select-none"
                                   onClick={() => handleSortChange("TongTien")}
                                 >
@@ -1175,8 +1320,10 @@ export default function Orders() {
                                     {renderSortIcon("TongTien")}
                                   </div>
                                 </TableHead>
-                                <TableHead className="text-xs font-semibold">Trạng thái</TableHead>
-                                <TableHead 
+                                <TableHead className="text-xs font-semibold">
+                                  Trạng thái
+                                </TableHead>
+                                <TableHead
                                   className="text-xs font-semibold cursor-pointer hover:bg-muted/50 select-none"
                                   onClick={() => handleSortChange("NgayTao")}
                                 >
@@ -1185,111 +1332,126 @@ export default function Orders() {
                                     {renderSortIcon("NgayTao")}
                                   </div>
                                 </TableHead>
-                                <TableHead className="text-xs font-semibold text-center">Thao tác</TableHead>
+                                <TableHead className="text-xs font-semibold text-center">
+                                  Thao tác
+                                </TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {orders.map((order) => (
-                                <TableRow 
-                                  key={order.MaDDH} 
+                                <TableRow
+                                  key={order.MaDDH}
                                   className="hover:bg-muted/30 cursor-pointer"
                                   onClick={() => handleRowClick(order.MaDDH)}
                                 >
                                   {(activeTab === "1" || activeTab === "3") && (
-                                    <TableCell onClick={(e) => e.stopPropagation()}>
+                                    <TableCell
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
                                       <Checkbox
-                                        checked={selectedOrders.has(order.MaDDH)}
-                                        onCheckedChange={(checked) => handleOrderSelection(order.MaDDH, checked as boolean)}
-                                        disabled={(activeTab === "1" && order.MaTTDH !== 1) || (activeTab === "3" && order.MaTTDH !== 3)} // Only allow selection for correct status
+                                        checked={selectedOrders.has(
+                                          order.MaDDH
+                                        )}
+                                        onCheckedChange={(checked) =>
+                                          handleOrderSelection(
+                                            order.MaDDH,
+                                            checked as boolean
+                                          )
+                                        }
+                                        disabled={
+                                          (activeTab === "1" &&
+                                            order.MaTTDH !== 1) ||
+                                          (activeTab === "3" &&
+                                            order.MaTTDH !== 3)
+                                        }
                                       />
                                     </TableCell>
                                   )}
-                                  <TableCell className="font-medium text-sm">
-                                    #{order.MaDDH.toString()}
+                                  <TableCell className="text-xs">
+                                    #{order.MaDDH}
                                   </TableCell>
-                                  <TableCell className="text-sm">
+                                  <TableCell className="text-xs">
                                     <div>
-                                      <div className="font-medium">{order.NguoiNhan}</div>
-                                      <div className="text-xs text-muted-foreground">
+                                      <div className="font-medium">
+                                        {order.NguoiNhan}
+                                      </div>
+                                      <div className="text-muted-foreground">
                                         {order.SDT}
                                       </div>
                                     </div>
                                   </TableCell>
-                                  <TableCell className="text-sm">
-                                    {getTotalItems(order)}
+                                  <TableCell className="text-xs">
+                                    {getTotalItems(order)} sản phẩm
                                   </TableCell>
-                                  <TableCell className="font-medium text-sm">
+                                  <TableCell className="text-xs font-medium">
                                     {formatPrice(order.TongTien)}
                                   </TableCell>
-                                  <TableCell>
-                                    {getStatusBadge(order.TrangThaiDH.MaTTDH)}
+                                  <TableCell className="text-xs">
+                                    {getStatusBadge(order.MaTTDH)}
                                   </TableCell>
-                                  <TableCell className="text-sm">
+                                  <TableCell className="text-xs">
                                     {formatDate(order.NgayTao)}
                                   </TableCell>
-                                  <TableCell onClick={(e) => e.stopPropagation()}>
-                                    <div className="flex items-center justify-center gap-2">
-                                      {order.MaTTDH === 1 && ( // Chỉ hiển thị cho đơn hàng "Đã đặt"
-                                        <>
-                                          <Button 
-                                            variant="outline" 
-                                            size="sm"
-                                            className="h-8 px-2 text-xs text-green-600 border-green-600 hover:bg-green-50"
-                                            title="Duyệt đơn hàng"
-                                            onClick={(e) => handleApproveOrder(order.MaDDH, e)}
-                                          >
-                                            <Check className="h-3 w-3" />
-                                          </Button>
-                                          <Button 
-                                            variant="outline" 
-                                            size="sm"
-                                            className="h-8 px-2 text-xs text-red-600 border-red-600 hover:bg-red-50"
-                                            title="Hủy đơn hàng"
-                                            onClick={(e) => handleCancelOrder(order.MaDDH, e)}
-                                          >
-                                            <X className="h-3 w-3" />
-                                          </Button>
-                                        </>
-                                      )}
-                                      {order.MaTTDH === 2 && ( // Chỉ hiển thị cho đơn hàng "Đã duyệt"
-                                        <Button 
-                                          variant="outline" 
+                                  <TableCell className="text-xs text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 px-3 text-xs"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          navigate(`/admin/orders/${order.MaDDH}`);
+                                        }}
+                                      >
+                                        <Eye className="h-3 w-3 mr-1" />
+                                        Chi tiết
+                                      </Button>
+                                      {order.MaTTDH === 1 && !isDeliveryStaff && ( // Chỉ hiển thị cho đơn hàng "Đã đặt" và không phải delivery staff
+                                        <Button
+                                          variant="outline"
                                           size="sm"
-                                          className={`h-8 px-3 text-xs ${
-                                            order.MaNV_Giao 
-                                              ? 'text-green-600 border-green-600 hover:bg-green-50' 
-                                              : 'text-[#825B32] border-[#825B32] hover:bg-[#825B32]/10'
-                                          }`}
-                                          title={order.MaNV_Giao ? "Đã phân công nhân viên giao hàng" : "Phân công nhân viên giao hàng"}
-                                          onClick={(e) => handleAssignDelivery(order, e)}
+                                          className="h-8 px-3 text-xs text-[#825B32] border-[#825B32] hover:bg-[#825B32]/10"
+                                          title="Duyệt đơn hàng"
+                                          onClick={(e) =>
+                                            handleApproveOrder(order.MaDDH, e)
+                                          }
                                         >
-                                          {order.MaNV_Giao ? (
-                                            <>
-                                              <Check className="h-3 w-3 mr-1" />
-                                              Đã phân công
-                                            </>
-                                          ) : (
-                                            <>
-                                              <Users className="h-3 w-3 mr-1" />
-                                              Phân công
-                                            </>
-                                          )}
+                                          <CheckCircle className="h-3 w-3 mr-1" />
+                                          Duyệt
+                                        </Button>
+                                      )}
+                                      {order.MaTTDH === 2 && !isDeliveryStaff && ( // Chỉ hiển thị cho đơn hàng "Đã duyệt" và không phải delivery staff
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-8 px-3 text-xs text-blue-600 border-blue-600 hover:bg-blue-50"
+                                          title="Phân công giao hàng"
+                                          onClick={(e) =>
+                                            handleAssignDelivery(order, e)
+                                          }
+                                        >
+                                          <Truck className="h-3 w-3 mr-1" />
+                                          Phân công
                                         </Button>
                                       )}
                                       {order.MaTTDH === 3 && ( // Chỉ hiển thị cho đơn hàng "Đang giao"
-                                        <Button 
-                                          variant="outline" 
+                                        <Button
+                                          variant="outline"
                                           size="sm"
                                           className="h-8 px-3 text-xs text-green-600 border-green-600 hover:bg-green-50"
-                                          title="Hoàn tất đơn hàng"
-                                          onClick={(e) => handleCompleteOrder(order.MaDDH, e)}
+                                          title={isDeliveryStaff ? "Xác nhận giao hàng" : "Hoàn tất đơn hàng"}
+                                          onClick={(e) =>
+                                            handleCompleteOrder(order.MaDDH, e)
+                                          }
                                         >
                                           <CheckCircle className="h-3 w-3 mr-1" />
-                                          Hoàn tất
+                                          {isDeliveryStaff ? "Xác nhận" : "Hoàn tất"}
                                         </Button>
                                       )}
                                       {![1, 2, 3].includes(order.MaTTDH) && ( // Cho các trạng thái khác
-                                        <span className="text-muted-foreground text-xs">-</span>
+                                        <span className="text-muted-foreground text-xs">
+                                          Không có thao tác
+                                        </span>
                                       )}
                                     </div>
                                   </TableCell>
@@ -1300,12 +1462,14 @@ export default function Orders() {
                         </div>
 
                         {/* Pagination */}
-                        {pagination.totalPages > 1 && (
-                          <div className="flex items-center justify-between mt-6">
+                        {orders.length > 0 && (
+                          <div className="flex items-center justify-between mt-4">
                             <div className="text-sm text-muted-foreground">
-                              Hiển thị {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} - {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} của {pagination.totalItems} đơn hàng
+                              Hiển thị {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} đến{" "}
+                              {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} trong tổng số{" "}
+                              {pagination.totalItems} đơn hàng
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center space-x-2">
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -1315,26 +1479,8 @@ export default function Orders() {
                                 <ChevronLeft className="h-4 w-4" />
                                 Trước
                               </Button>
-                              <div className="flex items-center gap-1">
-                                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                                  const pageNumber = pagination.currentPage <= 3 
-                                    ? i + 1 
-                                    : pagination.currentPage + i - 2;
-                                  
-                                  if (pageNumber > pagination.totalPages) return null;
-                                  
-                                  return (
-                                    <Button
-                                      key={pageNumber}
-                                      variant={pageNumber === pagination.currentPage ? "default" : "outline"}
-                                      size="sm"
-                                      onClick={() => handlePageChange(pageNumber)}
-                                      className="w-8 h-8 p-0"
-                                    >
-                                      {pageNumber}
-                                    </Button>
-                                  );
-                                })}
+                              <div className="text-sm">
+                                Trang {pagination.currentPage} / {pagination.totalPages}
                               </div>
                               <Button
                                 variant="outline"
@@ -1364,7 +1510,8 @@ export default function Orders() {
           <DialogHeader>
             <DialogTitle>Xác nhận duyệt đơn hàng</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn duyệt những đơn hàng đã chọn? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn duyệt những đơn hàng đã chọn? Hành động này
+              không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4">
@@ -1380,10 +1527,7 @@ export default function Orders() {
             >
               Hủy
             </Button>
-            <Button
-              onClick={confirmApproveOrders}
-              disabled={approvingOrders}
-            >
+            <Button onClick={confirmApproveOrders} disabled={approvingOrders}>
               {approvingOrders ? "Đang duyệt..." : "Duyệt đơn hàng"}
             </Button>
           </DialogFooter>
@@ -1396,10 +1540,11 @@ export default function Orders() {
           <DialogHeader>
             <DialogTitle>Xác nhận hủy đơn hàng</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn hủy đơn hàng #{orderToCancel}? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn hủy đơn hàng #{orderToCancel}? Hành động này
+              không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
-          
+
           <DialogFooter className="flex justify-end gap-2 mt-4">
             <Button
               variant="outline"
@@ -1420,15 +1565,19 @@ export default function Orders() {
       </Dialog>
 
       {/* Single Order Approval Modal */}
-      <Dialog open={showSingleApprovalModal} onOpenChange={setShowSingleApprovalModal}>
+      <Dialog
+        open={showSingleApprovalModal}
+        onOpenChange={setShowSingleApprovalModal}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Xác nhận duyệt đơn hàng</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn duyệt đơn hàng #{orderToApprove}? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn duyệt đơn hàng #{orderToApprove}? Hành động
+              này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
-          
+
           <DialogFooter className="flex justify-end gap-2 mt-4">
             <Button
               variant="outline"
@@ -1439,7 +1588,8 @@ export default function Orders() {
             </Button>
             <Button
               onClick={confirmApproveOrder}
-              disabled={approvingSingleOrder}>
+              disabled={approvingSingleOrder}
+            >
               {approvingSingleOrder ? "Đang duyệt..." : "Duyệt đơn hàng"}
             </Button>
           </DialogFooter>
@@ -1452,16 +1602,17 @@ export default function Orders() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-[#825B32]" />
-              {orderToAssign?.MaNV_Giao ? 'Thay đổi nhân viên giao hàng' : 'Phân công nhân viên giao hàng'}
+              {orderToAssign?.MaNV_Giao
+                ? "Thay đổi nhân viên giao hàng"
+                : "Phân công nhân viên giao hàng"}
             </DialogTitle>
             <DialogDescription>
-              {orderToAssign?.MaNV_Giao 
+              {orderToAssign?.MaNV_Giao
                 ? `Thay đổi nhân viên giao hàng cho đơn hàng #${orderToAssign?.MaDDH}`
-                : `Chọn nhân viên giao hàng phù hợp cho đơn hàng #${orderToAssign?.MaDDH}`
-              }
+                : `Chọn nhân viên giao hàng phù hợp cho đơn hàng #${orderToAssign?.MaDDH}`}
             </DialogDescription>
           </DialogHeader>
-          
+
           {orderToAssign && (
             <div className="space-y-4">
               {/* Order Info */}
@@ -1471,15 +1622,28 @@ export default function Orders() {
                   Thông tin giao hàng
                 </h4>
                 <div className="space-y-1 text-sm">
-                  <p><span className="font-medium">Người nhận:</span> {orderToAssign.NguoiNhan}</p>
-                  <p><span className="font-medium">Số điện thoại:</span> {orderToAssign.SDT}</p>
-                  <p><span className="font-medium">Địa chỉ:</span> {orderToAssign.DiaChiGiao}</p>
-                  <p><span className="font-medium">Tổng tiền:</span> {formatPrice(orderToAssign.TongTien)}</p>
+                  <p>
+                    <span className="font-medium">Người nhận:</span>{" "}
+                    {orderToAssign.NguoiNhan}
+                  </p>
+                  <p>
+                    <span className="font-medium">Số điện thoại:</span>{" "}
+                    {orderToAssign.SDT}
+                  </p>
+                  <p>
+                    <span className="font-medium">Địa chỉ:</span>{" "}
+                    {orderToAssign.DiaChiGiao}
+                  </p>
+                  <p>
+                    <span className="font-medium">Tổng tiền:</span>{" "}
+                    {formatPrice(orderToAssign.TongTien)}
+                  </p>
                   {orderToAssign.MaNV_Giao && orderToAssign.NguoiGiao && (
                     <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded">
                       <p className="flex items-center gap-2 text-green-700">
                         <Check className="h-3 w-3" />
-                        <span className="font-medium">Đã phân công:</span> {orderToAssign.NguoiGiao.TenNV}
+                        <span className="font-medium">Đã phân công:</span>{" "}
+                        {orderToAssign.NguoiGiao.TenNV}
                       </p>
                     </div>
                   )}
@@ -1488,15 +1652,21 @@ export default function Orders() {
 
               {/* Delivery Staff List */}
               <div>
-                <h4 className="font-medium text-sm mb-3 text-[#825B32]">Danh sách nhân viên giao hàng</h4>
-                
+                <h4 className="font-medium text-sm mb-3 text-[#825B32]">
+                  Danh sách nhân viên giao hàng
+                </h4>
+
                 {loadingStaff ? (
                   <div className="flex justify-center items-center py-8">
-                    <div className="text-sm text-muted-foreground">Đang tải danh sách nhân viên...</div>
+                    <div className="text-sm text-muted-foreground">
+                      Đang tải danh sách nhân viên...
+                    </div>
                   </div>
                 ) : deliveryStaff.length === 0 ? (
                   <div className="flex justify-center items-center py-8">
-                    <div className="text-sm text-muted-foreground">Không có nhân viên giao hàng khả dụng</div>
+                    <div className="text-sm text-muted-foreground">
+                      Không có nhân viên giao hàng khả dụng
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -1505,8 +1675,8 @@ export default function Orders() {
                         key={staff.MaNV}
                         className={`border rounded-lg p-3 cursor-pointer transition-all duration-200 relative ${
                           selectedStaff === staff.MaNV
-                            ? 'border-[#825B32] bg-[#825B32]/10 shadow-md'
-                            : 'border-gray-200 hover:border-[#825B32]/50 hover:bg-[#825B32]/5'
+                            ? "border-[#825B32] bg-[#825B32]/10 shadow-md"
+                            : "border-gray-200 hover:border-[#825B32]/50 hover:bg-[#825B32]/5"
                         }`}
                         onClick={() => setSelectedStaff(staff.MaNV)}
                       >
@@ -1516,19 +1686,25 @@ export default function Orders() {
                             <Check className="h-3 w-3 text-white" />
                           </div>
                         )}
-                        
+
                         <div className="flex items-center justify-between pr-6">
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <h5 className={`font-medium text-sm ${
-                                selectedStaff === staff.MaNV ? 'text-[#825B32]' : 'text-gray-900'
-                              }`}>
+                              <h5
+                                className={`font-medium text-sm ${
+                                  selectedStaff === staff.MaNV
+                                    ? "text-[#825B32]"
+                                    : "text-gray-900"
+                                }`}
+                              >
                                 {staff.TenNV}
                               </h5>
-                              {staff.LoaiPhuTrach === 'PHUTRACH' && (
+                              {staff.LoaiPhuTrach === "PHUTRACH" && (
                                 <div className="flex items-center gap-1">
                                   <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                                  <span className="text-xs text-yellow-600 font-medium">Phụ trách khu vực</span>
+                                  <span className="text-xs text-yellow-600 font-medium">
+                                    Phụ trách khu vực
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -1538,10 +1714,16 @@ export default function Orders() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-xs text-muted-foreground">Đơn đang giao</div>
-                            <div className={`text-sm font-medium ${
-                              staff.SoDonDangGiao === 0 ? 'text-green-600' : 'text-orange-600'
-                            }`}>
+                            <div className="text-xs text-muted-foreground">
+                              Đơn đang giao
+                            </div>
+                            <div
+                              className={`text-sm font-medium ${
+                                staff.SoDonDangGiao === 0
+                                  ? "text-green-600"
+                                  : "text-orange-600"
+                              }`}
+                            >
                               {staff.SoDonDangGiao}
                             </div>
                           </div>
@@ -1553,7 +1735,7 @@ export default function Orders() {
               </div>
             </div>
           )}
-          
+
           <DialogFooter className="flex justify-end gap-2 mt-6">
             <Button
               variant="outline"
@@ -1572,10 +1754,13 @@ export default function Orders() {
               disabled={!selectedStaff || assigningOrder}
               className="bg-[#825B32] hover:bg-[#825B32]/90 text-white"
             >
-              {assigningOrder 
-                ? (orderToAssign?.MaNV_Giao ? "Đang thay đổi..." : "Đang phân công...") 
-                : (orderToAssign?.MaNV_Giao ? "Thay đổi nhân viên" : "Phân công nhân viên")
-              }
+              {assigningOrder
+                ? orderToAssign?.MaNV_Giao
+                  ? "Đang thay đổi..."
+                  : "Đang phân công..."
+                : orderToAssign?.MaNV_Giao
+                ? "Thay đổi nhân viên"
+                : "Phân công nhân viên"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1585,9 +1770,14 @@ export default function Orders() {
       <Dialog open={showCompleteModal} onOpenChange={setShowCompleteModal}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Xác nhận hoàn tất đơn hàng</DialogTitle>
+            <DialogTitle>
+              {isDeliveryStaff ? "Xác nhận giao hàng" : "Xác nhận hoàn tất đơn hàng"}
+            </DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn đánh dấu những đơn hàng đã chọn là hoàn tất? Hành động này không thể hoàn tác.
+              {isDeliveryStaff 
+                ? "Bạn có chắc chắn muốn xác nhận đã giao hàng cho những đơn hàng đã chọn? Hành động này không thể hoàn tác."
+                : "Bạn có chắc chắn muốn đánh dấu những đơn hàng đã chọn là hoàn tất? Hành động này không thể hoàn tác."
+              }
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4">
@@ -1603,26 +1793,34 @@ export default function Orders() {
             >
               Hủy
             </Button>
-            <Button
-              onClick={confirmCompleteOrders}
-              disabled={completingOrders}
-            >
-              {completingOrders ? "Đang hoàn tất..." : "Hoàn tất đơn hàng"}
+            <Button onClick={confirmCompleteOrders} disabled={completingOrders}>
+              {completingOrders 
+                ? (isDeliveryStaff ? "Đang xác nhận..." : "Đang hoàn tất...") 
+                : (isDeliveryStaff ? "Xác nhận giao hàng" : "Hoàn tất đơn hàng")
+              }
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Single Order Complete Modal */}
-      <Dialog open={showSingleCompleteModal} onOpenChange={setShowSingleCompleteModal}>
+      <Dialog
+        open={showSingleCompleteModal}
+        onOpenChange={setShowSingleCompleteModal}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Xác nhận hoàn tất đơn hàng</DialogTitle>
+            <DialogTitle>
+              {isDeliveryStaff ? "Xác nhận giao hàng" : "Xác nhận hoàn tất đơn hàng"}
+            </DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn đánh dấu đơn hàng #{orderToComplete} là hoàn tất? Hành động này không thể hoàn tác.
+              {isDeliveryStaff 
+                ? `Bạn có chắc chắn muốn xác nhận đã giao hàng cho đơn hàng #${orderToComplete}? Hành động này không thể hoàn tác.`
+                : `Bạn có chắc chắn muốn đánh dấu đơn hàng #${orderToComplete} là hoàn tất? Hành động này không thể hoàn tác.`
+              }
             </DialogDescription>
           </DialogHeader>
-          
+
           <DialogFooter className="flex justify-end gap-2 mt-4">
             <Button
               variant="outline"
@@ -1633,8 +1831,12 @@ export default function Orders() {
             </Button>
             <Button
               onClick={confirmCompleteOrder}
-              disabled={completingSingleOrder}>
-              {completingSingleOrder ? "Đang hoàn tất..." : "Hoàn tất đơn hàng"}
+              disabled={completingSingleOrder}
+            >
+              {completingSingleOrder 
+                ? (isDeliveryStaff ? "Đang xác nhận..." : "Đang hoàn tất...") 
+                : (isDeliveryStaff ? "Xác nhận giao hàng" : "Hoàn tất đơn hàng")
+              }
             </Button>
           </DialogFooter>
         </DialogContent>

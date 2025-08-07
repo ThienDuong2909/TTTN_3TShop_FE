@@ -195,7 +195,11 @@ export const EmployeeManagement = () => {
   React.useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/department');
+        const res = await fetch('http://localhost:8080/api/department',{
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+          }
+        });
         const result = await res.json();
         if (result.success && Array.isArray(result.data)) {
           const filtered = result.data
@@ -217,7 +221,11 @@ export const EmployeeManagement = () => {
   // Fetch employees from API
   const refreshEmployees = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/employees');
+      const res = await fetch('http://localhost:8080/api/employees',{
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
       const result = await res.json();
       
       if (result.success && Array.isArray(result.data)) {
@@ -354,6 +362,7 @@ export const EmployeeManagement = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
         },
         body: JSON.stringify(payload)
       });
@@ -504,7 +513,9 @@ export const EmployeeManagement = () => {
       // Update employee info
       fetch(`http://localhost:8080/api/employees/${editingEmployee.maNV}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
         body: JSON.stringify(editPayload),
       })
         .then((res) => res.json())
@@ -534,7 +545,9 @@ export const EmployeeManagement = () => {
 
       fetch("http://localhost:8080/api/employees", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
         body: JSON.stringify(employeePayload),
       })
         .then((res) => res.json())

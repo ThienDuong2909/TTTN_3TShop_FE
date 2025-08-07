@@ -28,6 +28,64 @@ import { Separator } from "../components/ui/separator";
 import { Label } from "../components/ui/label";
 import { InvoiceView } from "../components/Invoice";
 import { toast } from "sonner";
+import { updateOrderStatus } from "../services/api";
+
+// Additional API functions for order detail management
+const getOrderDetailById = async (orderId: string) => {
+  try {
+    const response = await fetch(
+      `http://localhost:8080/api/orders/${orderId}/detail`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Error fetching order detail:", error);
+    return { success: false, message: "Không thể tải thông tin đơn hàng" };
+  }
+};
+
+const getInvoiceByOrderId = async (orderId: string) => {
+  try {
+    const response = await fetch(
+      `http://localhost:8080/api/invoices/order/${orderId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Error fetching invoice:", error);
+    return { success: false, message: "Không thể tải thông tin hóa đơn" };
+  }
+};
+
+const createInvoice = async (invoiceData: any) => {
+  try {
+    const response = await fetch("http://localhost:8080/api/invoices", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(invoiceData),
+    });
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Error creating invoice:", error);
+    return { success: false, message: "Không thể tạo hóa đơn" };
+  }
+};
 
 interface OrderDetail {
   ThongTinDonHang: {
@@ -95,19 +153,19 @@ export const OrderDetail = () => {
   const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // States for order approval
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [approvingOrder, setApprovingOrder] = useState(false);
-  
+
   // States for order cancellation
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancellingOrder, setCancellingOrder] = useState(false);
-  
+
   // States for invoice creation
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [creatingInvoice, setCreatingInvoice] = useState(false);
-  
+
   // States for invoice view
   const [showInvoiceView, setShowInvoiceView] = useState(false);
   const [invoiceNumber, setInvoiceNumber] = useState<string | null>(null);
@@ -116,22 +174,17 @@ export const OrderDetail = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const response = await fetch(`http://localhost:8080/api/orders/${orderId}/detail`);
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.message || 'Lỗi khi tải thông tin đơn hàng');
-      }
-      
+
+      const result = await getOrderDetailById(orderId);
+
       if (result.success && result.data) {
         setOrderDetail(result.data);
       } else {
-        throw new Error(result.message || 'Không tìm thấy thông tin đơn hàng');
+        throw new Error(result.message || "Không tìm thấy thông tin đơn hàng");
       }
     } catch (err) {
-      console.error('Error fetching order detail:', err);
-      setError(err instanceof Error ? err.message : 'Lỗi không xác định');
+      console.error("Error fetching order detail:", err);
+      setError(err instanceof Error ? err.message : "Lỗi không xác định");
     } finally {
       setIsLoading(false);
     }
@@ -166,29 +219,21 @@ export const OrderDetail = () => {
   // Confirm order approval
   const confirmApproveOrder = async () => {
     if (!orderDetail || !id) return;
-    
+
     try {
       setApprovingOrder(true);
-      
+
       // Get user info from localStorage or context (assuming user ID is 1 for now)
       const userId = 1; // You should get this from your auth context
-      
-      const response = await fetch(`http://localhost:8080/api/orders/${id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          maTTDH: 2, // Status "Đã duyệt"
-          maNVDuyet: userId
-        })
-      });
 
-      const result = await response.json();
+      const result = await updateOrderStatus(parseInt(id), {
+        maTTDH: 2, // Status "Đã duyệt"
+        maNVDuyet: userId,
+      });
 
       if (result.success) {
         // Show success message
-        toast.success("Đã duyệt đơn hàng thành công");        
+        toast.success("Đã duyệt đơn hàng thành công");
         // Refresh order detail
         await fetchOrderDetail(id);
       } else {
@@ -211,30 +256,22 @@ export const OrderDetail = () => {
   // Confirm order cancellation
   const confirmCancelOrder = async () => {
     if (!orderDetail || !id) return;
-    
+
     try {
       setCancellingOrder(true);
-      
+
       // Get user info from localStorage or context (assuming user ID is 1 for now)
       const userId = 1; // You should get this from your auth context
-      
-      const response = await fetch(`http://localhost:8080/api/orders/${id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          maTTDH: 5, // Status "Hủy"
-          maNVDuyet: userId
-        })
-      });
 
-      const result = await response.json();
+      const result = await updateOrderStatus(parseInt(id), {
+        maTTDH: 5, // Status "Hủy"
+        maNVDuyet: userId,
+      });
 
       if (result.success) {
         // Show success message
         toast.success("Đã hủy đơn hàng thành công");
-        
+
         // Refresh order detail
         await fetchOrderDetail(id);
       } else {
@@ -263,19 +300,22 @@ export const OrderDetail = () => {
   // Handle view invoice
   const handleViewInvoice = async () => {
     if (!orderDetail || !id) return;
-    
+
     try {
       // If we already have invoice number, use it directly
-      if (orderDetail.ThongTinHoaDon && typeof orderDetail.ThongTinHoaDon === 'object' && 'SoHD' in orderDetail.ThongTinHoaDon) {
+      if (
+        orderDetail.ThongTinHoaDon &&
+        typeof orderDetail.ThongTinHoaDon === "object" &&
+        "SoHD" in orderDetail.ThongTinHoaDon
+      ) {
         setInvoiceNumber(orderDetail.ThongTinHoaDon.SoHD as string);
         setShowInvoiceView(true);
         return;
       }
-      
+
       // Otherwise, get invoice by order ID
-      const response = await fetch(`http://localhost:8080/api/invoices/order/${id}`);
-      const result = await response.json();
-      
+      const result = await getInvoiceByOrderId(id);
+
       if (result.success && result.data?.ThongTinHoaDon?.SoHD) {
         setInvoiceNumber(result.data.ThongTinHoaDon.SoHD);
         setShowInvoiceView(true);
@@ -291,37 +331,29 @@ export const OrderDetail = () => {
   // Confirm invoice creation
   const confirmCreateInvoice = async () => {
     if (!orderDetail || !id) return;
-    
+
     // If invoice already exists, we could navigate to invoice detail or show invoice info
     if (orderDetail.ThongTinHoaDon) {
       toast.info("Đơn hàng này đã có hóa đơn");
       setShowInvoiceModal(false);
       return;
     }
-    
+
     try {
       setCreatingInvoice(true);
-      
+
       // Get user info from localStorage or context (assuming user ID is 1 for now)
       const userId = 1; // You should get this from your auth context
-      
-      const response = await fetch('http://localhost:8080/api/invoices', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          maDDH: parseInt(id),
-          maNVLap: userId
-        })
-      });
 
-      const result = await response.json();
+      const result = await createInvoice({
+        maDDH: parseInt(id),
+        maNVLap: userId,
+      });
 
       if (result.success) {
         // Show success message
         toast.success("Đã tạo hóa đơn thành công");
-        
+
         // Get invoice number from response and show invoice view
         if (result.data?.ThongTinHoaDon?.SoHD) {
           setInvoiceNumber(result.data.ThongTinHoaDon.SoHD);
@@ -329,7 +361,7 @@ export const OrderDetail = () => {
             setShowInvoiceView(true);
           }, 500); // Small delay to let the success message show
         }
-        
+
         // Refresh order detail to show invoice info
         await fetchOrderDetail(id);
       } else {
@@ -384,7 +416,9 @@ export const OrderDetail = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Có lỗi xảy ra</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Có lỗi xảy ra
+          </h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <Button onClick={() => id && fetchOrderDetail(id)} variant="outline">
             Thử lại
@@ -400,8 +434,12 @@ export const OrderDetail = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Không tìm thấy đơn hàng</h3>
-          <p className="text-gray-600 mb-4">Đơn hàng #{id} không tồn tại hoặc đã bị xóa.</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Không tìm thấy đơn hàng
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Đơn hàng #{id} không tồn tại hoặc đã bị xóa.
+          </p>
           <Button onClick={() => navigate("/admin/orders")} variant="outline">
             Quay lại danh sách
           </Button>
@@ -435,11 +473,11 @@ export const OrderDetail = () => {
 
         <div className="flex items-center space-x-3">
           {getStatusBadge(orderDetail.ThongTinDonHang.TrangThai)}
-          
+
           {/* Show approve button only for orders with status "Đã đặt" (id = 1) */}
           {orderDetail.ThongTinDonHang.TrangThai.Ma === 1 && (
-            <Button 
-              variant="default" 
+            <Button
+              variant="default"
               size="sm"
               onClick={handleApproveOrder}
               className="bg-[#825B32] hover:bg-[#825B32]/90 text-white"
@@ -448,11 +486,11 @@ export const OrderDetail = () => {
               Duyệt đơn hàng
             </Button>
           )}
-          
+
           {/* Show cancel button only for orders with status "Đã đặt" (id = 1) */}
           {orderDetail.ThongTinDonHang.TrangThai.Ma === 1 && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={handleCancelOrder}
               className="text-red-600 border-red-600 hover:bg-red-50"
@@ -461,19 +499,15 @@ export const OrderDetail = () => {
               Hủy đơn hàng
             </Button>
           )}
-          
+
           {/* Show create invoice button only for orders with status "Đã duyệt" (id = 2) */}
           {orderDetail.ThongTinDonHang.TrangThai.Ma !== 1 && (
-            <Button 
-              variant="default" 
-              size="sm"
-              onClick={handleCreateInvoice}
-            >
+            <Button variant="default" size="sm" onClick={handleCreateInvoice}>
               <FileText className="w-4 h-4 mr-2" />
-              {orderDetail.ThongTinHoaDon ? 'Xem hóa đơn' : 'Tạo hóa đơn'}
+              {orderDetail.ThongTinHoaDon ? "Xem hóa đơn" : "Tạo hóa đơn"}
             </Button>
           )}
-          
+
           {/* <Button variant="outline" size="sm">
             <FileText className="w-4 h-4 mr-2" />
             In đơn hàng
@@ -570,12 +604,18 @@ export const OrderDetail = () => {
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            target.nextElementSibling?.classList.remove('hidden');
+                            target.style.display = "none";
+                            target.nextElementSibling?.classList.remove(
+                              "hidden"
+                            );
                           }}
                         />
                       ) : null}
-                      <Package className={`w-6 h-6 text-gray-400 ${item.SanPham.HinhAnh ? 'hidden' : ''}`} />
+                      <Package
+                        className={`w-6 h-6 text-gray-400 ${
+                          item.SanPham.HinhAnh ? "hidden" : ""
+                        }`}
+                      />
                     </div>
 
                     <div className="flex-1 space-y-1">
@@ -689,7 +729,9 @@ export const OrderDetail = () => {
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs font-medium text-gray-500">CCCD</Label>
+                  <Label className="text-xs font-medium text-gray-500">
+                    CCCD
+                  </Label>
                   <div className="bg-gray-50/50 rounded-lg p-3 border border-gray-200 mt-1">
                     <p className="font-medium text-sm">
                       {orderDetail.ThongTinKhachHang.CCCD}
@@ -697,7 +739,9 @@ export const OrderDetail = () => {
                   </div>
                 </div>
                 <div className="md:col-span-2">
-                  <Label className="text-xs font-medium text-gray-500">Địa chỉ</Label>
+                  <Label className="text-xs font-medium text-gray-500">
+                    Địa chỉ
+                  </Label>
                   <div className="bg-gray-50/50 rounded-lg p-3 border border-gray-200 mt-1">
                     <p className="font-medium text-sm">
                       {orderDetail.ThongTinKhachHang.DiaChi}
@@ -721,7 +765,9 @@ export const OrderDetail = () => {
             </CardHeader>
             <CardContent className="p-4 space-y-3">
               <div>
-                <Label className="text-xs font-medium text-gray-500">Người nhận</Label>
+                <Label className="text-xs font-medium text-gray-500">
+                  Người nhận
+                </Label>
                 <div className="bg-gray-50/50 rounded-lg p-3 border border-gray-200 mt-1">
                   <p className="font-medium text-sm">
                     {orderDetail.ThongTinNguoiNhan.HoTen}
@@ -729,7 +775,9 @@ export const OrderDetail = () => {
                 </div>
               </div>
               <div>
-                <Label className="text-xs font-medium text-gray-500">Số điện thoại</Label>
+                <Label className="text-xs font-medium text-gray-500">
+                  Số điện thoại
+                </Label>
                 <div className="bg-gray-50/50 rounded-lg p-3 border border-gray-200 mt-1">
                   <p className="font-medium text-sm">
                     {orderDetail.ThongTinNguoiNhan.SDT}
@@ -883,11 +931,12 @@ export const OrderDetail = () => {
                   </p>
                 </div>
               </div>
-              
+
               <p className="text-gray-700 mb-6">
-                Bạn có chắc chắn muốn duyệt đơn hàng này? Trạng thái đơn hàng sẽ được chuyển thành "Đã duyệt".
+                Bạn có chắc chắn muốn duyệt đơn hàng này? Trạng thái đơn hàng sẽ
+                được chuyển thành "Đã duyệt".
               </p>
-              
+
               <div className="flex justify-end space-x-3">
                 <Button
                   variant="outline"
@@ -937,11 +986,12 @@ export const OrderDetail = () => {
                   </p>
                 </div>
               </div>
-              
+
               <p className="text-gray-700 mb-6">
-                Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này không thể hoàn tác.
+                Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này không thể
+                hoàn tác.
               </p>
-              
+
               <div className="flex justify-end space-x-3">
                 <Button
                   variant="outline"
@@ -991,14 +1041,13 @@ export const OrderDetail = () => {
                   </p>
                 </div>
               </div>
-              
+
               <p className="text-gray-700 mb-6">
-                {orderDetail.ThongTinHoaDon 
+                {orderDetail.ThongTinHoaDon
                   ? "Đơn hàng này đã có hóa đơn. Bạn có muốn xem chi tiết hóa đơn?"
-                  : "Bạn có chắc chắn muốn tạo hóa đơn cho đơn hàng này? Hóa đơn sẽ được lưu vào hệ thống."
-                }
+                  : "Bạn có chắc chắn muốn tạo hóa đơn cho đơn hàng này? Hóa đơn sẽ được lưu vào hệ thống."}
               </p>
-              
+
               <div className="flex justify-end space-x-3">
                 <Button
                   variant="outline"
@@ -1020,7 +1069,9 @@ export const OrderDetail = () => {
                   ) : (
                     <>
                       <FileText className="w-4 h-4 mr-2" />
-                      {orderDetail.ThongTinHoaDon ? 'Xem hóa đơn' : 'Tạo hóa đơn'}
+                      {orderDetail.ThongTinHoaDon
+                        ? "Xem hóa đơn"
+                        : "Tạo hóa đơn"}
                     </>
                   )}
                 </Button>

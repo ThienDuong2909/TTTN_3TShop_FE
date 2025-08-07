@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Tạo axios instance đơn giản
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080/api",
+  baseURL: "http://localhost:8080/api",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -13,11 +13,25 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    // Kiểm tra token có expired không
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      
+      if (payload.exp < currentTime) {
+        toast.warn("Token has expired, removing from storage");
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+        return config;
+      }
+      
+      config.headers.Authorization = `Bearer ${token}`;
+    } catch (error) {
+      console.error("Error parsing token:", error);
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    }
   }
-  // TẠM THỜI BYPASS AUTHENTICATION CHO TEST
-  // Thêm một token dummy hoặc comment out để test
-  // config.headers.Authorization = `Bearer dummy-token-for-testing`;
   return config;
 });
 
@@ -26,27 +40,28 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error("API Error:", error);
-    console.error("Error response:", error.response);
-    console.error("Error request:", error.request);
-    console.error("Error config:", error.config);
     
     // Xử lý lỗi 401 (unauthorized) - tự động logout
     if (error.response?.status === 401) {
       console.error("=== AUTHENTICATION ERROR DEBUG ===");
-      console.error("Authentication failed - redirecting to login");
+      console.error("Authentication failed - token expired or invalid");
       console.error("Current token:", localStorage.getItem("token"));
-      console.error("Error details:", error.response.data);
-      console.error("Request URL:", error.config?.url);
-      console.error("Request method:", error.config?.method);
-      console.error("Request headers:", error.config?.headers);
-      console.error("Full error:", error);
-      console.error("=== END DEBUG ===");
+      console.error("Error details:", error.response?.data);
       
+      // Hiển thị thông báo cho user
+      if (window.toast) {
+        window.toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      } else {
+        alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      }
+      
+      // Redirect về login sau 1 giây
       setTimeout(() => {
         localStorage.removeItem("token");
         window.location.href = "/login";
-      }, 2000);
+      }, 1000);
       
+      return Promise.reject(new Error("Authentication failed"));
     }
     
     return Promise.reject(error);

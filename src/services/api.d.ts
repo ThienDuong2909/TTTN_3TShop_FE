@@ -9,6 +9,32 @@ export function getPurchaseOrderStatuses(): Promise<any[]>;
 export function getProductDetails(): Promise<any[]>;
 export function getPurchaseOrderReceivedStatus(id: string): Promise<any>;
 
+// Product Detail functions
+export function getProductDetailById(id: string | number): Promise<any>;
+export function addProductDetail(data: any): Promise<any>;
+export function updateProductStock(stockUpdates: any[]): Promise<any>;
+
+// Lookup functions
+export function getSizes(): Promise<any[]>;
+export function getColors(): Promise<any[]>;
+
+// Orders functions
+export function getOrdersByStatus(status: string): Promise<any>;
+export function getOrderStatistics(): Promise<any>;
+export function updateOrderStatus(orderId: number, statusData: any): Promise<any>;
+export function updateBatchOrderStatus(ordersData: any): Promise<any>;
+export function getAvailableDeliveryStaff(address: string): Promise<any>;
+export function assignDelivery(assignmentData: any): Promise<any>;
+export function updateOrderDeliveryStaff(orderId: number, data: { maNVGiao: number }): Promise<ApiResponse>;
+
+export function updateBatchOrderCompletion(orders: Array<{ id: number; maTTDH: number; maNVDuyet: number }>): Promise<ApiResponse>;
+
+export function updateOrderCompletion(orderId: number, data: { maTTDH: number; maNVDuyet: number }): Promise<ApiResponse>;
+
+// Delivery Staff functions
+export function getAssignedOrders(params?: { page?: number; limit?: number; status?: string }): Promise<any>;
+export function confirmOrderDelivery(orderId: number): Promise<any>;
+
 // Goods Receipt functions
 export function getGoodsReceipts(): Promise<any[]>;
 export function createGoodsReceipt(data: any): Promise<any>;
@@ -84,6 +110,10 @@ export function getSearchProducts(q: string): Promise<any[]>;
 export function getCustomerOrders(maKH: number): Promise<any[]>;
 export function getOrderDetail(payload: { maKH: number, maDDH: number|string }): Promise<any>;
 
+// Review functions
+export function submitReview(reviewData: { MaCTDonDatHang: number; MoTa: string; SoSao: number }): Promise<any>;
+export function submitMultipleReviews(reviewList: Array<{ maCTDonDatHang: number; moTa: string; soSao: number }>): Promise<any>;
+export function getProductComments(productId: number): Promise<any>;
 
 // Auth functions
 export function login(credentials: { email: string; password: string }): Promise<any>;
