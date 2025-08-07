@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getBestSellerProducts } from "../services/api";
 import { ProductCard, Product } from "../components/ProductCard";
 import { useApp } from "../contexts/AppContext";
 import { 
   GridIcon,
-  List
+  List,
+  ArrowLeft
 } from "lucide-react";
 import {
   Select,
@@ -18,6 +20,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import { mapSanPhamFromApi } from "../utils/productMapper.ts";
 
 export default function BestSellerProducts() {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -43,6 +46,8 @@ export default function BestSellerProducts() {
 
   const sortedProducts = [...products].sort((a, b) => {
     switch (sort) {
+      case "bestseller":
+        return (b.sold || 0) - (a.sold || 0);
       case "price-asc":
         return a.price - b.price;
       case "price-desc":
@@ -52,19 +57,31 @@ export default function BestSellerProducts() {
       case "name-desc":
         return b.name.localeCompare(a.name);
       default:
-        return b.totalSold - a.totalSold; // Mặc định sắp xếp theo số lượng đã bán
+        return 0;
     }
   });
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
+      {/* Header với nút Back */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Sản phẩm bán chạy
-        </h1>
-        <p className="text-gray-600 dark:text-gray-300">
-          Khám phá những sản phẩm được ưa chuộng nhất
+        <div className="flex items-center gap-4 mb-4">
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="shrink-0"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Sản phẩm bán chạy
+            </h1>
+          </div>
+        </div>
+        <p className="text-gray-600 dark:text-gray-300 ml-14">
+          Những sản phẩm được mua nhiều nhất
         </p>
       </div>
 

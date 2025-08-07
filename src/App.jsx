@@ -49,7 +49,9 @@ import AdminLayout from './layouts/AdminLayout';
 import CategoryPage from './pages/CategoryPage';
 import NewProducts from "./pages/NewProducts";
 import BestSellerProducts from "./pages/BestSellerProducts";
+import DiscountProducts from './pages/DiscountProducts';
 
+import ScrollToTop from "./components/ScrollToTop";
 // Wrapper component for main layout
 const MainLayout = ({ children }) => (
   <div className="min-h-screen bg-background">
@@ -67,6 +69,7 @@ function App() {
   return (
     <ThemeProvider>
       <AppProvider>
+        <ScrollToTop />
         <Routes>
           {/* Admin Routes - Sử dụng AdminLayout với sidebar */}
           <Route path="/admin" element={
@@ -214,6 +217,7 @@ function App() {
           <Route path="/search" element={<MainLayout><SearchResults /></MainLayout>} />
           <Route path="/new-products" element={<MainLayout><NewProducts /></MainLayout>} />
           <Route path="/bestseller-products" element={<MainLayout><BestSellerProducts /></MainLayout>} />
+          <Route path="/discount-products" element={<MainLayout><DiscountProducts /></MainLayout>} />
           {/* Protected User Routes */}
           <Route path="/profile" element={
             <MainLayout>
