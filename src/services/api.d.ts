@@ -123,4 +123,5 @@ export function getRevenueReport(startDate: string, endDate: string): Promise<an
 
 
 export function cancelOrder(maKH: number, maDDH: number): Promise<any>;
+export function getCategoryById(id: number): Promise<Category>;
 

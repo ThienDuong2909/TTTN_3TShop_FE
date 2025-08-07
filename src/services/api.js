@@ -824,6 +824,17 @@ export const cancelOrder = async (maKH, maDDH) => {
   }
 };
 
+
+export const getCategoryById = async (id) => {
+  try {
+    const response = await api.get(`/category/${id}`);
+    return response.data.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy thông tin danh mục:", error);
+    throw error;
+    }
+};
+
 // ===================
 // REVIEW/COMMENT API
 // ===================
@@ -880,5 +891,6 @@ export const getReturnRequests = async () => {
     return response.data;
   } catch (error) {
     return handleError(error);
+
   }
 };

@@ -31,6 +31,7 @@ interface ProductCardProps {
   onToggleLike?: (productId: number) => void;
   isLiked?: boolean;
   className?: string;
+  titleClassName?: string; 
 }
 
 export function ProductCard({
@@ -39,6 +40,7 @@ export function ProductCard({
   onToggleLike,
   isLiked = false,
   className = "",
+  titleClassName,
 }: ProductCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -88,12 +90,6 @@ export function ProductCard({
             />
 
             {/* Badges */}
-            {/* {product.isBestSeller && (
-              <Badge className="absolute top-4 right-4 bg-yellow-500 text-black shadow-sm">
-                <TrendingUp className="w-3 h-3 mr-1" />
-                Bán chạy
-              </Badge>
-            )} */}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
               {product.isBestSeller ? (
                 <Badge className="bg-yellow-500 text-black shadow-sm">
@@ -114,45 +110,10 @@ export function ProductCard({
 
             {/* Hover Actions */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-            {/* <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="rounded-full p-2 bg-white/90 hover:bg-white shadow-lg"
-                  onClick={handleToggleLike}
-                  title={isLiked ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
-                >
-                  <Heart
-                    className={`w-4 h-4 ${
-                      isLiked ? "fill-red-500 text-red-500" : "text-gray-600"
-                    }`}
-                  />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="rounded-full p-2 bg-white/90 hover:bg-white shadow-lg"
-                  onClick={handleQuickView}
-                  title="Xem nhanh"
-                >
-                  <Eye className="w-4 h-4 text-gray-600" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="rounded-full p-2 bg-white/90 hover:bg-white shadow-lg"
-                  onClick={handleAddToCart}
-                  title="Thêm vào giỏ hàng"
-                >
-                  <ShoppingCart className="w-4 h-4 text-gray-600" />
-                </Button>
-              </div>
-            </div> */}
           </div>
 
           <div className="p-4">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+            <h3 className={`font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors h-12 ${titleClassName || ''}`}>
               {product.name}
             </h3>
 

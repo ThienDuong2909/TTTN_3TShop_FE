@@ -170,3 +170,84 @@
     box-shadow: 0 0 0 1px hsl(var(--primary) / 0.3) !important;
   }
 }
+
+/* Existing styles... */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    135deg,
+    #f0f0f0 0%,
+    #f8f8f8 25%,
+    #ffffff 50%,
+    #f8f8f8 75%,
+    #f0f0f0 100%
+  );
+  background-size: 200% 200%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.dark .shimmer {
+  background: linear-gradient(
+    135deg,
+    #374151 0%,
+    #4b5563 25%,
+    #6b7280 50%,
+    #4b5563 75%,
+    #374151 100%
+  );
+  background-size: 200% 200%;
+}
+
+/* Nếu muốn hiệu ứng mượt hơn */
+@keyframes shimmer-smooth {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+.shimmer-smooth {
+  position: relative;
+  overflow: hidden;
+  background-color: #f0f0f0;
+}
+
+.shimmer-smooth::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+  animation: shimmer-smooth 1.5s ease-in-out infinite;
+}
+
+.dark .shimmer-smooth {
+  background-color: #374151;
+}
+
+.dark .shimmer-smooth::before {
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+}
