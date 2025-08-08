@@ -19,9 +19,10 @@ api.interceptors.request.use((config) => {
       const currentTime = Date.now() / 1000;
       
       if (payload.exp < currentTime) {
-        toast.warn("Token has expired, removing from storage");
+        // Token hết hạn: xóa token, không redirect ở đây để tránh reload không mong muốn
+        // Việc điều hướng sẽ do response interceptor xử lý khi nhận 401 ở các API khác
+        console.warn("Token has expired, removing from storage");
         localStorage.removeItem("token");
-        window.location.href = "/login";
         return config;
       }
       
@@ -29,7 +30,7 @@ api.interceptors.request.use((config) => {
     } catch (error) {
       console.error("Error parsing token:", error);
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      // Không redirect tại request phase để tránh vòng lặp reload khi đang ở trang login
     }
   }
   return config;
@@ -43,10 +44,15 @@ api.interceptors.response.use(
     
     // Xử lý lỗi 401 (unauthorized) - tự động logout
     if (error.response?.status === 401) {
-      console.error("=== AUTHENTICATION ERROR DEBUG ===");
-      console.error("Authentication failed - token expired or invalid");
-      console.error("Current token:", localStorage.getItem("token"));
-      console.error("Error details:", error.response?.data);
+      const requestUrl = error.config?.url || "";
+      const isAuthEndpoint =
+        requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
+      const hasToken = Boolean(localStorage.getItem('token'));
+
+      // Nếu là lỗi từ trang đăng nhập/đăng ký, hoặc không có token -> để caller tự xử lý, KHÔNG redirect
+      if (isAuthEndpoint || !hasToken) {
+        return Promise.reject(error);
+      }
       
       // Hiển thị thông báo cho user
       if (window.toast) {
