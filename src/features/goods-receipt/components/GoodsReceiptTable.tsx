@@ -206,7 +206,6 @@ export default function GoodsReceiptTable({
                       <TableHead>Số lượng</TableHead>
                       <TableHead>Đơn giá</TableHead>
                       <TableHead>Thành tiền</TableHead>
-                      <TableHead>Ghi chú</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -225,7 +224,6 @@ export default function GoodsReceiptTable({
                         <TableCell>{item.receivedQuantity}</TableCell>
                         <TableCell>{formatPrice(item.unitPrice)}</TableCell>
                         <TableCell>{formatPrice(item.unitPrice * item.receivedQuantity)}</TableCell>
-                        <TableCell>{item.notes || "-"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

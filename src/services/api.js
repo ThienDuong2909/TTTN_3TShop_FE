@@ -45,6 +45,59 @@ export const getCurrentEmployee = async () => {
 };
 
 // ===================
+// PERMISSIONS API
+// ===================
+
+// Lấy quyền của user hiện tại
+export const fetchMyPermissions = async () => {
+  try {
+    const res = await api.get("/permissions/my-permissions");
+    return res.data?.data || [];
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy tất cả quyền (admin)
+export const fetchAllPermissions = async () => {
+  try {
+    const res = await api.get("/permissions/all");
+    return res.data?.data || [];
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// (Optional) Lấy quyền của một nhân viên theo id — nếu backend hỗ trợ
+export const fetchEmployeePermissions = async (nhanVienId) => {
+  try {
+    const res = await api.get(`/permissions/employee/${nhanVienId}`);
+    // Cho phép backend trả về mảng id hoặc mảng object { id }
+    const data = res.data?.data || [];
+    if (!Array.isArray(data)) return [];
+    if (data.length > 0 && typeof data[0] === "object") {
+      return data.map((p) => p.id).filter((v) => typeof v === "number");
+    }
+    return data;
+  } catch (error) {
+    // Nếu không có endpoint này, trả về mảng rỗng để UI vẫn hoạt động
+    return [];
+  }
+};
+
+// Gán quyền cho nhân viên (admin)
+export const assignPermissionsToEmployee = async (nhanVienId, permissionIds) => {
+  try {
+    const res = await api.put(`/permissions/employee/${nhanVienId}`, {
+      permissionIds,
+    });
+    return res.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// ===================
 // SUPPLIER API
 // ===================
 

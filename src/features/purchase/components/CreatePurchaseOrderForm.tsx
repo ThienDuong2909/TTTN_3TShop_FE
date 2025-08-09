@@ -808,7 +808,7 @@ export default function CreatePurchaseOrderForm({
           </div>
         )}
       </div>
-      <div>
+      {/* <div>
         <Label htmlFor="notes">Ghi chú</Label>
         <Textarea
           id="notes"
@@ -817,7 +817,7 @@ export default function CreatePurchaseOrderForm({
           placeholder="Ghi chú thêm về đơn đặt hàng..."
           rows={3}
         />
-      </div>
+      </div> */}
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel} disabled={isLoading}>
           Hủy
