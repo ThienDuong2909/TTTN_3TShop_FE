@@ -23,6 +23,12 @@ export function getPurchaseOrderForReceipt(id: string): Promise<any>;
 export function getColors(): Promise<any[]>;
 export function getSizes(): Promise<any[]>;
 
+// Permissions
+export function fetchMyPermissions(): Promise<string[]>;
+export function fetchAllPermissions(): Promise<Array<{ id: number; Ten: string; TenHienThi: string; NgayTao?: string }>>;
+export function fetchEmployeePermissions(nhanVienId: number): Promise<number[]>;
+export function assignPermissionsToEmployee(nhanVienId: number, permissionIds: number[]): Promise<any>;
+
 // Default export
 declare const commonService: {
   getPurchaseOrders(): Promise<any[]>;
@@ -44,6 +50,10 @@ declare const commonService: {
   getPurchaseOrderForReceipt(id: string): Promise<any>;
   getColors(): Promise<any[]>;
   getSizes(): Promise<any[]>;
+  fetchMyPermissions(): Promise<string[]>;
+  fetchAllPermissions(): Promise<Array<{ id: number; Ten: string; TenHienThi: string; NgayTao?: string }>>;
+  fetchEmployeePermissions(nhanVienId: number): Promise<number[]>;
+  assignPermissionsToEmployee(nhanVienId: number, permissionIds: number[]): Promise<any>;
 };
 
 export default commonService; 

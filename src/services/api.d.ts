@@ -124,3 +124,9 @@ export function getRevenueReport(startDate: string, endDate: string): Promise<an
 
 export function cancelOrder(maKH: number, maDDH: number): Promise<any>;
 
+// Permissions functions
+export function fetchMyPermissions(): Promise<string[]>;
+export function fetchAllPermissions(): Promise<Array<{ id: number; Ten: string; TenHienThi: string; NgayTao?: string }>>;
+export function fetchEmployeePermissions(nhanVienId: number): Promise<number[]>;
+export function assignPermissionsToEmployee(nhanVienId: number, permissionIds: number[]): Promise<any>;
+

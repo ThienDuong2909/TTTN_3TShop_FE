@@ -2,6 +2,10 @@
 import {
   getEmployees,
   getCurrentEmployee,
+  fetchMyPermissions,
+  fetchAllPermissions,
+  fetchEmployeePermissions,
+  assignPermissionsToEmployee,
   getSuppliers,
   getProducts,
   getProductsBySupplier,
@@ -32,6 +36,11 @@ export { getEmployees };
 
 // Lấy thông tin nhân viên hiện tại
 export { getCurrentEmployee };
+
+// ===================
+// PERMISSIONS SERVICES
+// ===================
+export { fetchMyPermissions, fetchAllPermissions, fetchEmployeePermissions, assignPermissionsToEmployee };
 
 // ===================
 // BASIC DATA SERVICES

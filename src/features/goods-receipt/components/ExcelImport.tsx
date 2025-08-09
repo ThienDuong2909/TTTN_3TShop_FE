@@ -793,13 +793,28 @@ export default function ExcelImport({
       return "";
     };
 
+    // Build a quick lookup map of PO items by (name|color|size)
+    const poItems = selectedPO?.CT_PhieuDatHangNCCs || [];
+    const poItemsMap = new Map<string, { maCTSP: any; productName: string; color: string; size: string; unitPrice: number; orderedQty: number }>();
+    poItems.forEach((item: any) => {
+      const productName = item.TenSP || item.ChiTietSanPham?.SanPham?.TenSP || "";
+      const color = item.ChiTietSanPham?.Mau?.TenMau || item.Mau?.TenMau || "";
+      const size = item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || item.KichThuoc?.TenKichThuoc || "";
+      const orderedQty = item.SoLuong || 0;
+      const unitPrice = item.DonGia || 0;
+      const maCTSP = item.MaCTSP;
+      console.log("maCTSP", maCTSP);
+      const key = `${productName.toLowerCase().trim()}|${color.toLowerCase().trim()}|${size.toLowerCase().trim()}`;
+      poItemsMap.set(key, { maCTSP, productName, color, size, unitPrice, orderedQty });
+    });
+
     const processedItems: Omit<GoodsReceiptItem, "totalReceivedValue">[] = data.map((row, index) => {
-      // Debug: Log toàn bộ row data trước khi xử lý
-      console.log(`=== PROCESSING ROW ${index + 1} ===`);
-      console.log("Raw row data:", row);
-      console.log("Row keys:", Object.keys(row));
       
-      // Lấy dữ liệu TRỰC TIẾP từ Excel - không phụ thuộc vào PO
+      // Lấy dữ liệu TRỰC TIẾP từ Excel - ưu tiên map theo STT sang CT_PhieuDatHangNCCs
+      const sttValueRaw = normalizeKey(row, [
+        "stt", "STT", "no", "No", "số thứ tự", "Số thứ tự"
+      ]);
+      const stt = parseInt(sttValueRaw);
       const productName = normalizeKey(row, ["tên sản phẩm", "product_name", "productName", "Tên sản phẩm"]) || "";
       const color = normalizeKey(row, ["màu sắc", "color", "mau_sac", "Màu sắc"]) || "";
       const size = normalizeKey(row, ["size", "kich_thuoc", "kichThuoc", "Size"]) || "";
@@ -847,10 +862,40 @@ export default function ExcelImport({
         rowData: row // Log toàn bộ row data để xem có gì khác không
       });
 
+      // Try to find the matching PO item to get the correct MaCTSP
+      let matchedMaCTSP: any = undefined;
+      // 1) Prefer mapping by STT if valid and selectedPO exists
+      if (selectedPO && Array.isArray(selectedPO.CT_PhieuDatHangNCCs) && !isNaN(stt) && stt > 0) {
+        const idx = stt - 1;
+        const poItemAtIndex = selectedPO.CT_PhieuDatHangNCCs[idx];
+        if (poItemAtIndex && poItemAtIndex.MaCTSP !== undefined && poItemAtIndex.MaCTSP !== null) {
+          matchedMaCTSP = poItemAtIndex.MaCTSP;
+        }
+      }
+      // 2) If STT mapping not available, fallback to name|color|size
+      if (matchedMaCTSP === undefined) {
+        const normalizedProductName = productName.toString().toLowerCase().trim();
+        const normalizedColor = color.toString().toLowerCase().trim();
+        const normalizedSize = size.toString().toLowerCase().trim();
+        const searchKey = `${normalizedProductName}|${normalizedColor}|${normalizedSize}`;
+        let matched = poItemsMap.get(searchKey);
+        if (!matched) {
+          // fallback: match by product name only
+          for (const [key, value] of poItemsMap.entries()) {
+            if (key.startsWith(normalizedProductName + '|')) {
+              matched = value;
+              break;
+            }
+          }
+        }
+        matchedMaCTSP = matched?.maCTSP;
+      }
+
       // Tạo item đơn giản - lấy dữ liệu TRỰC TIẾP từ Excel
       const processedItem = {
-        purchaseOrderItemId: `excel_${index}`,
-        productId: `excel_${index}`,
+        // Use matched MaCTSP when found; otherwise keep a temp id so row can still be displayed.
+        purchaseOrderItemId: matchedMaCTSP ?? `excel_${index}`,
+        productId: matchedMaCTSP ?? `excel_${index}`,
         productName: productName,
         selectedColor: color,
         colorName: color,

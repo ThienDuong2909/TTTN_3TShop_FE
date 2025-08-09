@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, RefreshCw, Edit2, ArrowRight, History } from "lucide-react";
+import { Eye, EyeOff, RefreshCw, Edit2, ArrowRight, History, Shield } from "lucide-react";
 import { DataTable, Column } from "../components/ui/DataTable";
 import { Modal } from "../components/ui/Modal";
 import { toast, Toaster } from "sonner";
 import districts from "../data/districts.json";
+import { fetchAllPermissions, fetchEmployeePermissions, assignPermissionsToEmployee } from "../services/api";
 
 // Interface matching SQL structure
 interface Employee {
@@ -191,6 +192,56 @@ export const EmployeeManagement = () => {
     await fetchWorkHistory(employee.maNV);
     setIsHistoryModalOpen(true);
   };
+
+  // Permissions: open modal and load data
+  const handleOpenPermissions = async (employee: Employee) => {
+    setPermissionEmployee(employee);
+    setIsPermissionModalOpen(true);
+    setIsLoadingPermissions(true);
+    try {
+      const [all, current] = await Promise.all([
+        fetchAllPermissions(),
+        fetchEmployeePermissions(employee.maNV),
+      ]);
+      const allList = Array.isArray(all) ? all : [];
+      setAllPermissions(allList as Array<{ id: number; Ten: string; TenHienThi: string }>);
+      const currentIds = Array.isArray(current) ? (current as number[]) : [];
+      setSelectedPermissionIds(currentIds);
+    } catch (err) {
+      console.error("Error loading permissions:", err);
+      toast.error("Không thể tải danh sách quyền");
+      setAllPermissions([]);
+      setSelectedPermissionIds([]);
+    } finally {
+      setIsLoadingPermissions(false);
+    }
+  };
+
+  const togglePermission = (permissionId: number, checked: boolean) => {
+    setSelectedPermissionIds((prev) => {
+      if (checked) return Array.from(new Set([...prev, permissionId]));
+      return prev.filter((id) => id !== permissionId);
+    });
+  };
+
+  const handleSavePermissions = async () => {
+    if (!permissionEmployee) return;
+    try {
+      const res = await assignPermissionsToEmployee(
+        permissionEmployee.maNV,
+        selectedPermissionIds,
+      );
+      if (res?.success) {
+        toast.success("Gán quyền cho nhân viên thành công");
+        setIsPermissionModalOpen(false);
+      } else {
+        toast.error(res?.message || "Gán quyền thất bại");
+      }
+    } catch (err) {
+      console.error("Assign permissions error:", err);
+      toast.error("Có lỗi khi gán quyền");
+    }
+  };
   // Fetch departments with TrangThai === true
   React.useEffect(() => {
     const fetchDepartments = async () => {
@@ -266,9 +317,11 @@ export const EmployeeManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [transferEmployee, setTransferEmployee] = useState<Employee | null>(null);
   const [selectedEmployeeHistory, setSelectedEmployeeHistory] = useState<Employee | null>(null);
+  const [permissionEmployee, setPermissionEmployee] = useState<Employee | null>(null);
   const [workHistory, setWorkHistory] = useState<any[]>([]);
   const [transferData, setTransferData] = useState({
     newDepartment: "",
@@ -280,6 +333,9 @@ export const EmployeeManagement = () => {
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [showPassword, setShowPassword] = useState(false);
+  const [allPermissions, setAllPermissions] = useState<Array<{ id: number; Ten: string; TenHienThi: string }>>([]);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
+  const [isLoadingPermissions, setIsLoadingPermissions] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     tenNV: "",
     ngaySinh: "",
@@ -697,6 +753,13 @@ export const EmployeeManagement = () => {
             title="Xem lịch sử làm việc"
           >
             <History className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleOpenPermissions(record)}
+            className="group relative bg-amber-50 hover:bg-amber-100 text-amber-600 hover:text-amber-700 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
+            title="Xem/Gán quyền"
+          >
+            <Shield className="w-4 h-4" />
           </button>
         </div>
       ),
@@ -1200,6 +1263,80 @@ export const EmployeeManagement = () => {
               Đóng
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Permissions Modal */}
+      <Modal
+        isOpen={isPermissionModalOpen}
+        onClose={() => setIsPermissionModalOpen(false)}
+        title={`Quyền của nhân viên - ${permissionEmployee?.tenNV || ""}`}
+        size="md"
+      >
+        <div className="space-y-3">
+          {isLoadingPermissions ? (
+            <div className="text-xs text-gray-500">Đang tải quyền...</div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-gray-600">Chọn quyền cần gán</div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSelectedPermissionIds(allPermissions.map(p => p.id))}
+                    className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200"
+                    type="button"
+                  >
+                    Chọn tất cả
+                  </button>
+                  <button
+                    onClick={() => setSelectedPermissionIds([])}
+                    className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200"
+                    type="button"
+                  >
+                    Bỏ chọn
+                  </button>
+                </div>
+              </div>
+              <div className="max-h-72 overflow-y-auto border rounded p-2">
+                {allPermissions.length === 0 ? (
+                  <div className="text-xs text-gray-500">Không có dữ liệu quyền.</div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2">
+                    {allPermissions.map((perm) => (
+                      <label key={perm.id} className="flex items-center gap-2 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={selectedPermissionIds.includes(perm.id)}
+                          onChange={(e) => togglePermission(perm.id, e.target.checked)}
+                        />
+                        <span className="font-medium">{perm.TenHienThi || perm.Ten}</span>
+                        <span className="text-gray-500">({perm.Ten})</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="text-[11px] text-gray-500">
+                Lưu ý: Gán quyền thông qua Vai Trò, có thể ảnh hưởng đến tất cả tài khoản cùng vai trò.
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPermissionModalOpen(false)}
+                  className="px-3 py-2 text-xs bg-gray-200 rounded hover:bg-gray-300"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePermissions}
+                  className="px-3 py-2 text-xs text-white bg-[#825B32] rounded hover:bg-[#6B4A2A]"
+                >
+                  Lưu quyền
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </Modal>
     </>

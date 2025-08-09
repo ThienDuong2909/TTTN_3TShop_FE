@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Plus, Search, RefreshCw } from "lucide-react";
 import AdminHeader from "../components/AdminHeader";
 import { Button } from "../components/ui/button";
@@ -82,6 +83,10 @@ export default function GoodsReceipt() {
     if (success) {
       setIsCreateGROpen(false);
       resetForm();
+    } else {
+      toast.error("Tạo phiếu nhập hàng thất bại", {
+        description: "Vui lòng kiểm tra dữ liệu và thử lại",
+      });
     }
   };
 
