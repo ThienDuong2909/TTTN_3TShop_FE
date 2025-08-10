@@ -1,17 +1,4 @@
-import {
-  BarChart3,
-  Package,
-  ShoppingCart,
-  Users,
-  Truck,
-  FileText,
-  Tags,
-  MessageSquare,
-  Building2,
-  UserCheck,
-  Shield,
-  RotateCcw,
-} from "lucide-react";
+import { Package, ShoppingCart, Truck, FileText, Tags, Building2, UserCheck, Shield, RotateCcw } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useApp } from "../contexts/AppContext";
 import { useNavigate } from "react-router-dom";
@@ -31,15 +18,12 @@ interface NavigationItem {
   alternativePermissions?: string[];
 }
 
-export default function AdminSidebar({
-  activeTab,
-  setActiveTab,
-}: AdminSidebarProps) {
+export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
   const { state } = useApp();
   const navigate = useNavigate();
 
   const userPermissions = state.user?.permissions || [];
-  const isAdmin = state.user?.role === "Admin";
+  // const isAdmin = state.user?.role === "Admin";
 
   const navigation: NavigationItem[] = [
     // {
@@ -188,7 +172,7 @@ export default function AdminSidebar({
   };
 
   return (
-    <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-50 lg:flex-col">
+    <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-52 lg:flex-col">
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-4 pb-4 shadow-sm">
         <div className="flex h-16 shrink-0 items-center">
           <div className="flex items-center space-x-2">
@@ -197,7 +181,7 @@ export default function AdminSidebar({
             </div>
             <div>
               <span className="text-base font-bold text-gray-900 dark:text-white">
-                Admin Panel
+                Bảng điều khiển
               </span>
               <div className="text-xs text-muted-foreground">
                 {state.user?.role === "Admin" ? "Quản trị viên" : "Nhân viên"}
@@ -246,16 +230,8 @@ export default function AdminSidebar({
               {state.user?.name.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <span className="sr-only">Thông tin người dùng</span>
-          <div className="flex-1 min-w-0">
-            <div className="font-medium truncate">Admin</div>
-            <div className="text-xs text-muted-foreground truncate">
-              admin@gmail.com
-            </div>
-            {/* <div className="font-medium truncate">{state.user?.name}</div>
-            <div className="text-xs text-muted-foreground truncate">
-              {state.user?.email}
-            </div> */}
+          <div className="text-xs text-muted-foreground">
+            {state.user?.name}
           </div>
         </div>
       </div>

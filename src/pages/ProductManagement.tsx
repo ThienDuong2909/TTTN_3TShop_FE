@@ -303,9 +303,8 @@ export default function ProductManagement() {
     }
   }, [state.user, navigate]);
   
-  const canEdit = 
-    state.user?.permissions?.includes("sanpham.sua") ||
-    state.user?.permissions?.includes("toanquyen");
+  const canCreate = state.user?.permissions?.includes("sanpham.tao") || state.user?.permissions?.includes("toanquyen");
+  const canEdit = state.user?.permissions?.includes("sanpham.sua") || state.user?.permissions?.includes("toanquyen");
 
   // Helper function to get latest price
   const getLatestPrice = (product: ApiProduct) => {
@@ -478,10 +477,17 @@ export default function ProductManagement() {
   };
 
   const handleAddProduct = () => {
+    if (!canCreate) {
+      toast.error("Bạn không có quyền thêm sản phẩm");
+      return;
+    }
     navigate("/admin/add-product");
   };
 
   const handleEditProduct = (product: ApiProduct) => {
+    if (!canEdit) {
+      return toast.error("Bạn không có quyền sửa sản phẩm");
+    }
     const latestPrice = getLatestPrice(product);
     const priceValue = latestPrice ? parseFloat(latestPrice.Gia) : 0;
     
@@ -568,6 +574,9 @@ export default function ProductManagement() {
   };
 
   const handleToggleProductStatus = (product: ApiProduct) => {
+    if (!canEdit) {
+      return toast.error("Bạn không có quyền cập nhật sản phẩm");
+    }
     setSelectedProduct(product);
     setStatusModalOpen(true);
   };
@@ -586,6 +595,11 @@ export default function ProductManagement() {
           TrangThai: newStatus,
         }),
       });
+
+      if (response.status === 401 || response.status === 403) {
+        toast.error("Bạn không có quyền cập nhật sản phẩm");
+        return;
+      }
 
       const result = await response.json();
       
@@ -918,7 +932,7 @@ export default function ProductManagement() {
               Quản lý thông tin sản phẩm, kho và giá cả
             </p>
           </div>
-          {canEdit && (
+          {canCreate && (
             <Button 
               className="bg-[#825B32] hover:bg-[#6B4423] text-white text-sm py-2 px-4"
               onClick={handleAddProduct}
@@ -1107,6 +1121,7 @@ export default function ProductManagement() {
                                   className="h-7 w-7 p-0"
                                   onClick={() => handleToggleProductStatus(product)}
                                   title={product.TrangThai ? "Ẩn sản phẩm" : "Hiển thị sản phẩm"}
+                                  disabled={!canEdit}
                                 >
                                   {product.TrangThai ? (
                                     <EyeOff className="h-3 w-3" />
