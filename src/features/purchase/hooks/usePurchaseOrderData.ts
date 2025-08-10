@@ -422,6 +422,11 @@ export const usePurchaseOrderData = (currentUserId: string) => {
 
       const result = await updatePurchaseOrderAPI(poId, apiData);
       
+      // Check if the API call was successful
+      if (!result || result.error) {
+        throw new Error(result?.error || "Cập nhật phiếu đặt hàng thất bại");
+      }
+      
       toast.success("Thành công", {
         description: "Phiếu đặt hàng đã được cập nhật thành công"
       });

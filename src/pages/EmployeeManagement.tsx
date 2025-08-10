@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, RefreshCw, Edit2, ArrowRight, History, Shield } from "lucide-react";
+import { Eye, EyeOff, RefreshCw, Edit2, ArrowRight, History, Shield, Users, CheckCircle } from "lucide-react";
 import { DataTable, Column } from "../components/ui/DataTable";
 import { Modal } from "../components/ui/Modal";
 import { toast, Toaster } from "sonner";
+import { usePermission } from "../components/PermissionGuard";
 import districts from "../data/districts.json";
-import { fetchAllPermissions, fetchEmployeePermissions, assignPermissionsToEmployee } from "../services/api";
+import { ROLES, PERMISSIONS } from "../utils/permissions";
 
 // Interface matching SQL structure
 interface Employee {
@@ -21,11 +22,16 @@ interface Employee {
   isActive: string; // Changed from boolean to string to match API
   createdAt: string;
   updatedAt?: string;
+  currentRole?: string; // Thêm trường để lưu vai trò hiện tại
 }
 
 // ...existing code...
 
 export const EmployeeManagement = () => {
+  const { hasPermission } = usePermission();
+  const canCreate = hasPermission("nhanvien.tao") || hasPermission("toanquyen");
+  const canEdit = hasPermission("nhanvien.sua") || hasPermission("toanquyen");
+  const canAssign = hasPermission("nhanvien.phancong") || hasPermission("toanquyen");
   const [departments, setDepartments] = useState<{ id: string, name: string }[]>([]);
   
   // Helper functions for currency formatting
@@ -170,7 +176,13 @@ export const EmployeeManagement = () => {
   // Fetch work history for specific employee
   const fetchWorkHistory = async (maNV: number) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/employees/${maNV}/department-history`);
+      const response = await fetch(`http://localhost:8080/api/employees/${maNV}/department-history`,
+        {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+          }
+        }
+      );
       const result = await response.json();
       
       if (result.success && Array.isArray(result.data)) {
@@ -188,58 +200,135 @@ export const EmployeeManagement = () => {
 
   // Handle view history
   const handleViewHistory = async (employee: Employee) => {
+    // Nếu muốn hạn chế quyền xem lịch sử, có thể thêm check tại đây
     setSelectedEmployeeHistory(employee);
     await fetchWorkHistory(employee.maNV);
     setIsHistoryModalOpen(true);
   };
 
-  // Permissions: open modal and load data
-  const handleOpenPermissions = async (employee: Employee) => {
-    setPermissionEmployee(employee);
-    setIsPermissionModalOpen(true);
-    setIsLoadingPermissions(true);
+  // Fetch vai trò hiện tại của nhân viên
+  const fetchEmployeeRole = async (maNV: number): Promise<string | null> => {
     try {
-      const [all, current] = await Promise.all([
-        fetchAllPermissions(),
-        fetchEmployeePermissions(employee.maNV),
-      ]);
-      const allList = Array.isArray(all) ? all : [];
-      setAllPermissions(allList as Array<{ id: number; Ten: string; TenHienThi: string }>);
-      const currentIds = Array.isArray(current) ? (current as number[]) : [];
-      setSelectedPermissionIds(currentIds);
-    } catch (err) {
-      console.error("Error loading permissions:", err);
-      toast.error("Không thể tải danh sách quyền");
-      setAllPermissions([]);
-      setSelectedPermissionIds([]);
-    } finally {
-      setIsLoadingPermissions(false);
+      console.log(`🔍 Fetching role for employee maNV: ${maNV}`);
+      console.log(`🔑 Token: ${localStorage.getItem("token")?.substring(0, 20)}...`);
+      
+      const response = await fetch(`http://localhost:8080/api/employees/${maNV}/role`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      
+      console.log(`📡 Response status: ${response.status}`);
+      console.log(`📡 Response headers:`, response.headers);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`✅ Response data:`, result);
+        
+        if (result.success && result.data) {
+          const roleId = result.data.roleId || result.data.role;
+          console.log(`🎯 Extracted roleId: ${roleId}`);
+          return roleId;
+        } else {
+          console.log(`❌ Response not successful or missing data:`, result);
+        }
+      } else {
+        console.log(`❌ Response not OK. Status: ${response.status}`);
+        try {
+          const errorText = await response.text();
+          console.log(`❌ Error response body:`, errorText);
+        } catch (e) {
+          console.log(`❌ Could not read error response body`);
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('❌ Error fetching employee role:', error);
+      return null;
     }
   };
 
-  const togglePermission = (permissionId: number, checked: boolean) => {
-    setSelectedPermissionIds((prev) => {
-      if (checked) return Array.from(new Set([...prev, permissionId]));
-      return prev.filter((id) => id !== permissionId);
-    });
+  // Hàm helper để chuyển đổi roleId thành roleKey cho UI
+  const getRoleKeyFromId = (roleId: string | number): string | null => {
+    const numericId = typeof roleId === 'string' ? parseInt(roleId) : roleId;
+    console.log(`🔍 Converting roleId ${roleId} (numeric: ${numericId}) to roleKey`);
+    
+    // Tìm role có id trùng khớp
+    const roleEntry = Object.entries(ROLES).find(([key, role]) => role.id === numericId);
+    
+    if (roleEntry) {
+      const [roleKey] = roleEntry;
+      console.log(`✅ Found roleKey: ${roleKey} for roleId: ${roleId}`);
+      return roleKey;
+    } else {
+      console.log(`❌ No roleKey found for roleId: ${roleId}`);
+      return null;
+    }
+  };
+
+  // Permissions: open modal and load data
+  const handleOpenPermissions = async (employee: Employee) => {
+    console.log(`🚀 Opening permissions for employee:`, employee);
+    setPermissionEmployee(employee);
+    setIsPermissionModalOpen(true);
+    
+    // Fetch và tự động select vai trò hiện tại của nhân viên
+    console.log(`🔍 About to fetch role for employee maNV: ${employee.maNV}`);
+    const currentRole = await fetchEmployeeRole(employee.maNV);
+    console.log(`🎯 Received currentRole: ${currentRole}`);
+    
+    // Chuyển đổi roleId thành roleKey để UI có thể select đúng
+    if (currentRole) {
+      const roleKey = getRoleKeyFromId(currentRole);
+      console.log(`🔑 Converted roleId ${currentRole} to roleKey: ${roleKey}`);
+      setSelectedRole(roleKey);
+      console.log(`✅ selectedRole state set to: ${roleKey}`);
+    } else {
+      setSelectedRole(null);
+      console.log(`❌ No role found, selectedRole set to null`);
+    }
   };
 
   const handleSavePermissions = async () => {
-    if (!permissionEmployee) return;
+    if (!permissionEmployee || !selectedRole) return;
+    
     try {
-      const res = await assignPermissionsToEmployee(
-        permissionEmployee.maNV,
-        selectedPermissionIds,
-      );
-      if (res?.success) {
-        toast.success("Gán quyền cho nhân viên thành công");
-        setIsPermissionModalOpen(false);
+      // Lấy roleId từ selectedRole (roleKey) để gửi lên API
+      const roleId = ROLES[selectedRole as keyof typeof ROLES]?.id;
+      console.log(`🔍 Sending roleId ${roleId} (from roleKey: ${selectedRole}) to API`);
+      
+      if (!roleId) {
+        toast.error("Không tìm thấy thông tin vai trò");
+        return;
+      }
+      
+      // Gán vai trò cho nhân viên thông qua API
+      const response = await fetch(`http://localhost:8080/api/employees/${permissionEmployee.maNV}/role`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({
+          roleId: roleId
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          toast.success(`Gán vai trò "${ROLES[selectedRole as keyof typeof ROLES]?.displayName}" cho nhân viên thành công`);
+          setIsPermissionModalOpen(false);
+          setSelectedRole(null);
+        } else {
+          toast.error(result.message || "Gán vai trò thất bại");
+        }
       } else {
-        toast.error(res?.message || "Gán quyền thất bại");
+        toast.error("Có lỗi khi gán vai trò");
       }
     } catch (err) {
-      console.error("Assign permissions error:", err);
-      toast.error("Có lỗi khi gán quyền");
+      console.error("Assign role error:", err);
+      toast.error("Có lỗi khi gán vai trò");
     }
   };
   // Fetch departments with TrangThai === true
@@ -322,6 +411,19 @@ export const EmployeeManagement = () => {
   const [transferEmployee, setTransferEmployee] = useState<Employee | null>(null);
   const [selectedEmployeeHistory, setSelectedEmployeeHistory] = useState<Employee | null>(null);
   const [permissionEmployee, setPermissionEmployee] = useState<Employee | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  
+  // Debug logging for selectedRole
+  React.useEffect(() => {
+    console.log(`🔍 Debug - selectedRole changed to: ${selectedRole}`);
+    if (selectedRole) {
+      console.log(`🔍 Debug - ROLES object:`, ROLES);
+      console.log(`🔍 Debug - ROLES[selectedRole]:`, ROLES[selectedRole as keyof typeof ROLES]);
+      console.log(`🔍 Debug - Role ID: ${ROLES[selectedRole as keyof typeof ROLES]?.id}`);
+      console.log(`🔍 Debug - Role Display Name: ${ROLES[selectedRole as keyof typeof ROLES]?.displayName}`);
+    }
+  }, [selectedRole]);
+  
   const [workHistory, setWorkHistory] = useState<any[]>([]);
   const [transferData, setTransferData] = useState({
     newDepartment: "",
@@ -333,9 +435,7 @@ export const EmployeeManagement = () => {
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [showPassword, setShowPassword] = useState(false);
-  const [allPermissions, setAllPermissions] = useState<Array<{ id: number; Ten: string; TenHienThi: string }>>([]);
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
-  const [isLoadingPermissions, setIsLoadingPermissions] = useState<boolean>(false);
+
   const [formData, setFormData] = useState({
     tenNV: "",
     ngaySinh: "",
@@ -351,6 +451,10 @@ export const EmployeeManagement = () => {
   });
 
   const handleAdd = () => {
+    if (!canCreate) {
+      toast.error("Bạn không có quyền thêm nhân viên");
+      return;
+    }
     setEditingEmployee(null);
     setFormData({
       tenNV: "",
@@ -369,6 +473,10 @@ export const EmployeeManagement = () => {
   };
 
   const handleEdit = (employee: Employee) => {
+    if (!canEdit) {
+      toast.error("Bạn không có quyền sửa thông tin nhân viên");
+      return;
+    }
     setEditingEmployee(employee);
     setFormData({
       tenNV: employee.tenNV,
@@ -387,6 +495,10 @@ export const EmployeeManagement = () => {
   };
 
   const handleTransfer = async () => {
+    if (!canAssign) {
+      toast.error("Bạn không có quyền điều chuyển nhân viên");
+      return;
+    }
     if (!transferEmployee || !transferData.newDepartment) {
       toast.warning("Vui lòng chọn bộ phận mới!");
       return;
@@ -422,6 +534,11 @@ export const EmployeeManagement = () => {
         },
         body: JSON.stringify(payload)
       });
+
+      if (response.status === 401 || response.status === 403) {
+        toast.error("Bạn không có quyền điều chuyển nhân viên");
+        return;
+      }
 
       const result = await response.json();
 
@@ -481,6 +598,17 @@ export const EmployeeManagement = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (editingEmployee) {
+      if (!canEdit) {
+        toast.error("Bạn không có quyền sửa thông tin nhân viên");
+        return;
+      }
+    } else {
+      if (!canCreate) {
+        toast.error("Bạn không có quyền thêm nhân viên");
+        return;
+      }
+    }
     
     // Validate required fields
     if (!formData.username || !formData.tenNV) {
@@ -574,7 +702,12 @@ export const EmployeeManagement = () => {
         },
         body: JSON.stringify(editPayload),
       })
-        .then((res) => res.json())
+        .then((res) => {
+          if (res.status === 401 || res.status === 403) {
+            throw { __unauthorized: true };
+          }
+          return res.json();
+        })
         .then((result) => {
           if (result.success) {
             toast.success("Cập nhật nhân viên thành công");
@@ -586,8 +719,12 @@ export const EmployeeManagement = () => {
           }
         })
         .catch((error) => {
-          console.error('Error updating employee:', error);
-          toast.error("Lỗi khi cập nhật nhân viên");
+          if (error && (error.__unauthorized || error.status === 401 || error.status === 403)) {
+            toast.error("Bạn không có quyền sửa thông tin nhân viên");
+          } else {
+            console.error('Error updating employee:', error);
+            toast.error("Lỗi khi cập nhật nhân viên");
+          }
         });
       return; // Exit early for edit case
     }
@@ -606,7 +743,12 @@ export const EmployeeManagement = () => {
         },
         body: JSON.stringify(employeePayload),
       })
-        .then((res) => res.json())
+        .then((res) => {
+          if (res.status === 401 || res.status === 403) {
+            throw { __unauthorized: true };
+          }
+          return res.json();
+        })
         .then((result) => {
           if (result.success) {
             toast.success("Tạo nhân viên thành công");
@@ -617,8 +759,12 @@ export const EmployeeManagement = () => {
             toast.error("Tạo nhân viên thất bại");
           }
         })
-        .catch(() => {
-          toast.error("Lỗi khi tạo nhân viên");
+        .catch((error) => {
+          if (error && (error.__unauthorized || error.status === 401 || error.status === 403)) {
+            toast.error("Bạn không có quyền thêm nhân viên");
+          } else {
+            toast.error("Lỗi khi tạo nhân viên");
+          }
         });
     }
   };
@@ -727,6 +873,7 @@ export const EmployeeManagement = () => {
             onClick={() => handleEdit(record)}
             className="group relative bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
             title="Sửa thông tin"
+            disabled={!canEdit}
           >
             <Edit2 className="w-4 h-4" />
           </button>
@@ -744,6 +891,7 @@ export const EmployeeManagement = () => {
             }}
             className="group relative bg-emerald-50 hover:bg-emerald-100 text-emerald-600 hover:text-emerald-700 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
             title="Điều chuyển bộ phận"
+            disabled={!canAssign}
           >
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -772,7 +920,7 @@ export const EmployeeManagement = () => {
         title={`Quản lý nhân viên (${filteredEmployees.length})`}
         columns={columns}
         data={filteredEmployees}
-        onAdd={handleAdd}
+        onAdd={canCreate ? handleAdd : undefined}
         // onEdit={handleEdit} // Removed because we have edit button in actions column
         // onDelete={handleDelete}
         addButtonText="Thêm nhân viên"
@@ -1270,73 +1418,115 @@ export const EmployeeManagement = () => {
       <Modal
         isOpen={isPermissionModalOpen}
         onClose={() => setIsPermissionModalOpen(false)}
-        title={`Quyền của nhân viên - ${permissionEmployee?.tenNV || ""}`}
+        title={`Gán vai trò cho nhân viên - ${permissionEmployee?.tenNV || ""}`}
         size="md"
       >
-        <div className="space-y-3">
-          {isLoadingPermissions ? (
-            <div className="text-xs text-gray-500">Đang tải quyền...</div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between">
-                <div className="text-xs text-gray-600">Chọn quyền cần gán</div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setSelectedPermissionIds(allPermissions.map(p => p.id))}
-                    className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200"
-                    type="button"
-                  >
-                    Chọn tất cả
-                  </button>
-                  <button
-                    onClick={() => setSelectedPermissionIds([])}
-                    className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200"
-                    type="button"
-                  >
-                    Bỏ chọn
-                  </button>
+        <div className="space-y-4">
+          <div className="text-sm text-gray-600">
+            Chọn vai trò phù hợp cho nhân viên. Vai trò sẽ quyết định các quyền hạn mà nhân viên có thể thực hiện.
+          </div>
+          
+          {/* Hiển thị vai trò hiện tại của nhân viên */}
+          {selectedRole && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span className="text-sm font-medium text-green-800">
+                  Vai trò hiện tại: <strong>{ROLES[selectedRole as keyof typeof ROLES]?.displayName || `Unknown Role (${selectedRole})`}</strong>
+                </span>
+              </div>
+              <p className="text-xs text-green-600 mt-1">
+                Vai trò này đã được gán cho nhân viên. Bạn có thể chọn vai trò khác để thay đổi.
+              </p>
+            </div>
+          )}
+          
+          <div className="space-y-3">
+            {Object.entries(ROLES).map(([roleKey, role]) => (
+              <div
+                key={role.id}
+                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  selectedRole === roleKey
+                    ? 'border-[#825B32] bg-[#825B32]/5'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+                onClick={() => setSelectedRole(roleKey)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="w-5 h-5 text-[#825B32]" />
+                      <h3 className="font-semibold text-gray-900">{role.displayName}</h3>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      ID: {role.id} • {role.permissions.length} quyền hạn
+                    </p>
+                    
+                    {/* Hiển thị một số quyền chính */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {role.permissions.slice(0, 6).map((permission) => (
+                        <div key={permission} className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                          <span className="text-xs text-gray-600">
+                            {PERMISSIONS[permission as keyof typeof PERMISSIONS] || permission}
+                          </span>
+                        </div>
+                      ))}
+                      {role.permissions.length > 6 && (
+                        <div className="text-xs text-gray-500 col-span-2">
+                          ... và {role.permissions.length - 6} quyền khác
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="ml-4">
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedRole === roleKey
+                        ? 'border-[#825B32] bg-[#825B32]'
+                        : 'border-gray-300'
+                    }`}>
+                      {selectedRole === roleKey && (
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="max-h-72 overflow-y-auto border rounded p-2">
-                {allPermissions.length === 0 ? (
-                  <div className="text-xs text-gray-500">Không có dữ liệu quyền.</div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-2">
-                    {allPermissions.map((perm) => (
-                      <label key={perm.id} className="flex items-center gap-2 text-xs">
-                        <input
-                          type="checkbox"
-                          checked={selectedPermissionIds.includes(perm.id)}
-                          onChange={(e) => togglePermission(perm.id, e.target.checked)}
-                        />
-                        <span className="font-medium">{perm.TenHienThi || perm.Ten}</span>
-                        <span className="text-gray-500">({perm.Ten})</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="text-[11px] text-gray-500">
-                Lưu ý: Gán quyền thông qua Vai Trò, có thể ảnh hưởng đến tất cả tài khoản cùng vai trò.
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsPermissionModalOpen(false)}
-                  className="px-3 py-2 text-xs bg-gray-200 rounded hover:bg-gray-300"
-                >
-                  Đóng
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSavePermissions}
-                  className="px-3 py-2 text-xs text-white bg-[#825B32] rounded hover:bg-[#6B4A2A]"
-                >
-                  Lưu quyền
-                </button>
-              </div>
-            </>
-          )}
+            ))}
+          </div>
+
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <div className="text-xs text-blue-800">
+              <strong>Lưu ý:</strong> Gán vai trò sẽ cập nhật tất cả quyền hạn của nhân viên theo vai trò được chọn. 
+              Việc này có thể ảnh hưởng đến khả năng truy cập các chức năng của nhân viên.
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={() => {
+                setIsPermissionModalOpen(false);
+                setSelectedRole(null);
+              }}
+              className="px-4 py-2 text-sm bg-gray-200 rounded hover:bg-gray-300 transition-colors"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleSavePermissions}
+              disabled={!selectedRole}
+              className={`px-4 py-2 text-sm text-white rounded transition-colors ${
+                selectedRole
+                  ? 'bg-[#825B32] hover:bg-[#6B4A2A]'
+                  : 'bg-gray-400 cursor-not-allowed'
+              }`}
+            >
+              Gán vai trò
+            </button>
+          </div>
         </div>
       </Modal>
     </>

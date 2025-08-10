@@ -1,27 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useApp } from "../contexts/AppContext";
-import { categories, getFeaturedProducts } from "../libs/data";
 import { getAllProducts,getAllCategories, getBestSellerProducts, getNewProducts, getDiscountProducts  } from "../services/api";
 import { mapSanPhamFromApi } from "../utils/productMapper.ts";
 import {
   ChevronRight,
-  Star,
-  Heart,
-  ShoppingCart,
-  Eye,
-  TrendingUp,
-  Zap,
-  Gift,
-  Truck,
-  Shield,
-  Clock,
   ChevronLeft,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { ProductCard, Product } from "../components/ProductCard";
-import { Skeleton } from "../components/ui/skeleton";
 
 const HERO_SLIDES = [
   {
@@ -187,7 +175,7 @@ export default function Index() {
   const displayCategories = categories;
 
   const [slide, setSlide] = useState(0);
-  const slideTimeout = useRef<NodeJS.Timeout | null>(null);
+  const slideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Tự động chuyển slide
   useEffect(() => {

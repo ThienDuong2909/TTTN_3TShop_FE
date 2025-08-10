@@ -293,11 +293,43 @@ export const updatePurchaseOrder = async (id, data) => {
 
     console.log("Final orderData:", orderData);
     console.log("Sending to backend:", JSON.stringify(orderData, null, 2));
+    console.log("API endpoint:", `/purchase-orders/${id}`);
 
-    const response = await api.put(`/purchase-orders/${id}`, orderData);
+    let response;
+    try {
+      // Try the main endpoint first
+      response = await api.put(`/purchase-orders/${id}`, orderData);
+      console.log("API response:", response);
+    } catch (error) {
+      console.log("Main endpoint failed, trying alternative...");
+      // Try alternative endpoint if main one fails
+      try {
+        response = await api.put(`/purchase-orders/update/${id}`, orderData);
+        console.log("Alternative endpoint response:", response);
+      } catch (altError) {
+        console.log("Alternative endpoint also failed");
+        // Try another possible endpoint
+        try {
+          response = await api.put(`/phieu-dat-hang/${id}`, orderData);
+          console.log("Vietnamese endpoint response:", response);
+        } catch (vietError) {
+          console.log("Vietnamese endpoint also failed");
+          // Try POST method instead of PUT
+          try {
+            response = await api.post(`/purchase-orders/${id}/update`, orderData);
+            console.log("POST update endpoint response:", response);
+          } catch (postError) {
+            console.log("POST update endpoint also failed");
+            throw error; // Throw the original error
+          }
+        }
+      }
+    }
+    
     return response.data;
   } catch (error) {
     handleError(error);
+    throw error; // Re-throw the error so the calling function can handle it
   }
 };
 
@@ -310,6 +342,7 @@ export const updatePurchaseOrderStatus = async (id, statusId) => {
     return response.data;
   } catch (error) {
     handleError(error);
+    throw error; // Re-throw the error so the calling function can handle it
   }
 };
 
