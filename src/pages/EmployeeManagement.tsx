@@ -1441,11 +1441,11 @@ export const EmployeeManagement = () => {
             </div>
           )}
           
-          <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             {Object.entries(ROLES).map(([roleKey, role]) => (
               <div
                 key={role.id}
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
                   selectedRole === roleKey
                     ? 'border-[#825B32] bg-[#825B32]/5'
                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
@@ -1455,39 +1455,39 @@ export const EmployeeManagement = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <Users className="w-5 h-5 text-[#825B32]" />
-                      <h3 className="font-semibold text-gray-900">{role.displayName}</h3>
+                      <Users className="w-4 h-4 text-[#825B32]" />
+                      <h3 className="font-semibold text-gray-900 text-sm">{role.displayName}</h3>
                     </div>
-                    <p className="text-sm text-gray-600 mb-3">
+                    <p className="text-xs text-gray-600 mb-2">
                       ID: {role.id} • {role.permissions.length} quyền hạn
                     </p>
                     
                     {/* Hiển thị một số quyền chính */}
-                    <div className="grid grid-cols-2 gap-2">
-                      {role.permissions.slice(0, 6).map((permission) => (
+                    <div className="space-y-1">
+                      {role.permissions.slice(0, 4).map((permission) => (
                         <div key={permission} className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                          <span className="text-xs text-gray-600">
+                          <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
+                          <span className="text-xs text-gray-600 truncate">
                             {PERMISSIONS[permission as keyof typeof PERMISSIONS] || permission}
                           </span>
                         </div>
                       ))}
-                      {role.permissions.length > 6 && (
-                        <div className="text-xs text-gray-500 col-span-2">
-                          ... và {role.permissions.length - 6} quyền khác
+                      {role.permissions.length > 4 && (
+                        <div className="text-xs text-gray-500">
+                          ... và {role.permissions.length - 4} quyền khác
                         </div>
                       )}
                     </div>
                   </div>
                   
-                  <div className="ml-4">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  <div className="ml-2">
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                       selectedRole === roleKey
                         ? 'border-[#825B32] bg-[#825B32]'
                         : 'border-gray-300'
                     }`}>
                       {selectedRole === roleKey && (
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                        <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
                       )}
                     </div>
                   </div>

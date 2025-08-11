@@ -7,6 +7,16 @@ import {
   getPurchaseOrderForReceipt,
 } from "../../../services/api";
 
+// Normalize hex color to ensure a single leading '#'
+function normalizeHexColor(input?: string): string {
+  if (!input) return "";
+  const trimmed = String(input).trim();
+  if (!trimmed) return "";
+  // Remove all leading '#', then add exactly one
+  const withoutHashes = trimmed.replace(/^#+/, "");
+  return withoutHashes ? `#${withoutHashes}` : "";
+}
+
 interface GoodsReceiptItem {
   purchaseOrderItemId: string;
   productId: string;
@@ -130,7 +140,7 @@ export const useGoodsReceiptData = (currentUserId: string) => {
           purchaseOrderItemId: item.MaCTSP,
           productId: item.MaCTSP,
           productName: item.ChiTietSanPham?.SanPham?.TenSP || "",
-          selectedColor: item.ChiTietSanPham?.Mau?.MaHex ? `#${item.ChiTietSanPham.Mau.MaHex}` : "",
+          selectedColor: normalizeHexColor(item.ChiTietSanPham?.Mau?.MaHex),
           colorName: item.ChiTietSanPham?.Mau?.TenMau || "",
           selectedSize: item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || "",
           orderedQuantity: item.SoLuongDat || 0,
