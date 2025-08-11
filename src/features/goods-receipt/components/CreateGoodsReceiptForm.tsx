@@ -48,6 +48,15 @@ import ExcelImport from "./ExcelImport";
 import clsx from "clsx";
 import { formatVietnameseCurrency } from "../../../lib/utils";
 
+// Normalize hex color to ensure a single leading '#'
+function normalizeHexColor(input?: string): string {
+  if (!input) return "";
+  const trimmed = String(input).trim();
+  if (!trimmed) return "";
+  const withoutHashes = trimmed.replace(/^#+/, "");
+  return withoutHashes ? `#${withoutHashes}` : "";
+}
+
 interface GoodsReceiptItem {
   purchaseOrderItemId: string;
   productId: string;
@@ -295,7 +304,7 @@ export default function CreateGoodsReceiptForm({
           purchaseOrderItemId: ct.MaCTSP,
           productId: ct.MaCTSP,
           productName: ct.ChiTietSanPham?.SanPham?.TenSP || ct.TenSP || "",
-          selectedColor: ct.ChiTietSanPham?.Mau?.MaHex ? `#${ct.ChiTietSanPham.Mau.MaHex}` : (ct.Mau?.MaHex ? `#${ct.Mau.MaHex}` : ""),
+          selectedColor: normalizeHexColor(ct.ChiTietSanPham?.Mau?.MaHex || ct.Mau?.MaHex),
           colorName: ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
           selectedSize: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ct.KichThuoc?.TenKichThuoc || "",
           orderedQuantity: ct.SoLuong,
@@ -483,7 +492,7 @@ export default function CreateGoodsReceiptForm({
                     purchaseOrderItemId: ct.MaCTSP,
                     productId: ct.MaCTSP,
                     productName: ct.ChiTietSanPham?.SanPham?.TenSP || ct.TenSP || "",
-                    selectedColor: ct.ChiTietSanPham?.Mau?.MaHex ? `#${ct.ChiTietSanPham.Mau.MaHex}` : (ct.Mau?.MaHex ? `#${ct.Mau.MaHex}` : ""),
+                    selectedColor: normalizeHexColor(ct.ChiTietSanPham?.Mau?.MaHex || ct.Mau?.MaHex),
                     colorName: ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
                     selectedSize: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ct.KichThuoc?.TenKichThuoc || "",
                     orderedQuantity: ct.SoLuong,
@@ -531,7 +540,6 @@ export default function CreateGoodsReceiptForm({
                           <TableHead>Đặt hàng</TableHead>
                           <TableHead>Nhận thực tế</TableHead>
                           <TableHead>Thành tiền</TableHead>
-                          <TableHead>Ghi chú</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -545,7 +553,10 @@ export default function CreateGoodsReceiptForm({
                                 <div className="flex items-center gap-2">
                                   <div
                                     className="w-4 h-4 rounded border"
-                                    style={{ backgroundColor: item.selectedColor }}
+                                    style={{ 
+                                      backgroundColor: item.selectedColor || undefined,
+                                      borderColor: item.selectedColor ? '#e5e7eb' : '#d1d5db'
+                                    }}
                                   />
                                   <span>{item.colorName}</span>
                                 </div>
@@ -575,7 +586,7 @@ export default function CreateGoodsReceiptForm({
                             <TableCell className="font-medium">
                               {formatVietnameseCurrency(item.receivedQuantity * item.unitPrice)}
                             </TableCell>
-                            <TableCell>
+                            {/* <TableCell>
                               <Input
                                 value={item.notes || ""}
                                 onChange={(e) =>
@@ -584,7 +595,7 @@ export default function CreateGoodsReceiptForm({
                                 placeholder="Ghi chú..."
                                 className="w-32 focus:outline-none"
                               />
-                            </TableCell>
+                            </TableCell> */}
                           </TableRow>
                         ))}
                       </TableBody>
@@ -682,7 +693,10 @@ export default function CreateGoodsReceiptForm({
                                     <div className="flex items-center gap-2">
                                       <div
                                         className="w-3 h-3 rounded border"
-                                        style={{ backgroundColor: item.selectedColor }}
+                                        style={{ 
+                                          backgroundColor: item.selectedColor || undefined,
+                                          borderColor: item.selectedColor ? '#e5e7eb' : '#d1d5db'
+                                        }}
                                       />
                                       <span className="text-sm">{item.colorName || item.selectedColor}</span>
                                     </div>
@@ -740,7 +754,7 @@ export default function CreateGoodsReceiptForm({
       </div>
 
       {/* Notes */}
-      <div>
+      {/* <div>
         <Label htmlFor="grNotes">Ghi chú nhập kho</Label>
         <Textarea
           id="grNotes"
@@ -749,7 +763,7 @@ export default function CreateGoodsReceiptForm({
           placeholder="Ghi chú về tình trạng hàng nhận, vấn đề phát sinh..."
           rows={3}
         />
-      </div>
+      </div> */}
 
       {/* Error Summary */}
       {inputMethod === "excel" && excelValidationErrors.length > 0 && (

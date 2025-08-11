@@ -26,6 +26,21 @@ import {
 } from "../../../components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 
+// Ensure background color is a valid CSS color (fix cases like '##FF0000' or 'FF0000')
+function normalizeDisplayColor(input?: string): string {
+  if (!input) return "";
+  const trimmed = String(input).trim();
+  if (!trimmed) return "";
+  // If looks like hex (with or without #), coerce to single-# 6-hex format
+  const hexMatch = trimmed.match(/^#?[0-9a-fA-F]{6}$/);
+  if (hexMatch) {
+    const withoutHashes = trimmed.replace(/^#+/, "");
+    return `#${withoutHashes}`;
+  }
+  // Otherwise return original string (handles rgb(), hsl(), named css colors)
+  return trimmed.replace(/^##+/, "#");
+}
+
 interface GoodsReceiptItem {
   purchaseOrderItemId: string;
   productId: string;
@@ -134,7 +149,9 @@ export default function GoodsReceiptTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                goodsReceipts.map((gr) => (
+                goodsReceipts
+                  .sort((a, b) => new Date(b.receiptDate).getTime() - new Date(a.receiptDate).getTime())
+                  .map((gr) => (
                   <TableRow key={gr.id}>
                     <TableCell className="font-medium">{gr.id}</TableCell>
                     <TableCell>
@@ -162,9 +179,6 @@ export default function GoodsReceiptTable({
                           onClick={() => handleViewDetails(gr)}
                         >
                           <Eye className="h-3 w-3" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Download className="h-3 w-3" />
                         </Button>
                       </div>
                     </TableCell>
@@ -215,7 +229,13 @@ export default function GoodsReceiptTable({
                         <TableCell>
                           {item.selectedColor && (
                             <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 rounded border" style={{ backgroundColor: item.selectedColor }} />
+                              <div
+                                className="w-4 h-4 rounded border"
+                                style={{ 
+                                  backgroundColor: normalizeDisplayColor(item.selectedColor) || undefined,
+                                  borderColor: item.selectedColor ? '#e5e7eb' : '#d1d5db'
+                                }}
+                              />
                               <span>{item.colorName}</span>
                             </div>
                           )}
