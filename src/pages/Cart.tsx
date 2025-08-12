@@ -50,7 +50,7 @@ export default function Cart() {
         name: item.sanPham?.tenSP || "Tên SP",
         price: donGia,
         originalPrice: undefined,
-        image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=600&fit=crop",
+        image: item.anhSanPham,
         rating: 4.5,
         reviews: 0,
         discount: 0,

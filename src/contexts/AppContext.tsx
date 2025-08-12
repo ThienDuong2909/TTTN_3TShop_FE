@@ -235,6 +235,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   // Persist user to localStorage
   useEffect(() => {
     if (state.user) {
+      console.log("Persisting user to localStorage:", state.user);
       localStorage.setItem("fashionhub-user", JSON.stringify(state.user));
     } else {
       localStorage.removeItem("fashionhub-user");

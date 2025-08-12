@@ -89,7 +89,7 @@ export default function Login() {
         apiUser?.MaTK ||
         apiUser?.TaiKhoan?.MaTK,
       email: apiUser?.TaiKhoan?.Email || apiUser?.Email || apiUser?.TenKH,
-      name: apiUser?.TenKH || apiUser?.TaiKhoan?.Email || apiUser?.Email,
+      name: apiUser?.TenKH || apiUser?.TenNV || apiUser?.TaiKhoan?.Email || apiUser?.Email,
       role,
       permissions,
       avatar: apiUser?.avatar || undefined,

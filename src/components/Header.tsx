@@ -225,7 +225,7 @@ function Header() {
                         <Link to="/orders">Đơn hàng của tôi</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem>
-                        <Link to="/wishlist">Danh sách yêu thích</Link>
+                        <Link to="/account-settings">Cài đặt tài khoản</Link>
                       </DropdownMenuItem>
                     </>
                   )}
