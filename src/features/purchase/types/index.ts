@@ -4,6 +4,7 @@ export interface PurchaseOrderItem {
   MaCTSP: number | ""; // Product detail ID instead of separate color and size
   colorId?: number;
   colorName?: string;
+  colorHex?: string; // Thêm MaHex của màu
   sizeId?: number;
   sizeName?: string;
   quantity: number;

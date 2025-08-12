@@ -20,16 +20,34 @@ import { updatePurchaseOrder as updatePurchaseOrderAPI } from "../../../services
 
 // Transform API data to match our interface
 const transformPurchaseOrderFromAPI = (apiPO: any): PurchaseOrder => {
-  const items = (apiPO.CT_PhieuDatHangNCCs || []).map((item: any) => ({
-    MaSP: item.ChiTietSanPham?.MaSP || item.MaSP,
-    productName: item.ChiTietSanPham?.SanPham?.TenSP || item.productName || "Sản phẩm không tên",
-    MaCTSP: item.MaCTSP || item.ChiTietSanPham?.MaCTSP || "",
-    colorName: item.ChiTietSanPham?.Mau?.TenMau || item.colorName || "",
-    sizeName: item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || item.sizeName || "",
-    quantity: item.SoLuong || 0,
-    unitPrice: parseFloat(item.DonGia) || 0,
-    totalPrice: (item.SoLuong || 0) * (parseFloat(item.DonGia) || 0),
-  }));
+  console.log('transformPurchaseOrderFromAPI - apiPO:', apiPO); // Debug log
+  
+  const items = (apiPO.CT_PhieuDatHangNCCs || []).map((item: any, index: number) => {
+    console.log(`transformPurchaseOrderFromAPI - item ${index}:`, item); // Debug log
+    
+    // Debug: Check the structure of ChiTietSanPham
+    if (item.ChiTietSanPham) {
+      console.log(`  ChiTietSanPham structure:`, {
+        Mau: item.ChiTietSanPham.Mau,
+        KichThuoc: item.ChiTietSanPham.KichThuoc,
+        SanPham: item.ChiTietSanPham.SanPham
+      });
+    }
+    
+    const transformedItem = {
+      MaSP: item.ChiTietSanPham?.MaSP || item.MaSP,
+      productName: item.ChiTietSanPham?.SanPham?.TenSP || item.productName || "Sản phẩm không tên",
+      MaCTSP: item.MaCTSP || item.ChiTietSanPham?.MaCTSP || "",
+      colorName: item.ChiTietSanPham?.Mau?.TenMau || item.colorName || "",
+      colorHex: item.ChiTietSanPham?.Mau?.MaHex || item.colorHex || "",
+      sizeName: item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || item.sizeName || "",
+      quantity: item.SoLuong || 0,
+      unitPrice: parseFloat(item.DonGia) || 0,
+      totalPrice: (item.SoLuong || 0) * (parseFloat(item.DonGia) || 0),
+    };
+    console.log(`transformPurchaseOrderFromAPI - transformedItem ${index}:`, transformedItem); // Debug log
+    return transformedItem;
+  });
   
   // Calculate total amount from items
   const totalAmount = items.reduce((sum: number, item: any) => sum + item.totalPrice, 0);
@@ -135,6 +153,7 @@ export const usePurchaseOrderData = (currentUserId: string) => {
     
     try {
       const response = await getPurchaseOrders();
+      console.log('loadPurchaseOrders - raw response:', response); // Debug log
       
       // Handle API response structure: {success, message, data}
       let orders: any[] = [];
@@ -148,7 +167,22 @@ export const usePurchaseOrderData = (currentUserId: string) => {
         orders = responseObj.orders || responseObj.items || responseObj.result || [];
       }
       
+      console.log('loadPurchaseOrders - extracted orders:', orders); // Debug log
+      
       const transformedOrders = orders.map(transformPurchaseOrderFromAPI);
+      console.log('loadPurchaseOrders - transformed orders:', transformedOrders); // Debug log
+      
+      // Debug: Check if items have colorName and sizeName
+      transformedOrders.forEach((po, poIndex) => {
+        console.log(`PO ${poIndex} (${po.id}) items:`, po.items);
+        po.items.forEach((item, itemIndex) => {
+          console.log(`  Item ${itemIndex}: colorName="${item.colorName}", sizeName="${item.sizeName}"`);
+          // Also log the raw item data for debugging
+          console.log(`  Raw item data:`, item);
+        });
+      });
+      
+      // Set purchase orders
       setPurchaseOrders(transformedOrders);
       
       // Calculate stats
@@ -421,6 +455,11 @@ export const usePurchaseOrderData = (currentUserId: string) => {
       };
 
       const result = await updatePurchaseOrderAPI(poId, apiData);
+      
+      // Check if the API call was successful
+      if (!result || result.error) {
+        throw new Error(result?.error || "Cập nhật phiếu đặt hàng thất bại");
+      }
       
       toast.success("Thành công", {
         description: "Phiếu đặt hàng đã được cập nhật thành công"

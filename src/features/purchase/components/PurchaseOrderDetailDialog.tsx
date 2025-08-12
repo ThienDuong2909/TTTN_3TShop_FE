@@ -30,6 +30,8 @@ export default function PurchaseOrderDetailDialog({
   purchaseOrder,
 }: PurchaseOrderDetailDialogProps) {
   if (!purchaseOrder) return null;
+  
+  console.log('PurchaseOrderDetailDialog - purchaseOrder:', purchaseOrder); // Debug log
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
@@ -83,7 +85,6 @@ export default function PurchaseOrderDetailDialog({
           </div>
 
           <Separator />
-
           <div>
             <Label>Danh sách sản phẩm</Label>
             <Table>
@@ -97,27 +98,41 @@ export default function PurchaseOrderDetailDialog({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {purchaseOrder.items.map((item, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{item.productName}</TableCell>
-                    <TableCell>
-                      {item.MaMau && (
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-4 h-4 rounded border"
-                            
-                          />
-                          {item.MaKichThuoc}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>{formatPrice(item.unitPrice)}</TableCell>
-                    <TableCell className="font-medium">
-                      {formatPrice(item.totalPrice)}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {purchaseOrder.items.map((item, index) => {
+                  return (
+                    <TableRow key={index}>
+                      <TableCell>{item.productName}</TableCell>
+                                             <TableCell>
+                         {item.colorName || item.sizeName ? (
+                           <div className="flex items-center gap-2">
+                             {item.colorName && (
+                               <div className="flex items-center gap-1">
+                                 <div
+                                   className="w-4 h-4 rounded border"
+                                   style={{ 
+                                     backgroundColor: item.colorHex || undefined,
+                                     borderColor: item.colorHex ? '#e5e7eb' : '#d1d5db'
+                                   }}
+                                 />
+                                 <span>{item.colorName}</span>
+                               </div>
+                             )}
+                             {item.sizeName && (
+                               <span className="ml-2">{item.sizeName}</span>
+                             )}
+                           </div>
+                         ) : (
+                           <span className="text-gray-400">Chưa xác định</span>
+                         )}
+                       </TableCell>
+                      <TableCell>{item.quantity}</TableCell>
+                      <TableCell>{formatPrice(item.unitPrice)}</TableCell>
+                      <TableCell className="font-medium">
+                        {formatPrice(item.totalPrice)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
             <div className="text-right mt-4">
@@ -126,15 +141,6 @@ export default function PurchaseOrderDetailDialog({
               </div>
             </div>
           </div>
-
-          {purchaseOrder.notes && (
-            <div>
-              <Label>Ghi chú</Label>
-              <div className="bg-muted p-3 rounded">
-                {purchaseOrder.notes}
-              </div>
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>

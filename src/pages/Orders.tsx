@@ -28,7 +28,6 @@ import {
 import {
   Search,
   Check,
-  X,
   CheckCircle,
   XCircle,
   Clock,
@@ -698,13 +697,6 @@ export default function Orders() {
       setApprovingOrders(false);
       setShowApprovalModal(false);
     }
-  };
-
-  // Handle cancel order
-  const handleCancelOrder = (orderId: number, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent row click
-    setOrderToCancel(orderId);
-    setShowCancelModal(true);
   };
 
   const confirmCancelOrder = async () => {

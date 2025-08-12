@@ -2,9 +2,14 @@ import React, { useState } from "react";
 import { DataTable, Column } from "../components/ui/DataTable";
 import { Modal } from "../components/ui/Modal";
 import { toast, Toaster } from "sonner";
+import { usePermission } from "../components/PermissionGuard";
 
 
 const Departments = () => {
+  const { hasPermission } = usePermission();
+  const canCreate = hasPermission("toanquyen");
+  const canEdit = hasPermission("toanquyen");
+  const canToggle = hasPermission("toanquyen");
   const [departments, setDepartments] = useState<any[]>([]);
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,6 +54,10 @@ const Departments = () => {
 }, []);
 
 const handleAdd = () => {
+  if (!canCreate) {
+    toast.error("Bạn không có quyền thêm bộ phận");
+    return;
+  }
   setEditingDepartment(null);
   setFormData({
     name: "",
@@ -63,6 +72,10 @@ const handleAdd = () => {
 };
 
 const handleEdit = (department: any) => {
+  if (!canEdit) {
+    toast.error("Bạn không có quyền sửa bộ phận");
+    return;
+  }
   setEditingDepartment(department);
   setFormData({
     name: department.name || "",
@@ -79,6 +92,10 @@ const handleEdit = (department: any) => {
 const [confirmHideModal, setConfirmHideModal] = useState<{ open: boolean, department: any | null }>({ open: false, department: null });
 
 const handleToggleDepartment = (department: any) => {
+  if (!canToggle) {
+    toast.error("Bạn không có quyền cập nhật bộ phận");
+    return;
+  }
   setConfirmHideModal({ open: true, department });
 };
 
@@ -95,6 +112,11 @@ const confirmToggle = async () => {
       },
       body: JSON.stringify({ TrangThai: newStatus }),
     });
+    if (res.status === 401 || res.status === 403) {
+      toast.error("Bạn không có quyền cập nhật bộ phận");
+      setConfirmHideModal({ open: false, department: null });
+      return;
+    }
     const result = await res.json();
     if (result.success) {
       toast.success(newStatus === 0 ? 'Đã ẩn bộ phận thành công!' : 'Đã hiển thị bộ phận thành công!');
@@ -130,6 +152,10 @@ const handleSubmit = async (e: React.FormEvent) => {
   };
   try {
     if (editingDepartment) {
+      if (!canEdit) {
+        toast.error("Bạn không có quyền sửa bộ phận");
+        return;
+      }
       // Update department
       const res = await fetch(`http://localhost:8080/api/department/${editingDepartment.id}`, {
         method: 'PUT',
@@ -138,6 +164,10 @@ const handleSubmit = async (e: React.FormEvent) => {
         },
         body: JSON.stringify(payload),
       });
+      if (res.status === 401 || res.status === 403) {
+        toast.error("Bạn không có quyền sửa bộ phận");
+        return;
+      }
       const result = await res.json();
       if (result.success) {
           // Refresh data from API
@@ -155,6 +185,10 @@ const handleSubmit = async (e: React.FormEvent) => {
         }
       } else {
         // Add new department
+      if (!canCreate) {
+        toast.error("Bạn không có quyền thêm bộ phận");
+        return;
+      }
         const res = await fetch('http://localhost:8080/api/department', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json',
@@ -162,7 +196,11 @@ const handleSubmit = async (e: React.FormEvent) => {
           },
           body: JSON.stringify(payload),
         });
-        const result = await res.json();
+      if (res.status === 401 || res.status === 403) {
+        toast.error("Bạn không có quyền thêm bộ phận");
+        return;
+      }
+      const result = await res.json();
         if (result.success) {
           // Refresh data from API
           const resList = await fetch('http://localhost:8080/api/department');

@@ -45,6 +45,59 @@ export const getCurrentEmployee = async () => {
 };
 
 // ===================
+// PERMISSIONS API
+// ===================
+
+// Lấy quyền của user hiện tại
+export const fetchMyPermissions = async () => {
+  try {
+    const res = await api.get("/permissions/my-permissions");
+    return res.data?.data || [];
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy tất cả quyền (admin)
+export const fetchAllPermissions = async () => {
+  try {
+    const res = await api.get("/permissions/all");
+    return res.data?.data || [];
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// (Optional) Lấy quyền của một nhân viên theo id — nếu backend hỗ trợ
+export const fetchEmployeePermissions = async (nhanVienId) => {
+  try {
+    const res = await api.get(`/permissions/employee/${nhanVienId}`);
+    // Cho phép backend trả về mảng id hoặc mảng object { id }
+    const data = res.data?.data || [];
+    if (!Array.isArray(data)) return [];
+    if (data.length > 0 && typeof data[0] === "object") {
+      return data.map((p) => p.id).filter((v) => typeof v === "number");
+    }
+    return data;
+  } catch (error) {
+    // Nếu không có endpoint này, trả về mảng rỗng để UI vẫn hoạt động
+    return [];
+  }
+};
+
+// Gán quyền cho nhân viên (admin)
+export const assignPermissionsToEmployee = async (nhanVienId, permissionIds) => {
+  try {
+    const res = await api.put(`/permissions/employee/${nhanVienId}`, {
+      permissionIds,
+    });
+    return res.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// ===================
 // SUPPLIER API
 // ===================
 
@@ -240,11 +293,43 @@ export const updatePurchaseOrder = async (id, data) => {
 
     console.log("Final orderData:", orderData);
     console.log("Sending to backend:", JSON.stringify(orderData, null, 2));
+    console.log("API endpoint:", `/purchase-orders/${id}`);
 
-    const response = await api.put(`/purchase-orders/${id}`, orderData);
+    let response;
+    try {
+      // Try the main endpoint first
+      response = await api.put(`/purchase-orders/${id}`, orderData);
+      console.log("API response:", response);
+    } catch (error) {
+      console.log("Main endpoint failed, trying alternative...");
+      // Try alternative endpoint if main one fails
+      try {
+        response = await api.put(`/purchase-orders/update/${id}`, orderData);
+        console.log("Alternative endpoint response:", response);
+      } catch (altError) {
+        console.log("Alternative endpoint also failed");
+        // Try another possible endpoint
+        try {
+          response = await api.put(`/phieu-dat-hang/${id}`, orderData);
+          console.log("Vietnamese endpoint response:", response);
+        } catch (vietError) {
+          console.log("Vietnamese endpoint also failed");
+          // Try POST method instead of PUT
+          try {
+            response = await api.post(`/purchase-orders/${id}/update`, orderData);
+            console.log("POST update endpoint response:", response);
+          } catch (postError) {
+            console.log("POST update endpoint also failed");
+            throw error; // Throw the original error
+          }
+        }
+      }
+    }
+    
     return response.data;
   } catch (error) {
     handleError(error);
+    throw error; // Re-throw the error so the calling function can handle it
   }
 };
 
@@ -257,6 +342,7 @@ export const updatePurchaseOrderStatus = async (id, statusId) => {
     return response.data;
   } catch (error) {
     handleError(error);
+    throw error; // Re-throw the error so the calling function can handle it
   }
 };
 

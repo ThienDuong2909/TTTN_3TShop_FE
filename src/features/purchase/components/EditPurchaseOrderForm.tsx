@@ -65,6 +65,7 @@ export default function EditPurchaseOrderForm({
   // Validate form
   const [touched, setTouched] = useState<{[key: string]: boolean}>({});
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   
   const isFieldInvalid = (field: string, value: any) => {
     if (!touched[field]) return false;
@@ -95,10 +96,8 @@ export default function EditPurchaseOrderForm({
     switch (field) {
       case 'MaSP':
         return (!value || value.toString().trim() === "") ? "Vui lòng chọn sản phẩm" : "";
-      case 'colorId':
-        return (!value || value === undefined) ? "Vui lòng chọn màu sắc" : "";
-      case 'sizeId':
-        return (!value || value === undefined) ? "Vui lòng chọn kích thước" : "";
+      case 'MaCTSP':
+        return (value === "" || value === undefined || value === null || value === 0) ? "Vui lòng chọn màu và kích thước" : "";
       case 'quantity':
         return (!value || value <= 0) ? "Vui lòng nhập số lượng hợp lệ (lớn hơn 0)" : "";
       case 'unitPrice':
@@ -269,6 +268,9 @@ export default function EditPurchaseOrderForm({
         newItems[index].MaCTSP = "";
         newItems[index].colorName = "";
         newItems[index].sizeName = "";
+        // Also clear the color and size IDs
+        newItems[index].colorId = undefined;
+        newItems[index].sizeId = undefined;
         // Clear existing product details for this index first
         setItemProductDetails(prev => ({
           ...prev,
@@ -295,6 +297,9 @@ export default function EditPurchaseOrderForm({
       if (selectedDetail) {
         newItems[index].colorName = selectedDetail.Mau.TenMau;
         newItems[index].sizeName = selectedDetail.KichThuoc.TenKichThuoc;
+        // Also store the actual color and size IDs for API compatibility
+        newItems[index].colorId = selectedDetail.Mau.MaMau;
+        newItems[index].sizeId = selectedDetail.KichThuoc.MaKichThuoc;
       }
     }
 
@@ -306,6 +311,9 @@ export default function EditPurchaseOrderForm({
         newItems[index][field] = "";
         newItems[index].colorName = "";
         newItems[index].sizeName = "";
+        // Also clear the color and size IDs
+        newItems[index].colorId = undefined;
+        newItems[index].sizeId = undefined;
       }
     }
     setPOForm({ ...poForm, items: newItems });
@@ -340,8 +348,11 @@ export default function EditPurchaseOrderForm({
   };
 
   const handleSubmit = () => {
+    // Mark form as submitted
+    setHasSubmitted(true);
+    
     // Mark all fields as touched to show validation errors
-    setTouched({
+    const touchedFields = {
       supplierId: true,
       expectedDeliveryDate: true,
       ...poForm.items.reduce((acc, _, index) => ({
@@ -351,7 +362,8 @@ export default function EditPurchaseOrderForm({
         [`quantity_${index}`]: true,
         [`unitPrice_${index}`]: true,
       }), {})
-    });
+    };
+    setTouched(touchedFields);
 
     // Check if no products selected - this should show toast
     if (poForm.items.length === 0) {
@@ -374,6 +386,8 @@ export default function EditPurchaseOrderForm({
       newErrors[`MaCTSP_${index}`] = validateItemField(index, 'MaCTSP', item.MaCTSP);
       newErrors[`quantity_${index}`] = validateItemField(index, 'quantity', item.quantity);
       newErrors[`unitPrice_${index}`] = validateItemField(index, 'unitPrice', item.unitPrice);
+      
+
     });
 
     // Update errors state
@@ -392,6 +406,35 @@ export default function EditPurchaseOrderForm({
 
   return (
     <div className="space-y-6 relative">
+      {/* General Error Banner */}
+      {(() => {
+        // Check if there are any validation errors
+        const hasValidationErrors = Object.values(errors).some(error => error);
+        
+        if (hasValidationErrors) {
+          return (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    Thông tin không đầy đủ
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p>Vui lòng chọn màu và kích thước cho tất cả sản phẩm</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
         <div>
           <Label htmlFor="supplier">Nhà cung cấp *</Label>
@@ -650,16 +693,6 @@ export default function EditPurchaseOrderForm({
             </div>
           </div>
         )}
-      </div>
-      <div>
-        <Label htmlFor="notes">Ghi chú</Label>
-        <Textarea
-          id="notes"
-          value={poForm.notes}
-          onChange={(e) => setPOForm({ ...poForm, notes: e.target.value })}
-          placeholder="Ghi chú thêm về đơn đặt hàng..."
-          rows={3}
-        />
       </div>
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel} disabled={isLoading}>

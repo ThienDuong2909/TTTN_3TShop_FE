@@ -125,6 +125,7 @@ export function getRevenueReport(startDate: string, endDate: string): Promise<an
 export function cancelOrder(maKH: number, maDDH: number): Promise<any>;
 export function getCategoryById(id: number): Promise<Category>;
 
+
 export function getCustomerProfile(): Promise<{
   success: boolean;
   message: string;
@@ -205,3 +206,11 @@ export interface ChangePasswordResponse {
 // Function declarations
 export declare function getAccountInfo(): Promise<GetAccountInfoResponse>;
 export declare function changePassword(passwordData: ChangePasswordRequest): Promise<ChangePasswordResponse>;
+
+// Permissions functions
+export function fetchMyPermissions(): Promise<string[]>;
+export function fetchAllPermissions(): Promise<Array<{ id: number; Ten: string; TenHienThi: string; NgayTao?: string }>>;
+export function fetchEmployeePermissions(nhanVienId: number): Promise<number[]>;
+export function assignPermissionsToEmployee(nhanVienId: number, permissionIds: number[]): Promise<any>;
+
+

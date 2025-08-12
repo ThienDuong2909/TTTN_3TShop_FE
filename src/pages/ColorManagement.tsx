@@ -3,6 +3,7 @@ import { DataTable, Column } from "../components/ui/DataTable";
 import { Modal } from "../components/ui/Modal";
 import axios from "axios";
 import { toast, Toaster } from "sonner";
+import { usePermission } from "../components/PermissionGuard";
 
 interface Color {
   MaMau: number;
@@ -13,6 +14,9 @@ interface Color {
 }
 
 export const ColorManagement = () => {
+  const { hasPermission } = usePermission();
+  const canCreate = hasPermission("mausac.tao") || hasPermission("toanquyen");
+  const canEdit = hasPermission("mausac.sua") || hasPermission("toanquyen");
   const [colors, setColors] = useState<Color[]>([]);
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,12 +58,20 @@ export const ColorManagement = () => {
   }, []);
 
   const handleAdd = () => {
+    if (!canCreate) {
+      toast.error("Bạn không có quyền thêm màu sắc");
+      return;
+    }
     setEditingColor(null);
     setFormData({ TenMau: "", MaHex: "#FFFFFF", TrangThai: true });
     setIsModalOpen(true);
   };
 
   const handleEdit = (color: Color) => {
+    if (!canEdit) {
+      toast.error("Bạn không có quyền sửa màu sắc");
+      return;
+    }
     setEditingColor(color);
     setFormData({ TenMau: color.TenMau, MaHex: color.MaHex, TrangThai: color.TrangThai });
     setIsModalOpen(true);
@@ -84,6 +96,10 @@ export const ColorManagement = () => {
 
     try {
       if (editingColor) {
+        if (!canEdit) {
+          toast.error("Bạn không có quyền sửa màu sắc");
+          return;
+        }
         let response;
         response = await axios.put(`http://localhost:8080/api/colors/${editingColor.MaMau}`, payload);
         if (response && response.status === 200) {
@@ -92,6 +108,10 @@ export const ColorManagement = () => {
           toast.error("Lỗi khi cập nhật màu");
         }
       } else {
+        if (!canCreate) {
+          toast.error("Bạn không có quyền thêm màu sắc");
+          return;
+        }
         let response;
         response = await axios.post("http://localhost:8080/api/colors", payload);
         if (response && response.status === 201) {
@@ -102,8 +122,13 @@ export const ColorManagement = () => {
       }
       setIsModalOpen(false);
       fetchColors();
-    } catch (error) {
-      toast.error("Lỗi khi thêm/sửa màu");
+    } catch (error: any) {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        toast.error(editingColor ? "Bạn không có quyền sửa màu sắc" : "Bạn không có quyền thêm màu sắc");
+      } else {
+        toast.error("Lỗi khi thêm/sửa màu");
+      }
     }
   };
 
@@ -183,8 +208,8 @@ export const ColorManagement = () => {
           title="Quản lý màu sắc sản phẩm"
           columns={columns}
           data={filteredColors}
-          onAdd={handleAdd}
-          onEdit={handleEdit}
+          onAdd={canCreate ? handleAdd : undefined}
+          onEdit={canEdit ? handleEdit : undefined}
           addButtonText="Thêm màu sắc"
           searchPlaceholder="Tìm kiếm màu sắc..."
           filterComponent={

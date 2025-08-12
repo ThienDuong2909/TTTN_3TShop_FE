@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Plus, Search, RefreshCw } from "lucide-react";
 import AdminHeader from "../components/AdminHeader";
 import { Button } from "../components/ui/button";
@@ -15,11 +16,14 @@ import {
   useGoodsReceiptForm,
 } from "../features/goods-receipt";
 
-import React, { useState } from "react";
+import { useState } from "react";
+import { usePermission } from "../components/PermissionGuard";
 
 export default function GoodsReceipt() {
   const { state } = useApp();
   const navigate = useNavigate();
+  const { hasPermission } = usePermission();
+  const canCreate = hasPermission("nhaphang.tao") || hasPermission("toanquyen");
 
   // Thêm state resetKey để force remount ExcelImport
   const [resetKey, setResetKey] = useState(0);
@@ -27,7 +31,7 @@ export default function GoodsReceipt() {
   // Check permissions
   if (
     !state.user ||
-    (state.user.role !== "admin" &&
+    (state.user.role !== "Admin" &&
       !state.user.permissions?.includes("nhaphang.xem") &&
     !state.user.permissions?.includes("toanquyen"))
   ) {
@@ -82,6 +86,10 @@ export default function GoodsReceipt() {
     if (success) {
       setIsCreateGROpen(false);
       resetForm();
+    } else {
+      toast.error("Tạo phiếu nhập hàng thất bại", {
+        description: "Vui lòng kiểm tra dữ liệu và thử lại",
+      });
     }
   };
 
@@ -93,6 +101,10 @@ export default function GoodsReceipt() {
 
   // Handle dialog open/close
   const handleDialogOpenChange = (open: boolean) => {
+    if (open && !canCreate) {
+      toast.error("Bạn không có quyền tạo phiếu nhập hàng");
+      return;
+    }
     if (open) {
       setSelectedPO(null); // Đặt null trước để form con nhận đúng giá trị
       resetForm(); // Reset mọi state liên quan
@@ -141,7 +153,7 @@ export default function GoodsReceipt() {
                   open={isCreateGROpen}
                   onOpenChange={handleDialogOpenChange}
                   trigger={
-                    <Button className="bg-brand-600 hover:bg-brand-700">
+                    <Button className="bg-brand-600 hover:bg-brand-700" disabled={!(hasPermission("nhaphang.tao") || hasPermission("toanquyen"))}>
                       <Plus className="h-4 w-4 mr-2" />
                       Tạo phiếu nhập hàng
                     </Button>
