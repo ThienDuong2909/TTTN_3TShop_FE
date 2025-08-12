@@ -533,7 +533,9 @@ export const updateBatchOrderStatus = async (ordersData) => {
 // Lấy danh sách nhân viên giao hàng có sẵn
 export const getAvailableDeliveryStaff = async (address) => {
   try {
-    const response = await api.post("/employees/delivery/available", { diaChi: address });
+    const response = await api.post("/employees/delivery/available", {
+      diaChi: address,
+    });
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -543,7 +545,10 @@ export const getAvailableDeliveryStaff = async (address) => {
 // Cập nhật nhân viên giao hàng cho đơn hàng
 export const updateOrderDeliveryStaff = async (orderId, staffData) => {
   try {
-    const response = await api.put(`/orders/${orderId}/delivery-staff`, staffData);
+    const response = await api.put(
+      `/orders/${orderId}/delivery-staff`,
+      staffData
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -579,11 +584,11 @@ export const getAssignedOrders = async (params = {}) => {
   try {
     const { page = 1, limit = 10, status } = params;
     let url = `/orders/delivery/assigned?page=${page}&limit=${limit}`;
-    
+
     if (status) {
       url += `&status=${status}`;
     }
-    
+
     const response = await api.get(url);
     return response.data;
   } catch (error) {
@@ -910,7 +915,6 @@ export const cancelOrder = async (maKH, maDDH) => {
   }
 };
 
-
 export const getCategoryById = async (id) => {
   try {
     const response = await api.get(`/category/${id}`);
@@ -918,7 +922,7 @@ export const getCategoryById = async (id) => {
   } catch (error) {
     console.error("Lỗi khi lấy thông tin danh mục:", error);
     throw error;
-    }
+  }
 };
 
 // ===================
@@ -943,11 +947,11 @@ export const submitReview = async (reviewData) => {
 export const submitMultipleReviews = async (reviewList) => {
   try {
     const response = await api.post("/binh-luan", {
-      binhLuanList: reviewList.map(review => ({
+      binhLuanList: reviewList.map((review) => ({
         maCTDonDatHang: review.maCTDonDatHang,
         moTa: review.moTa,
         soSao: review.soSao,
-      }))
+      })),
     });
     return response.data;
   } catch (error) {
@@ -977,6 +981,65 @@ export const getReturnRequests = async () => {
     return response.data;
   } catch (error) {
     return handleError(error);
+  }
+};
 
+export const getCustomerProfile = async () => {
+  try {
+    const response = await api.get("/auth/profile");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Cập nhật thông tin profile khách hàng
+export const updateCustomerProfile = async (maKH, profileData) => {
+  try {
+    const response = await api.put(`/customers/profile/${maKH}`, profileData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Upload ảnh đại diện
+export const uploadAvatar = async (avatarData) => {
+  try {
+    const response = await api.put("/customers/upload-avatar", {
+      maKH: avatarData.maKH,
+      AnhDaiDien: avatarData.AnhDaiDien,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Upload avatar error:", error);
+    throw error;
+  }
+};
+
+// ===================
+// ACCOUNT SETTINGS API
+// ===================
+
+// Lấy thông tin tài khoản
+export const getAccountInfo = async () => {
+  try {
+    const response = await api.get("/auth/account");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Đổi mật khẩu
+export const changePassword = async (passwordData) => {
+  try {
+    const response = await api.post("/auth/change-password", {
+      matKhauCu: passwordData.matKhauCu,
+      matKhauMoi: passwordData.matKhauMoi,
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
   }
 };

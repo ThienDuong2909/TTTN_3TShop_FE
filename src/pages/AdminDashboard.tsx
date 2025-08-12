@@ -98,8 +98,8 @@ export default function AdminDashboard() {
     );
   }
 
-  const isAdmin = state.user.role === "admin";
-  const isStaff = state.user.role === "staff";
+  const isAdmin = state.user.role === "Admin";
+  const isStaff = state.user.role === "NhanVienCuaHang";
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {

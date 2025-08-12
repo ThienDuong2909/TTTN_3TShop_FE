@@ -48,11 +48,13 @@ import Colors from './pages/ColorManagement';
 import PermissionManagement from './pages/PermissionManagement';
 import ReturnManagement from './pages/ReturnManagement';
 import AdminLayout from './layouts/AdminLayout';
+import UserAccountLayout from './layouts/UserAccountLayout';
 import CategoryPage from './pages/CategoryPage';
 import NewProducts from "./pages/NewProducts";
 import BestSellerProducts from "./pages/BestSellerProducts";
 
 import DiscountProducts from './pages/DiscountProducts';
+import AccountSettings from './pages/AccountSettings';
 
 import TestPage from "./pages/TestPage";
 
@@ -67,6 +69,14 @@ const MainLayout = ({ children }) => (
     </main>
     <Footer />
   </div>
+);
+
+const UserAccountLayoutWrapper = ({ children }) => (
+  <MainLayout>
+    <UserAccountLayout>
+      {children}
+    </UserAccountLayout>
+  </MainLayout>
 );
 
 // Admin layout wrapper - removed inline AdminLayout as we now have a separate component
@@ -254,12 +264,20 @@ function App() {
 
           {/* Protected User Routes */}
           <Route path="/profile" element={
-            <MainLayout>
-              <ProtectedRoute requiredPermissions={['toanquyen']}>
-                <Profile />
+              <ProtectedRoute requiredPermissions={['thongtin.xem']}>
+                <UserAccountLayoutWrapper>
+                  <Profile />
+                </UserAccountLayoutWrapper>
               </ProtectedRoute>
-            </MainLayout>
           } />
+
+          <Route path="/account-settings" element={
+              <ProtectedRoute requiredPermissions={['thongtin.xem']}>
+                <UserAccountLayoutWrapper>
+                  <AccountSettings />
+                </UserAccountLayoutWrapper>
+              </ProtectedRoute>
+            } />
           <Route path="/cart" element={
             <MainLayout>
               <ProtectedRoute requiredPermissions={['giohang.xem']}>
@@ -276,18 +294,18 @@ function App() {
           } />
 
           <Route path="/orders" element={
-            <MainLayout>
-              <ProtectedRoute requiredPermissions={['donhang.xem_cua_minh']}>
+            <ProtectedRoute requiredPermissions={['donhang.xem_cua_minh']}>
+              <UserAccountLayoutWrapper>
                 <OrderManagement />
-              </ProtectedRoute>
-            </MainLayout>
-              } />
+              </UserAccountLayoutWrapper>
+            </ProtectedRoute>
+          } />
               <Route path="/orders/:id" element={
-            <MainLayout>
-              <ProtectedRoute requiredPermissions={['donhang.xem_cua_minh']}>
+            <ProtectedRoute requiredPermissions={['donhang.xem_cua_minh']}>
+              <UserAccountLayoutWrapper>
                 <OrderDetail />
-              </ProtectedRoute>
-            </MainLayout>
+              </UserAccountLayoutWrapper>
+            </ProtectedRoute>
           } />
           
           {/* 404 */}

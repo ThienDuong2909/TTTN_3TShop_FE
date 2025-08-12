@@ -237,7 +237,7 @@ export const ROUTE_PERMISSIONS = {
   '/admin/return-management': ['thongtin.xem', 'toanquyen'],
 
   // User routes
-  '/profile': ['toanquyen'],
+  '/profile': ['toanquyen', 'thongtin.xem'],
   '/cart': ['giohang.xem'],
   '/checkout': ['giohang.xem', 'donhang.tao'],
   '/orders': ['donhang.xem_cua_minh'],

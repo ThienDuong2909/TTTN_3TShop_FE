@@ -15,7 +15,7 @@ export interface Product {
   rating: number;
   reviews: number;
   totalSold: number;
-  discount?: number;
+  discount?: number | null;
   isNew?: boolean;
   isBestSeller?: boolean;
   category?: string;

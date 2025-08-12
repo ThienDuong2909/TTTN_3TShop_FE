@@ -125,9 +125,92 @@ export function getRevenueReport(startDate: string, endDate: string): Promise<an
 export function cancelOrder(maKH: number, maDDH: number): Promise<any>;
 export function getCategoryById(id: number): Promise<Category>;
 
+
+export function getCustomerProfile(): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    MaKH: number;
+    TenKH: string;
+    DiaChi: string;
+    SDT: string;
+    CCCD: string;
+    MaTK: number;
+    NgaySinh: string | null;
+    GioiTinh: string | null;
+    AnhDaiDien: string | null;
+  };
+}>;
+
+export function updateCustomerProfile(maKH: number, profileData: {
+  TenKH: string;
+  DiaChi: string;
+  SDT: string;
+  CCCD: string;
+  NgaySinh: string | null;
+  GioiTinh: string | null;
+}): Promise<any>;
+
+// Cập nhật interface trong api.d.ts
+export interface UploadAvatarRequest {
+  maKH: string | number; // ID của khách hàng
+  AnhDaiDien: string;     // URL của ảnh từ Cloudinary
+}
+
+export interface UploadAvatarResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    maKH: string | number;
+    AnhDaiDien: string;
+  };
+}
+
+// Cập nhật function signature
+export declare function uploadAvatar(avatarData: UploadAvatarRequest): Promise<UploadAvatarResponse>;
+
+
+
+
+// ===================
+// ACCOUNT SETTINGS TYPES
+// ===================
+// Cập nhật interface trong api.d.ts
+export interface VaiTro {
+  MaVaiTro: number;
+  TenVaiTro: string;
+}
+
+export interface AccountInfo {
+  MaTK: number;
+  Email: string;
+  VaiTro: VaiTro;
+}
+
+export interface GetAccountInfoResponse {
+  success: boolean;
+  message: string;
+  data: AccountInfo;
+}
+
+export interface ChangePasswordRequest {
+  matKhauCu: string;
+  matKhauMoi: string;
+}
+
+export interface ChangePasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+// Function declarations
+export declare function getAccountInfo(): Promise<GetAccountInfoResponse>;
+export declare function changePassword(passwordData: ChangePasswordRequest): Promise<ChangePasswordResponse>;
+
 // Permissions functions
 export function fetchMyPermissions(): Promise<string[]>;
 export function fetchAllPermissions(): Promise<Array<{ id: number; Ten: string; TenHienThi: string; NgayTao?: string }>>;
 export function fetchEmployeePermissions(nhanVienId: number): Promise<number[]>;
 export function assignPermissionsToEmployee(nhanVienId: number, permissionIds: number[]): Promise<any>;
+
 
