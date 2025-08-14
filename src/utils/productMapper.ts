@@ -9,6 +9,8 @@ export const mapSanPhamFromApi = (sanPham: any) => {
   const anhChinh = sanPham.AnhSanPhams?.find((anh: any) => anh.AnhChinh === true);
   const fallbackImage = "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=600&fit=crop";
   const image = anhChinh?.DuongDan || fallbackImage;
+  console.log("TenSP for product:", sanPham.TenSP);
+  console.log("avgRate product from API:", sanPham.BinhLuan.avgRate);
 
   return {
     id: sanPham.MaSP,
@@ -17,8 +19,8 @@ export const mapSanPhamFromApi = (sanPham: any) => {
     originalPrice: giam > 0 ? giaGoc : undefined, // chỉ hiển thị nếu có giảm giá
     discount: giam > 0 ? giam : undefined,
     image,
-    rating: 4.5,
-    reviews: 100,
+    rating: sanPham.BinhLuan.avgRate,
+    reviews: sanPham.BinhLuan.luotBinhLuan,
     isNew: false,
      isBestSeller: !!sanPham.totalSold, // đánh dấu là bestseller nếu có totalSold
     totalSold: sanPham.totalSold ?? 0,
@@ -71,8 +73,8 @@ export const mapProductDetailFromApi = (apiData: any)=> {
     discount: giam > 0 ? giam : undefined,
     image,
     images,
-    rating: 4.5,
-    reviews: 123,
+    rating:  apiData.BinhLuan.avgRate,
+    reviews:  apiData.BinhLuan.luotBinhLuan,
     isNew: true,
     isBestSeller: false,
     category: apiData.MaLoaiSP.toString(),

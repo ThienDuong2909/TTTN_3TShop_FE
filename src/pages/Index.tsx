@@ -77,16 +77,6 @@ export default function Index() {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const productsFromApi = await getAllProducts();
-        const mappedProducts = productsFromApi.map(mapSanPhamFromApi);
-        setFeaturedProducts(mappedProducts);
-      } catch (error) {
-        console.error("Lỗi khi lấy sản phẩm:", error);
-      }
-    };
-
     const fetchCategories = async () => {
       try {
         setCategoriesLoading(true);
@@ -107,8 +97,6 @@ export default function Index() {
         setCategoriesLoading(false);
       }
     };
-
-    fetchData();
     fetchCategories();
   }, []);
 
@@ -120,6 +108,7 @@ export default function Index() {
       try {
         setBestSellerLoading(true);
         const products = await getBestSellerProducts();
+        console.log("Best seller products from API:", products);
         const mapped = products.map(mapSanPhamFromApi);
         setBestSellerProducts(mapped);
       } catch (error) {

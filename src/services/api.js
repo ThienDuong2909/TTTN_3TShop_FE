@@ -86,7 +86,10 @@ export const fetchEmployeePermissions = async (nhanVienId) => {
 };
 
 // Gán quyền cho nhân viên (admin)
-export const assignPermissionsToEmployee = async (nhanVienId, permissionIds) => {
+export const assignPermissionsToEmployee = async (
+  nhanVienId,
+  permissionIds
+) => {
   try {
     const res = await api.put(`/permissions/employee/${nhanVienId}`, {
       permissionIds,
@@ -316,7 +319,10 @@ export const updatePurchaseOrder = async (id, data) => {
           console.log("Vietnamese endpoint also failed");
           // Try POST method instead of PUT
           try {
-            response = await api.post(`/purchase-orders/${id}/update`, orderData);
+            response = await api.post(
+              `/purchase-orders/${id}/update`,
+              orderData
+            );
             console.log("POST update endpoint response:", response);
           } catch (postError) {
             console.log("POST update endpoint also failed");
@@ -325,7 +331,7 @@ export const updatePurchaseOrder = async (id, data) => {
         }
       }
     }
-    
+
     return response.data;
   } catch (error) {
     handleError(error);
