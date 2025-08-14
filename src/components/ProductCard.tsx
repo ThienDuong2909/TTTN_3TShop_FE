@@ -43,6 +43,7 @@ export function ProductCard({
   titleClassName,
 }: ProductCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  // console.log("Rendering ProductCard for:", product);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
