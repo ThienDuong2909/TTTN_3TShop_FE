@@ -196,7 +196,10 @@ export default function CreateGoodsReceiptForm({
   const calculateTotalReceived = () => {
     // Tính tổng từ TẤT CẢ items, không lọc bỏ lỗi validation
     return (grForm.items || []).reduce(
-      (sum, item) => sum + item.receivedQuantity * item.unitPrice,
+      (sum, item) => {
+        const quantity = typeof item.receivedQuantity === 'number' ? item.receivedQuantity : 0;
+        return sum + quantity * item.unitPrice;
+      },
       0
     );
   };
@@ -241,7 +244,10 @@ export default function CreateGoodsReceiptForm({
     }
     // Nếu nhập tay, chỉ lấy các item có receivedQuantity > 0
     if (inputMethod === "manual") {
-      return grForm.items.filter(item => item.receivedQuantity > 0);
+      return grForm.items.filter(item => {
+        const quantity = typeof item.receivedQuantity === 'number' ? item.receivedQuantity : 0;
+        return quantity > 0;
+      });
     }
     // Nếu không có lỗi hoặc không xác định, trả về tất cả items
     return grForm.items;
@@ -379,7 +385,8 @@ export default function CreateGoodsReceiptForm({
     // Tổng số đã nhập cho sản phẩm này trong form (trừ dòng hiện tại)
     const totalEnteredOtherRows = grForm.items.reduce((sum, it, idx) => {
       if (idx !== index && String(it.purchaseOrderItemId) === String(item.purchaseOrderItemId)) {
-        return sum + (it.receivedQuantity || 0);
+        const quantity = typeof it.receivedQuantity === 'number' ? it.receivedQuantity : 0;
+        return sum + quantity;
       }
       return sum;
     }, 0);
@@ -571,8 +578,18 @@ export default function CreateGoodsReceiptForm({
                                 type="number"
                                 value={item.receivedQuantity}
                                 onChange={(e) => {
-                                  const val = parseInt(e.target.value) || 0;
-                                  handleReceivedQuantityChange(index, val);
+                                  const value = e.target.value;
+                                  if (value === "") {
+                                    updateGRItem(index, 'receivedQuantity', "");
+                                  } else {
+                                    const val = parseInt(value);
+                                    if (!isNaN(val) && val >= 1) {
+                                      handleReceivedQuantityChange(index, val);
+                                    } else {
+                                      // Keep the string value if it's not a valid number
+                                      updateGRItem(index, 'receivedQuantity', value);
+                                    }
+                                  }
                                 }}
                                 onBlur={() => setTouched(t => ({...t, [`receivedQuantity_${index}`]: true}))}
                                 min="1"
@@ -584,7 +601,7 @@ export default function CreateGoodsReceiptForm({
                               )}
                             </TableCell>
                             <TableCell className="font-medium">
-                              {formatVietnameseCurrency(item.receivedQuantity * item.unitPrice)}
+                              {formatVietnameseCurrency((typeof item.receivedQuantity === 'number' ? item.receivedQuantity : 0) * item.unitPrice)}
                             </TableCell>
                             {/* <TableCell>
                               <Input
@@ -711,7 +728,8 @@ export default function CreateGoodsReceiptForm({
                                 </TableCell>
                                 <TableCell>
                                   {(() => {
-                                    const formattedPrice = formatVietnameseCurrency(item.unitPrice);
+                                    // Hiển thị đơn giá với dấu chấm ngăn cách phần nghìn
+                                    const formattedPrice = item.unitPrice.toLocaleString('vi-VN');
                                     console.log(`Displaying unitPrice for ${item.productName}:`, {
                                       rawValue: item.unitPrice,
                                       formattedValue: formattedPrice,
@@ -722,7 +740,8 @@ export default function CreateGoodsReceiptForm({
                                 </TableCell>
                                 <TableCell className="font-medium">
                                   {(() => {
-                                    const total = item.receivedQuantity * item.unitPrice;
+                                    const quantity = typeof item.receivedQuantity === 'number' ? item.receivedQuantity : 0;
+                                    const total = quantity * item.unitPrice;
                                     const formattedTotal = formatVietnameseCurrency(total);
                                     console.log(`Displaying total for ${item.productName}:`, {
                                       receivedQuantity: item.receivedQuantity,
