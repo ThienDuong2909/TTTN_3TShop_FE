@@ -92,9 +92,23 @@ export default function CreatePurchaseOrderForm({
       case 'sizeId':
         return (!value || value === undefined) ? "Vui lòng chọn kích thước" : "";
       case 'quantity':
-        return (!value || value <= 0) ? "Vui lòng nhập số lượng hợp lệ (lớn hơn 0)" : "";
+        if (!value || value === "" || value <= 0) {
+          return "Vui lòng nhập số lượng hợp lệ (lớn hơn 0)";
+        }
+        return "";
       case 'unitPrice':
-        return (!value || value <= 0) ? "Vui lòng nhập đơn giá hợp lệ (lớn hơn 0)" : "";
+        if (!value || value === "" || value <= 0) {
+          return "Vui lòng nhập đơn giá hợp lệ (lớn hơn 0)";
+        }
+        // Kiểm tra nếu là chuỗi, chuyển thành số để validate
+        if (typeof value === 'string') {
+          const cleanValue = value.replace(/\./g, '');
+          const numValue = parseInt(cleanValue);
+          if (isNaN(numValue) || numValue <= 0) {
+            return "Vui lòng nhập đơn giá hợp lệ (lớn hơn 0)";
+          }
+        }
+        return "";
       default:
         return "";
     }
@@ -371,7 +385,9 @@ export default function CreatePurchaseOrderForm({
 
   const calculateTotal = () => {
     return poForm.items.reduce((total, item) => {
-      return total + (item.quantity * item.unitPrice);
+      const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
+      const unitPrice = typeof item.unitPrice === 'number' ? item.unitPrice : 0;
+      return total + (quantity * unitPrice);
     }, 0);
   };
 
@@ -736,15 +752,18 @@ export default function CreatePurchaseOrderForm({
                       <Input
                         key={`quantity-${index}`}
                         type="number"
-                        value={item.quantity || ""}
+                        value={item.quantity === 0 ? "" : item.quantity || ""}
                         onChange={(e) => {
                           const value = e.target.value;
                           if (value === "") {
-                            updatePOItem(index, "quantity", 1);
+                            updatePOItem(index, "quantity", "");
                           } else {
                             const numValue = parseInt(value);
                             if (!isNaN(numValue) && numValue >= 1) {
                               updatePOItem(index, "quantity", numValue);
+                            } else {
+                              // Keep the string value if it's not a valid number
+                              updatePOItem(index, "quantity", value);
                             }
                           }
                         }}
@@ -761,20 +780,24 @@ export default function CreatePurchaseOrderForm({
                       <Label>Đơn giá</Label>
                       <Input
                         key={`price-${index}`}
-                        type="number"
-                        value={item.unitPrice === 0 ? "" : item.unitPrice || ""}
+                        type="text"
+                        value={item.unitPrice === 0 ? "" : item.unitPrice.toLocaleString('vi-VN') || ""}
                         onChange={(e) => {
                           const value = e.target.value;
                           if (value === "") {
                             updatePOItem(index, "unitPrice", 0);
                           } else {
-                            const numValue = parseInt(value);
+                            // Loại bỏ dấu chấm và chuyển thành số
+                            const cleanValue = value.replace(/\./g, '');
+                            const numValue = parseInt(cleanValue);
                             if (!isNaN(numValue) && numValue >= 0) {
                               updatePOItem(index, "unitPrice", numValue);
+                            } else {
+                              // Giữ nguyên giá trị string nếu không phải số hợp lệ
+                              updatePOItem(index, "unitPrice", value);
                             }
                           }
                         }}
-                        min="0"
                         placeholder="Nhập đơn giá"
                         className={clsx('focus:outline-none', isFieldInvalid(`unitPrice_${index}`, item.unitPrice) && 'border-red-500')}
                         onBlur={() => setTouched(t => ({...t, [`unitPrice_${index}`]: true}))}
@@ -785,7 +808,7 @@ export default function CreatePurchaseOrderForm({
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="text-sm font-medium">
-                        {formatPrice(item.quantity * item.unitPrice)}
+                        {formatPrice((typeof item.quantity === 'number' ? item.quantity : 0) * (typeof item.unitPrice === 'number' ? item.unitPrice : 0))}
                       </div>
                       <Button
                         variant="outline"
