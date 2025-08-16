@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Separator } from "./ui/separator";
 import { toast } from "sonner";
-// @ts-ignore
-import api from "../services/fetch";
+import { getInvoiceDetail } from "../services/api";
 
 interface InvoiceViewProps {
   isOpen: boolean;
@@ -73,25 +72,35 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch invoice data when modal opens
-  useEffect(() => {
-    if (isOpen && invoiceNumber) {
-      fetchInvoiceDetail();
-    }
-  }, [isOpen, invoiceNumber]);
-
-  const fetchInvoiceDetail = async () => {
+  const fetchInvoiceDetail = useCallback(async () => {
     if (!invoiceNumber) return;
 
     try {
       setIsLoading(true);
       setError(null);
 
-      const response = await api.get(`/invoices/detail/${invoiceNumber}`);
-      const result = response.data;
+      const result = await getInvoiceDetail(invoiceNumber);
+      console.log("API result:", result); // Debug log
 
       if (result.success && result.data) {
+        console.log("Setting invoice data:", result.data); // Debug log
         setInvoiceData(result.data);
+      } else if (result && !result.success && result.data) {
+        // Try fallback: sometimes API returns data even when success is false
+        console.log(
+          "Fallback: setting invoice data from result.data:",
+          result.data
+        );
+        setInvoiceData(result.data);
+      } else if (
+        result &&
+        typeof result === "object" &&
+        !result.success &&
+        !result.error
+      ) {
+        // Try fallback: result might be the data itself
+        console.log("Fallback: result might be data itself:", result);
+        setInvoiceData(result);
       } else {
         throw new Error(result.message || "Không tìm thấy thông tin hóa đơn");
       }
@@ -102,21 +111,30 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [invoiceNumber]);
+
+  // Fetch invoice data when modal opens
+  useEffect(() => {
+    if (isOpen && invoiceNumber) {
+      console.log("Modal opened with invoice number:", invoiceNumber); // Debug log
+      fetchInvoiceDetail();
+    }
+  }, [isOpen, invoiceNumber, fetchInvoiceDetail]);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setInvoiceData(null);
+      setError(null);
+      setIsLoading(false);
+    }
+  }, [isOpen]);
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
     }).format(amount);
   };
-
-  // const formatDate = (dateString: string) => {
-  //   return new Date(dateString).toLocaleDateString("vi-VN", {
-  //     day: "2-digit",
-  //     month: "2-digit",
-  //     year: "numeric",
-  //   });
-  // };
 
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString("vi-VN", {
@@ -529,6 +547,9 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="sr-only">Đang tải hóa đơn</DialogTitle>
+          </DialogHeader>
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#825B32] mx-auto"></div>
@@ -547,6 +568,9 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="sr-only">Lỗi tải hóa đơn</DialogTitle>
+          </DialogHeader>
           <div className="text-center py-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Có lỗi xảy ra
@@ -571,10 +595,24 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
   }
 
   // No data state
-  if (!invoiceData) {
+  if (
+    !invoiceData ||
+    !invoiceData.ThongTinHoaDon ||
+    !invoiceData.ThongTinHoaDon.SoHD
+  ) {
+    console.log("No invoice data, current state:", {
+      invoiceData,
+      isLoading,
+      error,
+    }); // Debug log
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="sr-only">
+              Không tìm thấy hóa đơn
+            </DialogTitle>
+          </DialogHeader>
           <div className="text-center py-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Không tìm thấy hóa đơn
@@ -588,6 +626,8 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
       </Dialog>
     );
   }
+
+  console.log("Rendering invoice with data:", invoiceData); // Debug log
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

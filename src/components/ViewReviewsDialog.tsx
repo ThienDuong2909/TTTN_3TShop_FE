@@ -11,7 +11,6 @@ import dayjs from "dayjs";
 
 interface ReviewItem {
   MaBL: number;
-  MaCTDDH: number;
   MoTa: string;
   SoSao: number;
   NgayBinhLuan: string;
@@ -19,34 +18,10 @@ interface ReviewItem {
     MaKH: number;
     TenKH: string;
   };
-  SanPham: {
-    MaSP: number;
-    TenSP: string;
-    ChiTiet: {
-      MaCTSP: number;
-      KichThuoc: {
-        MaKichThuoc: number;
-        TenKichThuoc: string;
-      };
-      MauSac: {
-        MaMau: number;
-        TenMau: string;
-        MaHex: string;
-      };
-    };
-    HinhAnh: {
-      MaAnh: number;
-      TenFile: string;
-      DuongDan: string;
-      AnhChinh: boolean;
-      ThuTu: number;
-    };
-  };
-  ThongTinDonHang: {
-    SoLuong: number;
-    DonGia: number;
-    ThanhTien: number;
-  };
+  TenSP: string;
+  AnhSP: string;
+  KichThuoc: string;
+  MauSac: string;
 }
 
 interface ViewReviewsDialogProps {
@@ -72,6 +47,8 @@ export const ViewReviewsDialog: React.FC<ViewReviewsDialogProps> = ({
       />
     ));
   };
+
+  console.log("Review: ", reviews);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -153,32 +130,22 @@ export const ViewReviewsDialog: React.FC<ViewReviewsDialogProps> = ({
                   <div className="flex items-start gap-4 mb-4">
                     <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                       <img
-                        src={review.SanPham.HinhAnh.DuongDan}
-                        alt={review.SanPham.TenSP}
+                        src={review.AnhSP}
+                        alt={review.TenSP}
                         className="object-cover w-full h-full"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-gray-900 mb-2">
-                        {review.SanPham.TenSP}
+                        {review.TenSP}
                       </h4>
                       <div className="flex items-center gap-2 mb-2">
                         <Badge variant="secondary" className="text-xs">
-                          {review.SanPham.ChiTiet.MauSac.TenMau}
+                          {review.MauSac}
                         </Badge>
                         <Badge variant="secondary" className="text-xs">
-                          {review.SanPham.ChiTiet.KichThuoc.TenKichThuoc}
+                          {review.KichThuoc}
                         </Badge>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        <span>SL: {review.ThongTinDonHang.SoLuong}</span>
-                        <span className="mx-2">•</span>
-                        <span>
-                          {review.ThongTinDonHang.DonGia.toLocaleString(
-                            "vi-VN"
-                          )}
-                          ₫
-                        </span>
                       </div>
                     </div>
                     <div className="text-right">

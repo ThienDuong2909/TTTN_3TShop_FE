@@ -1,6 +1,12 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { Toaster } from "sonner";
+import {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from "../services/api";
 
 type Category = {
   MaLoaiSP: number;
@@ -62,25 +68,11 @@ export default function CategoriesManagement() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/category",
-          {
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("token")}`
-            }
-          }
-        );
-        const result = await res.json();
-        console.log("Fetched categories:", result.data);
-        if (result && result.success && Array.isArray(result.data)) {
-          console.log("Fetched categories:", result.data);
-          setCategories(result.data);
-        } else if (Array.isArray(result)) {
-          setCategories(result);
-        } else {
-          setCategories([]);
-        }
+        const result = await getCategories();
+        console.log("Fetched categories:", result);
+        setCategories(result);
       } catch (err) {
+        console.error("Error fetching categories:", err);
         setCategories([]);
       }
     };
@@ -232,30 +224,17 @@ export default function CategoriesManagement() {
         return;
       }
       try {
-        const res = await fetch(
-          `http://localhost:8080/api/category/${categoryToDelete.MaLoaiSP}`,
-          {
-            method: "DELETE",
-            headers: {
-              "Authorization": `Bearer ${localStorage.getItem("token")}`
-            }
-          }
-        );
-        if (res.status === 401 || res.status === 403) {
-          toast.error("Bạn không có quyền xóa danh mục");
-          setCategoryToDelete(null);
-          setDeleteConfirmOpen(false);
-          return;
-        }
-        if (res.ok) {
+        const result = await deleteCategory(categoryToDelete.MaLoaiSP);
+        if (result && !result.error) {
           setCategories((prev) =>
             prev.filter((c) => c.MaLoaiSP !== categoryToDelete.MaLoaiSP)
           );
           toast.success("Xóa thành công!");
         } else {
-          toast.error("Xóa thất bại!");
+          toast.error(result?.message || "Xóa thất bại!");
         }
-      } catch {
+      } catch (error) {
+        console.error("Error deleting category:", error);
         toast.error("Xóa thất bại!");
       }
       setCategoryToDelete(null);
@@ -273,24 +252,12 @@ export default function CategoriesManagement() {
       }
       // Update category
       try {
-        const res = await fetch(
-          `http://localhost:8080/api/category/${editingCategory.MaLoaiSP}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("token")}`
-            },
-            body: JSON.stringify({
-              TenLoai: formData.TenLoai,
-              HinhMinhHoa: formData.HinhMinhHoa,
-            }),
-          }
-        );
-        if (res.status === 401 || res.status === 403) {
-          toast.error("Bạn không có quyền sửa danh mục");
-          return;
-        }
-        if (res.ok) {
+        const result = await updateCategory(editingCategory.MaLoaiSP, {
+          TenLoai: formData.TenLoai,
+          HinhMinhHoa: formData.HinhMinhHoa,
+        });
+
+        if (result && !result.error) {
           toast.success("Cập nhật thành công!");
           setCategories((prev) =>
             prev.map((c) =>
@@ -304,9 +271,10 @@ export default function CategoriesManagement() {
             )
           );
         } else {
-          toast.error("Cập nhật thất bại!");
+          toast.error(result?.message || "Cập nhật thất bại!");
         }
-      } catch {
+      } catch (error) {
+        console.error("Error updating category:", error);
         toast.error("Cập nhật thất bại!");
       }
     } else {
@@ -316,31 +284,16 @@ export default function CategoriesManagement() {
         return;
       }
       try {
-        const res = await fetch("http://localhost:8080/api/category", {
-          method: "POST",
-          headers: { "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("token")}`
-          },
-          body: JSON.stringify({
-            TenLoai: formData.TenLoai,
-            HinhMinhHoa: formData.HinhMinhHoa,
-            NgayTao: new Date(),
-          }),
+        const result = await createCategory({
+          TenLoai: formData.TenLoai,
+          HinhMinhHoa: formData.HinhMinhHoa,
         });
-        if (res.status === 401 || res.status === 403) {
-          toast.error("Bạn không có quyền thêm danh mục");
-          return;
+
+        if (result && !result.error && result.data) {
+          setCategories((prev) => [...prev, result.data]);
         }
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.data) {
-            setCategories((prev) => [...prev, data.data]);
-          }
-          toast.success("Thêm thành công!");
-        } else {
-          toast.error("Thêm thất bại!");
-        }
-      } catch {
+      } catch (error) {
+        console.error("Error creating category:", error);
         toast.error("Thêm thất bại!");
       }
     }
@@ -359,7 +312,9 @@ export default function CategoriesManagement() {
       <Toaster position="top-center" richColors />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Quản lý danh mục sản phẩm</h1>
-        <Button onClick={handleAdd} disabled={!canCreate}>Thêm danh mục</Button>
+        <Button onClick={handleAdd} disabled={!canCreate}>
+          Thêm danh mục
+        </Button>
       </div>
       <div className="flex items-center gap-2 mb-4">
         <div className="relative w-full max-w-xs">

@@ -1,4 +1,14 @@
-import { Package, ShoppingCart, Truck, FileText, Tags, Building2, UserCheck, Shield, RotateCcw } from "lucide-react";
+import {
+  Package,
+  ShoppingCart,
+  Truck,
+  FileText,
+  Tags,
+  Building2,
+  UserCheck,
+  Shield,
+  RotateCcw,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useApp } from "../contexts/AppContext";
 import { useNavigate } from "react-router-dom";
@@ -94,30 +104,19 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
       icon: Truck,
       permission: "nhacungcap.xem",
       route: "/admin/suppliers",
-      alternativePermissions: ["nhacungcap.tao", "nhacungcap.sua", "nhacungcap.xoa"],
+      alternativePermissions: [
+        "nhacungcap.tao",
+        "nhacungcap.sua",
+        "nhacungcap.xoa",
+      ],
     },
-    // {
-    //   name: "Hóa đơn",
-    //   id: "invoices",
-    //   icon: FileText,
-    //   permission: "hoadon.xem",
-    //   route: "/admin/invoices",
-    //   alternativePermissions: ["hoadon.tao"],
-    // },
     {
       name: "Giảm giá",
       id: "discounts",
       icon: Tags,
       permission: "toanquyen",
-      route: "/admin/discounts",
+      route: "/admin/discount-management",
     },
-    // {
-    //   name: "Bình luận",
-    //   id: "reviews",
-    //   icon: MessageSquare,
-    //   permission: "toanquyen",
-    //   route: "/admin/reviews",
-    // },
     {
       name: "Nhân viên",
       id: "staff",
@@ -141,14 +140,6 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
       permission: "mausac.tao",
       route: "/admin/colors",
       alternativePermissions: ["mausac.sua", "mausac.xoa"],
-    },
-    {
-      name: "Kích thước",
-      id: "sizes",
-      icon: Building2,
-      permission: "kichthuoc.tao",
-      route: "/admin/sizes",
-      alternativePermissions: ["kichthuoc.sua", "kichthuoc.xoa"],
     },
     {
       name: "Phân quyền",

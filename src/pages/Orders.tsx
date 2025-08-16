@@ -1,8 +1,35 @@
-import { useState, useEffect, useCallback, memo } from "react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Eye,
+  FileText,
+  Package,
+  Search,
+  Undo2,
+  Users,
+  XCircle,
+} from "lucide-react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import AdminHeader from "../components/AdminHeader";
+import { InvoiceView } from "../components/Invoice";
+import {
+  BatchApprovalModal,
+  BatchCompleteOrdersModal,
+  CancelOrderModal,
+  DeliveryAssignmentModal,
+  InvoiceCreationModal,
+  SingleOrderApprovalModal,
+  SingleOrderCompleteModal,
+} from "../components/orders";
+import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
 import {
   Card,
   CardContent,
@@ -10,6 +37,8 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
+import { Checkbox } from "../components/ui/checkbox";
+import { Input } from "../components/ui/input";
 import {
   Table,
   TableBody,
@@ -18,63 +47,34 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { Badge } from "../components/ui/badge";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "../components/ui/tabs";
-import {
-  Search,
-  Check,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Package,
-  ChevronLeft,
-  ChevronRight,
-  Users,
-  MapPin,
-  Star,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  Eye,
-  Truck,
-} from "lucide-react";
-import { toast } from "sonner";
-import {
-  getOrdersByStatus,
-  getOrderStatistics,
-  updateOrderStatus,
-  updateBatchOrderStatus,
-  getAvailableDeliveryStaff,
-  updateOrderDeliveryStaff,
-  updateBatchOrderCompletion,
-  updateOrderCompletion,
-  getAssignedOrders,
-  confirmOrderDelivery,
-} from "../services/api";
 import { useApp } from "../contexts/AppContext";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../components/ui/dialog";
-import { Checkbox } from "../components/ui/checkbox";
+  confirmOrderDelivery,
+  createInvoice,
+  getAssignedOrders,
+  getAvailableDeliveryStaff,
+  getOrdersByStatus,
+  getOrderStatistics,
+  updateBatchOrderCompletion,
+  updateBatchOrderStatus,
+  updateOrderCompletion,
+  updateOrderDeliveryStaff,
+  updateOrderStatus,
+} from "../services/api";
 
 // Delivery Staff interface
 interface DeliveryStaff {
   MaNV: number;
   TenNV: string;
-  KhuVuc: string;
   DiaChi: string;
   SoDonDangGiao: number;
-  LoaiPhuTrach: string;
+  KhuVucPhuTrach: string | null;
 }
 
 // Order interfaces
@@ -152,7 +152,12 @@ interface Order {
   NguoiGiao: OrderEmployee | null;
   TrangThaiDH: OrderStatus;
   CT_DonDatHangs: OrderItem[];
-  HoaDon: any | null;
+  HoaDon: Invoice | null;
+}
+
+interface Invoice {
+  SoHD: string;
+  NgayLap: string;
 }
 
 // Memoized SearchInput component to prevent focus loss
@@ -219,10 +224,10 @@ export default function Orders() {
   const navigate = useNavigate();
   const { state } = useApp();
   const currentUser = state.user;
-  
+
   // Check if user is delivery staff
   const isDeliveryStaff = currentUser?.role === "NhanVienGiaoHang";
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("1");
   const [sortBy, setSortBy] = useState<string | null>(null); // null means no sorting
@@ -267,6 +272,16 @@ export default function Orders() {
   const [orderToComplete, setOrderToComplete] = useState<number | null>(null);
   const [completingSingleOrder, setCompletingSingleOrder] = useState(false);
 
+  // Invoice states
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [orderToCreateInvoice, setOrderToCreateInvoice] =
+    useState<Order | null>(null);
+  const [creatingInvoice, setCreatingInvoice] = useState(false);
+
+  // Invoice view states
+  const [showInvoiceView, setShowInvoiceView] = useState(false);
+  const [invoiceNumber, setInvoiceNumber] = useState<string | null>(null);
+
   // Statistics state
   const [stats, setStats] = useState({
     total: 0,
@@ -275,6 +290,7 @@ export default function Orders() {
     shipping: 0, // Đang giao hàng (status 3)
     completed: 0, // Hoàn tất (status 4)
     cancelled: 0, // Hủy (status 5)
+    returned: 0, // Trả hàng (status 7)
   });
 
   // Order status mapping
@@ -284,6 +300,7 @@ export default function Orders() {
     "3": { label: "Đang giao", color: "default", icon: Package },
     "4": { label: "Hoàn tất", color: "outline", icon: CheckCircle },
     "5": { label: "Hủy", color: "destructive", icon: XCircle },
+    "7": { label: "Trả hàng", color: "secondary", icon: Undo2 },
   };
 
   // Process orders on client-side (search, sort, filter)
@@ -390,49 +407,52 @@ export default function Orders() {
   );
 
   // Fetch orders by status (simplified - no server-side processing)
-  const fetchOrdersByStatus = useCallback(async (status: string) => {
-    try {
-      setLoading(true);
+  const fetchOrdersByStatus = useCallback(
+    async (status: string) => {
+      try {
+        setLoading(true);
 
-      let result;
-      
-      // If user is delivery staff, use assigned orders API
-      if (isDeliveryStaff) {
-        result = await getAssignedOrders({
-          page: pagination.currentPage,
-          limit: pagination.itemsPerPage,
-          status: status
-        });
-      } else {
-        // For admin and store staff, use regular orders API
-        result = await getOrdersByStatus(status);
-      }
+        let result;
 
-      if (result && result.success && result.data) {
-        const fetchedOrders = result.data.orders || result.data || [];
-        setAllOrders(fetchedOrders);
-        // Clear current orders while loading new data
-        setOrders([]);
-        // Let useEffect handle the processing
-      } else {
+        // If user is delivery staff, use assigned orders API
+        if (isDeliveryStaff) {
+          result = await getAssignedOrders({
+            page: pagination.currentPage,
+            limit: pagination.itemsPerPage,
+            status: status,
+          });
+        } else {
+          // For admin and store staff, use regular orders API
+          result = await getOrdersByStatus(status);
+        }
+
+        if (result && result.success && result.data) {
+          const fetchedOrders = result.data.orders || result.data || [];
+          setAllOrders(fetchedOrders);
+          // Clear current orders while loading new data
+          setOrders([]);
+          // Let useEffect handle the processing
+        } else {
+          setAllOrders([]);
+          setOrders([]);
+          setPagination((prev) => ({
+            ...prev,
+            totalItems: 0,
+            totalPages: 1,
+            currentPage: 1,
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+        toast.error("Có lỗi xảy ra khi tải dữ liệu");
         setAllOrders([]);
         setOrders([]);
-        setPagination((prev) => ({
-          ...prev,
-          totalItems: 0,
-          totalPages: 1,
-          currentPage: 1,
-        }));
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      toast.error("Có lỗi xảy ra khi tải dữ liệu");
-      setAllOrders([]);
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [isDeliveryStaff, pagination.currentPage, pagination.itemsPerPage]); // Add dependencies
+    },
+    [isDeliveryStaff, pagination.currentPage, pagination.itemsPerPage]
+  ); // Add dependencies
 
   // Fetch statistics for all order statuses
   const fetchOrderStatistics = useCallback(async () => {
@@ -446,6 +466,7 @@ export default function Orders() {
           shipping: result.data[3] || 0,
           completed: result.data[4] || 0,
           cancelled: result.data[5] || 0,
+          returned: result.data[7] || 0,
         });
       }
     } catch (error) {
@@ -794,6 +815,8 @@ export default function Orders() {
 
       if (result && result.success) {
         setDeliveryStaff(result.data || []);
+        console.log("Delivery staff data:", result.data);
+        console.log("API response:", result);
         // Pre-select current delivery staff if exists
         if (order.MaNV_Giao) {
           setSelectedStaff(order.MaNV_Giao);
@@ -881,13 +904,18 @@ export default function Orders() {
               failedCount++;
             }
           } catch (error) {
-            console.error(`Error confirming delivery for order ${orderId}:`, error);
+            console.error(
+              `Error confirming delivery for order ${orderId}:`,
+              error
+            );
             failedCount++;
           }
         }
 
         if (successCount > 0) {
-          toast.success(`Đã xác nhận giao hàng thành công ${successCount} đơn hàng`);
+          toast.success(
+            `Đã xác nhận giao hàng thành công ${successCount} đơn hàng`
+          );
         }
 
         if (failedCount > 0) {
@@ -916,7 +944,9 @@ export default function Orders() {
         result = await updateBatchOrderCompletion(ordersToComplete);
 
         if (result && result.success) {
-          toast.success(`Đã hoàn tất thành công ${result.data.success} đơn hàng`);
+          toast.success(
+            `Đã hoàn tất thành công ${result.data.success} đơn hàng`
+          );
 
           if (result.data.failed > 0) {
             toast.warning(`${result.data.failed} đơn hàng hoàn tất thất bại`);
@@ -956,7 +986,7 @@ export default function Orders() {
       setCompletingSingleOrder(true);
 
       let result;
-      
+
       // If user is delivery staff, use confirm delivery API
       if (isDeliveryStaff) {
         result = await confirmOrderDelivery(orderToComplete);
@@ -972,7 +1002,7 @@ export default function Orders() {
       }
 
       if (result && result.success) {
-        const message = isDeliveryStaff 
+        const message = isDeliveryStaff
           ? "Đã xác nhận giao hàng thành công"
           : "Đã hoàn tất đơn hàng thành công";
         toast.success(message);
@@ -993,10 +1023,63 @@ export default function Orders() {
     }
   };
 
-  // Reset selection when changing tabs
   useEffect(() => {
     setSelectedOrders(new Set());
   }, [activeTab]);
+
+  const handleCreateInvoice = (order: Order, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setOrderToCreateInvoice(order);
+    setShowInvoiceModal(true);
+  };
+
+  const confirmCreateInvoice = async () => {
+    if (!orderToCreateInvoice) return;
+
+    try {
+      setCreatingInvoice(true);
+      const userId = 1;
+
+      const invoiceData = {
+        maDDH: orderToCreateInvoice.MaDDH,
+        maNVLap: userId,
+      };
+
+      console.log("Creating invoice with data:", invoiceData);
+
+      const result = await createInvoice(invoiceData);
+
+      console.log("Invoice creation result:", result);
+
+      if (result && result.success) {
+        toast.success("Đã tạo hóa đơn thành công");
+
+        // Refresh data to get updated order with invoice information
+        await fetchOrderStatistics();
+        await fetchOrdersByStatus(activeTab);
+      } else {
+        console.error("Invoice creation failed:", result);
+        toast.error(result?.message || "Có lỗi xảy ra khi tạo hóa đơn");
+      }
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      toast.error("Không thể kết nối đến server");
+    } finally {
+      setCreatingInvoice(false);
+      setShowInvoiceModal(false);
+      setOrderToCreateInvoice(null);
+    }
+  };
+
+  // Handle view invoice detail
+  const handleViewInvoice = (
+    invoiceNumber: string,
+    event: React.MouseEvent
+  ) => {
+    event.stopPropagation();
+    setInvoiceNumber(invoiceNumber);
+    setShowInvoiceView(true);
+  };
 
   const getStatusBadge = (statusId: number) => {
     const status =
@@ -1022,6 +1105,15 @@ export default function Orders() {
         );
       case 5:
         return <Badge variant="destructive">{status.label}</Badge>;
+      case 7:
+        return (
+          <Badge
+            variant="secondary"
+            className="text-orange-600 border-orange-600 bg-orange-50"
+          >
+            {status.label}
+          </Badge>
+        );
       default:
         return <Badge variant="secondary">{status.label}</Badge>;
     }
@@ -1089,44 +1181,53 @@ export default function Orders() {
       icon: XCircle,
       color: "text-red-600",
     },
+    {
+      title: "Trả hàng",
+      value: stats.returned,
+      icon: Undo2,
+      color: "text-orange-600",
+    },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminHeader title={isDeliveryStaff ? "Đơn hàng được phân công" : "Quản lý đơn hàng"} />
+      <AdminHeader
+        title={isDeliveryStaff ? "Đơn hàng được phân công" : "Quản lý đơn hàng"}
+      />
 
       <main className="py-6">
         <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           {/* Statistics */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-              {statisticsCards.map((stat, index) => (
-                <Card key={index} className="shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-1">
-                          {stat.title}
-                        </p>
-                        <p className="text-xl font-bold">{stat.value}</p>
-                      </div>
-                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-6">
+            {statisticsCards.map((stat, index) => (
+              <Card key={index} className="shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                        {stat.title}
+                      </p>
+                      <p className="text-xl font-bold">{stat.value}</p>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
           {/* Orders Management */}
           <Card className="shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg">
-                {isDeliveryStaff ? "Đơn hàng được phân công" : "Danh sách đơn hàng"}
+                {isDeliveryStaff
+                  ? "Đơn hàng được phân công"
+                  : "Danh sách đơn hàng"}
               </CardTitle>
               <CardDescription>
-                {isDeliveryStaff 
+                {isDeliveryStaff
                   ? "Xem và xác nhận các đơn hàng được phân công cho bạn"
-                  : "Quản lý tất cả đơn hàng trong hệ thống theo trạng thái"
-                }
+                  : "Quản lý tất cả đơn hàng trong hệ thống theo trạng thái"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1136,7 +1237,7 @@ export default function Orders() {
                 onValueChange={handleTabChange}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-5 mb-6">
+                <TabsList className="grid w-full grid-cols-6 mb-6">
                   <TabsTrigger value="1" className="text-xs">
                     Đã đặt ({stats.placed})
                   </TabsTrigger>
@@ -1151,6 +1252,9 @@ export default function Orders() {
                   </TabsTrigger>
                   <TabsTrigger value="5" className="text-xs">
                     Hủy ({stats.cancelled})
+                  </TabsTrigger>
+                  <TabsTrigger value="7" className="text-xs">
+                    Trả hàng ({stats.returned})
                   </TabsTrigger>
                 </TabsList>
 
@@ -1257,7 +1361,10 @@ export default function Orders() {
                               className="bg-green-600 hover:bg-green-700 text-white"
                             >
                               <CheckCircle className="w-4 h-4 mr-2" />
-                              {isDeliveryStaff ? "Xác nhận giao hàng" : "Hoàn tất đơn hàng"} ({selectedOrders.size})
+                              {isDeliveryStaff
+                                ? "Xác nhận giao hàng"
+                                : "Hoàn tất đơn hàng"}{" "}
+                              ({selectedOrders.size})
                             </Button>
                           </div>
                         )}
@@ -1386,58 +1493,94 @@ export default function Orders() {
                                   </TableCell>
                                   <TableCell className="text-xs text-center">
                                     <div className="flex items-center justify-center gap-1">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 px-3 text-xs"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          navigate(`/admin/orders/${order.MaDDH}`);
-                                        }}
-                                      >
-                                        <Eye className="h-3 w-3 mr-1" />
-                                        Chi tiết
-                                      </Button>
-                                      {order.MaTTDH === 1 && !isDeliveryStaff && ( // Chỉ hiển thị cho đơn hàng "Đã đặt" và không phải delivery staff
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="h-8 px-3 text-xs text-[#825B32] border-[#825B32] hover:bg-[#825B32]/10"
-                                          title="Duyệt đơn hàng"
-                                          onClick={(e) =>
-                                            handleApproveOrder(order.MaDDH, e)
-                                          }
-                                        >
-                                          <CheckCircle className="h-3 w-3 mr-1" />
-                                          Duyệt
-                                        </Button>
-                                      )}
-                                      {order.MaTTDH === 2 && !isDeliveryStaff && ( // Chỉ hiển thị cho đơn hàng "Đã duyệt" và không phải delivery staff
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="h-8 px-3 text-xs text-blue-600 border-blue-600 hover:bg-blue-50"
-                                          title="Phân công giao hàng"
-                                          onClick={(e) =>
-                                            handleAssignDelivery(order, e)
-                                          }
-                                        >
-                                          <Truck className="h-3 w-3 mr-1" />
-                                          Phân công
-                                        </Button>
+                                      {order.MaTTDH === 1 &&
+                                        !isDeliveryStaff && ( // Chỉ hiển thị cho đơn hàng "Đã đặt" và không phải delivery staff
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-8 px-3 text-xs text-[#825B32] border-[#825B32] hover:bg-[#825B32]/10"
+                                            title="Duyệt đơn hàng"
+                                            onClick={(e) =>
+                                              handleApproveOrder(order.MaDDH, e)
+                                            }
+                                          >
+                                            <CheckCircle className="h-3 w-3 mr-1" />
+                                            Duyệt
+                                          </Button>
+                                        )}
+                                      {order.MaTTDH === 2 && ( // Đơn hàng "Đã duyệt"
+                                        <>
+                                          {!order.HoaDon ? (
+                                            // Nếu chưa có hóa đơn, hiển thị nút tạo hóa đơn
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="h-8 px-3 text-xs text-blue-600 border-blue-600 hover:bg-blue-50"
+                                              title="Tạo hóa đơn"
+                                              onClick={(e) =>
+                                                handleCreateInvoice(order, e)
+                                              }
+                                            >
+                                              <FileText className="h-3 w-3 mr-1" />
+                                              Tạo hóa đơn
+                                            </Button>
+                                          ) : (
+                                            <>
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 px-3 text-xs text-blue-600 border-blue-600 hover:bg-blue-50"
+                                                title="Xem chi tiết hóa đơn"
+                                                onClick={(e) =>
+                                                  order.HoaDon?.SoHD &&
+                                                  handleViewInvoice(
+                                                    order.HoaDon.SoHD,
+                                                    e
+                                                  )
+                                                }
+                                              >
+                                                <Eye className="h-3 w-3 mr-1" />
+                                                Xem hóa đơn
+                                              </Button>
+                                              {!order.MaNV_Giao && (
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  className="h-8 px-3 text-xs text-[#825B32] border-[#825B32] hover:bg-[#825B32]/10"
+                                                  title="Phân công nhân viên giao hàng"
+                                                  onClick={(e) =>
+                                                    handleAssignDelivery(
+                                                      order,
+                                                      e
+                                                    )
+                                                  }
+                                                >
+                                                  <Users className="h-3 w-3 mr-1" />
+                                                  Phân công
+                                                </Button>
+                                              )}
+                                            </>
+                                          )}
+                                        </>
                                       )}
                                       {order.MaTTDH === 3 && ( // Chỉ hiển thị cho đơn hàng "Đang giao"
                                         <Button
                                           variant="outline"
                                           size="sm"
                                           className="h-8 px-3 text-xs text-green-600 border-green-600 hover:bg-green-50"
-                                          title={isDeliveryStaff ? "Xác nhận giao hàng" : "Hoàn tất đơn hàng"}
+                                          title={
+                                            isDeliveryStaff
+                                              ? "Xác nhận giao hàng"
+                                              : "Hoàn tất đơn hàng"
+                                          }
                                           onClick={(e) =>
                                             handleCompleteOrder(order.MaDDH, e)
                                           }
                                         >
                                           <CheckCircle className="h-3 w-3 mr-1" />
-                                          {isDeliveryStaff ? "Xác nhận" : "Hoàn tất"}
+                                          {isDeliveryStaff
+                                            ? "Xác nhận"
+                                            : "Hoàn tất"}
                                         </Button>
                                       )}
                                       {![1, 2, 3].includes(order.MaTTDH) && ( // Cho các trạng thái khác
@@ -1457,28 +1600,44 @@ export default function Orders() {
                         {orders.length > 0 && (
                           <div className="flex items-center justify-between mt-4">
                             <div className="text-sm text-muted-foreground">
-                              Hiển thị {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} đến{" "}
-                              {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} trong tổng số{" "}
-                              {pagination.totalItems} đơn hàng
+                              Hiển thị{" "}
+                              {(pagination.currentPage - 1) *
+                                pagination.itemsPerPage +
+                                1}{" "}
+                              đến{" "}
+                              {Math.min(
+                                pagination.currentPage *
+                                  pagination.itemsPerPage,
+                                pagination.totalItems
+                              )}{" "}
+                              trong tổng số {pagination.totalItems} đơn hàng
                             </div>
                             <div className="flex items-center space-x-2">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                                onClick={() =>
+                                  handlePageChange(pagination.currentPage - 1)
+                                }
                                 disabled={pagination.currentPage === 1}
                               >
                                 <ChevronLeft className="h-4 w-4" />
                                 Trước
                               </Button>
                               <div className="text-sm">
-                                Trang {pagination.currentPage} / {pagination.totalPages}
+                                Trang {pagination.currentPage} /{" "}
+                                {pagination.totalPages}
                               </div>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handlePageChange(pagination.currentPage + 1)}
-                                disabled={pagination.currentPage === pagination.totalPages}
+                                onClick={() =>
+                                  handlePageChange(pagination.currentPage + 1)
+                                }
+                                disabled={
+                                  pagination.currentPage ===
+                                  pagination.totalPages
+                                }
                               >
                                 Sau
                                 <ChevronRight className="h-4 w-4" />
@@ -1496,343 +1655,93 @@ export default function Orders() {
         </div>
       </main>
 
-      {/* Approval Modal */}
-      <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Xác nhận duyệt đơn hàng</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn duyệt những đơn hàng đã chọn? Hành động này
-              không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4">
-            <p className="text-sm text-muted-foreground">
-              Số đơn hàng đã chọn: <strong>{selectedOrders.size}</strong>
-            </p>
-          </div>
-          <DialogFooter className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowApprovalModal(false)}
-              disabled={approvingOrders}
-            >
-              Hủy
-            </Button>
-            <Button onClick={confirmApproveOrders} disabled={approvingOrders}>
-              {approvingOrders ? "Đang duyệt..." : "Duyệt đơn hàng"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Batch Approval Modal */}
+      <BatchApprovalModal
+        isOpen={showApprovalModal}
+        onClose={() => setShowApprovalModal(false)}
+        selectedOrdersCount={selectedOrders.size}
+        isApproving={approvingOrders}
+        onConfirm={confirmApproveOrders}
+      />
 
       {/* Cancel Order Modal */}
-      <Dialog open={showCancelModal} onOpenChange={setShowCancelModal}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Xác nhận hủy đơn hàng</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn hủy đơn hàng #{orderToCancel}? Hành động này
-              không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowCancelModal(false)}
-              disabled={cancellingOrder}
-            >
-              Hủy bỏ
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmCancelOrder}
-              disabled={cancellingOrder}
-            >
-              {cancellingOrder ? "Đang xử lý..." : "Xác nhận hủy"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CancelOrderModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        orderId={orderToCancel}
+        isCancelling={cancellingOrder}
+        onConfirm={confirmCancelOrder}
+      />
 
       {/* Single Order Approval Modal */}
-      <Dialog
-        open={showSingleApprovalModal}
-        onOpenChange={setShowSingleApprovalModal}
-      >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Xác nhận duyệt đơn hàng</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn duyệt đơn hàng #{orderToApprove}? Hành động
-              này không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowSingleApprovalModal(false)}
-              disabled={approvingSingleOrder}
-            >
-              Hủy
-            </Button>
-            <Button
-              onClick={confirmApproveOrder}
-              disabled={approvingSingleOrder}
-            >
-              {approvingSingleOrder ? "Đang duyệt..." : "Duyệt đơn hàng"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SingleOrderApprovalModal
+        isOpen={showSingleApprovalModal}
+        onClose={() => setShowSingleApprovalModal(false)}
+        orderId={orderToApprove}
+        isApproving={approvingSingleOrder}
+        onConfirm={confirmApproveOrder}
+      />
 
       {/* Delivery Assignment Modal */}
-      <Dialog open={showDeliveryModal} onOpenChange={setShowDeliveryModal}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-[#825B32]" />
-              {orderToAssign?.MaNV_Giao
-                ? "Thay đổi nhân viên giao hàng"
-                : "Phân công nhân viên giao hàng"}
-            </DialogTitle>
-            <DialogDescription>
-              {orderToAssign?.MaNV_Giao
-                ? `Thay đổi nhân viên giao hàng cho đơn hàng #${orderToAssign?.MaDDH}`
-                : `Chọn nhân viên giao hàng phù hợp cho đơn hàng #${orderToAssign?.MaDDH}`}
-            </DialogDescription>
-          </DialogHeader>
-
-          {orderToAssign && (
-            <div className="space-y-4">
-              {/* Order Info */}
-              <div className="bg-[#825B32]/5 border border-[#825B32]/20 p-4 rounded-lg">
-                <h4 className="font-medium text-sm mb-2 flex items-center gap-2 text-[#825B32]">
-                  <MapPin className="h-4 w-4" />
-                  Thông tin giao hàng
-                </h4>
-                <div className="space-y-1 text-sm">
-                  <p>
-                    <span className="font-medium">Người nhận:</span>{" "}
-                    {orderToAssign.NguoiNhan}
-                  </p>
-                  <p>
-                    <span className="font-medium">Số điện thoại:</span>{" "}
-                    {orderToAssign.SDT}
-                  </p>
-                  <p>
-                    <span className="font-medium">Địa chỉ:</span>{" "}
-                    {orderToAssign.DiaChiGiao}
-                  </p>
-                  <p>
-                    <span className="font-medium">Tổng tiền:</span>{" "}
-                    {formatPrice(orderToAssign.TongTien)}
-                  </p>
-                  {orderToAssign.MaNV_Giao && orderToAssign.NguoiGiao && (
-                    <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded">
-                      <p className="flex items-center gap-2 text-green-700">
-                        <Check className="h-3 w-3" />
-                        <span className="font-medium">Đã phân công:</span>{" "}
-                        {orderToAssign.NguoiGiao.TenNV}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Delivery Staff List */}
-              <div>
-                <h4 className="font-medium text-sm mb-3 text-[#825B32]">
-                  Danh sách nhân viên giao hàng
-                </h4>
-
-                {loadingStaff ? (
-                  <div className="flex justify-center items-center py-8">
-                    <div className="text-sm text-muted-foreground">
-                      Đang tải danh sách nhân viên...
-                    </div>
-                  </div>
-                ) : deliveryStaff.length === 0 ? (
-                  <div className="flex justify-center items-center py-8">
-                    <div className="text-sm text-muted-foreground">
-                      Không có nhân viên giao hàng khả dụng
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {deliveryStaff.map((staff) => (
-                      <div
-                        key={staff.MaNV}
-                        className={`border rounded-lg p-3 cursor-pointer transition-all duration-200 relative ${
-                          selectedStaff === staff.MaNV
-                            ? "border-[#825B32] bg-[#825B32]/10 shadow-md"
-                            : "border-gray-200 hover:border-[#825B32]/50 hover:bg-[#825B32]/5"
-                        }`}
-                        onClick={() => setSelectedStaff(staff.MaNV)}
-                      >
-                        {/* Selected Check Icon */}
-                        {selectedStaff === staff.MaNV && (
-                          <div className="absolute top-2 right-2 w-5 h-5 bg-[#825B32] rounded-full flex items-center justify-center">
-                            <Check className="h-3 w-3 text-white" />
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-between pr-6">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h5
-                                className={`font-medium text-sm ${
-                                  selectedStaff === staff.MaNV
-                                    ? "text-[#825B32]"
-                                    : "text-gray-900"
-                                }`}
-                              >
-                                {staff.TenNV}
-                              </h5>
-                              {staff.LoaiPhuTrach === "PHUTRACH" && (
-                                <div className="flex items-center gap-1">
-                                  <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                                  <span className="text-xs text-yellow-600 font-medium">
-                                    Phụ trách khu vực
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              <p>Khu vực: {staff.KhuVuc}</p>
-                              <p>Địa chỉ: {staff.DiaChi}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xs text-muted-foreground">
-                              Đơn đang giao
-                            </div>
-                            <div
-                              className={`text-sm font-medium ${
-                                staff.SoDonDangGiao === 0
-                                  ? "text-green-600"
-                                  : "text-orange-600"
-                              }`}
-                            >
-                              {staff.SoDonDangGiao}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <DialogFooter className="flex justify-end gap-2 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDeliveryModal(false);
-                setOrderToAssign(null);
-                setSelectedStaff(null);
-                setDeliveryStaff([]);
-              }}
-              disabled={assigningOrder}
-            >
-              Hủy
-            </Button>
-            <Button
-              onClick={confirmAssignDelivery}
-              disabled={!selectedStaff || assigningOrder}
-              className="bg-[#825B32] hover:bg-[#825B32]/90 text-white"
-            >
-              {assigningOrder
-                ? orderToAssign?.MaNV_Giao
-                  ? "Đang thay đổi..."
-                  : "Đang phân công..."
-                : orderToAssign?.MaNV_Giao
-                ? "Thay đổi nhân viên"
-                : "Phân công nhân viên"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeliveryAssignmentModal
+        isOpen={showDeliveryModal}
+        onClose={() => {
+          setShowDeliveryModal(false);
+          setOrderToAssign(null);
+          setSelectedStaff(null);
+          setDeliveryStaff([]);
+        }}
+        order={orderToAssign}
+        deliveryStaff={deliveryStaff}
+        selectedStaff={selectedStaff}
+        isLoadingStaff={loadingStaff}
+        isAssigning={assigningOrder}
+        onStaffSelect={setSelectedStaff}
+        onConfirm={confirmAssignDelivery}
+        formatPrice={formatPrice}
+      />
 
       {/* Complete Orders Modal */}
-      <Dialog open={showCompleteModal} onOpenChange={setShowCompleteModal}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>
-              {isDeliveryStaff ? "Xác nhận giao hàng" : "Xác nhận hoàn tất đơn hàng"}
-            </DialogTitle>
-            <DialogDescription>
-              {isDeliveryStaff 
-                ? "Bạn có chắc chắn muốn xác nhận đã giao hàng cho những đơn hàng đã chọn? Hành động này không thể hoàn tác."
-                : "Bạn có chắc chắn muốn đánh dấu những đơn hàng đã chọn là hoàn tất? Hành động này không thể hoàn tác."
-              }
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4">
-            <p className="text-sm text-muted-foreground">
-              Số đơn hàng đã chọn: <strong>{selectedOrders.size}</strong>
-            </p>
-          </div>
-          <DialogFooter className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowCompleteModal(false)}
-              disabled={completingOrders}
-            >
-              Hủy
-            </Button>
-            <Button onClick={confirmCompleteOrders} disabled={completingOrders}>
-              {completingOrders 
-                ? (isDeliveryStaff ? "Đang xác nhận..." : "Đang hoàn tất...") 
-                : (isDeliveryStaff ? "Xác nhận giao hàng" : "Hoàn tất đơn hàng")
-              }
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <BatchCompleteOrdersModal
+        isOpen={showCompleteModal}
+        onClose={() => setShowCompleteModal(false)}
+        selectedOrdersCount={selectedOrders.size}
+        isCompleting={completingOrders}
+        onConfirm={confirmCompleteOrders}
+      />
 
       {/* Single Order Complete Modal */}
-      <Dialog
-        open={showSingleCompleteModal}
-        onOpenChange={setShowSingleCompleteModal}
-      >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>
-              {isDeliveryStaff ? "Xác nhận giao hàng" : "Xác nhận hoàn tất đơn hàng"}
-            </DialogTitle>
-            <DialogDescription>
-              {isDeliveryStaff 
-                ? `Bạn có chắc chắn muốn xác nhận đã giao hàng cho đơn hàng #${orderToComplete}? Hành động này không thể hoàn tác.`
-                : `Bạn có chắc chắn muốn đánh dấu đơn hàng #${orderToComplete} là hoàn tất? Hành động này không thể hoàn tác.`
-              }
-            </DialogDescription>
-          </DialogHeader>
+      <SingleOrderCompleteModal
+        isOpen={showSingleCompleteModal}
+        onClose={() => setShowSingleCompleteModal(false)}
+        orderId={orderToComplete}
+        isCompleting={completingSingleOrder}
+        onConfirm={confirmCompleteOrder}
+      />
 
-          <DialogFooter className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowSingleCompleteModal(false)}
-              disabled={completingSingleOrder}
-            >
-              Hủy
-            </Button>
-            <Button
-              onClick={confirmCompleteOrder}
-              disabled={completingSingleOrder}
-            >
-              {completingSingleOrder 
-                ? (isDeliveryStaff ? "Đang xác nhận..." : "Đang hoàn tất...") 
-                : (isDeliveryStaff ? "Xác nhận giao hàng" : "Hoàn tất đơn hàng")
-              }
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Invoice Creation Modal */}
+      <InvoiceCreationModal
+        isOpen={showInvoiceModal}
+        onClose={() => {
+          setShowInvoiceModal(false);
+          setOrderToCreateInvoice(null);
+        }}
+        order={orderToCreateInvoice}
+        isCreating={creatingInvoice}
+        onConfirm={confirmCreateInvoice}
+        formatPrice={formatPrice}
+        getTotalItems={getTotalItems}
+      />
+
+      {/* Invoice View Dialog */}
+      <InvoiceView
+        isOpen={showInvoiceView}
+        onClose={() => {
+          setShowInvoiceView(false);
+          setInvoiceNumber(null);
+        }}
+        invoiceNumber={invoiceNumber}
+      />
     </div>
   );
 }

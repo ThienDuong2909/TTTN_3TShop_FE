@@ -12,7 +12,12 @@ import {
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 import { Modal } from "../components/ui/Modal";
 import {
   Card,
@@ -24,6 +29,12 @@ import { toast } from "sonner";
 import { Toaster } from "sonner";
 import AdminHeader from "../components/AdminHeader";
 import { usePermission } from "../components/PermissionGuard";
+import {
+  getSuppliers,
+  createSupplier,
+  updateSupplier,
+  deleteSupplier,
+} from "../services/api";
 
 // Based on SQL schema: nhacungcap table
 interface Supplier {
@@ -35,8 +46,6 @@ interface Supplier {
 }
 
 // Mock suppliers data
-
-
 
 export const SupplierManagement = () => {
   const { hasPermission } = usePermission();
@@ -56,26 +65,28 @@ export const SupplierManagement = () => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
+  const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(
+    null
+  );
 
   // Fetch suppliers from API
   React.useEffect(() => {
     const fetchSuppliers = async () => {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:8080/api/suppliers?page=1",{
-          headers: {
-            "Authorization": `Bearer ${localStorage.getItem("token")}`
-          }
-        });
-        const data = await res.json();
-        if (data.success && data.data && Array.isArray(data.data.data)) {
-          setSuppliers(data.data.data);
+        const response = await getSuppliers(1);
+        if (
+          response.success &&
+          response.data &&
+          Array.isArray(response.data.data)
+        ) {
+          setSuppliers(response.data.data);
         } else {
           setSuppliers([]);
         }
       } catch (err) {
         setSuppliers([]);
+        toast.error("Có lỗi xảy ra khi tải danh sách nhà cung cấp!");
       } finally {
         setLoading(false);
       }
@@ -126,38 +137,29 @@ export const SupplierManagement = () => {
 
   const confirmDelete = async () => {
     if (!supplierToDelete) return;
+
     if (!canDelete) {
       toast.error("Bạn không có quyền xóa nhà cung cấp");
       setSupplierToDelete(null);
       setDeleteConfirmOpen(false);
       return;
     }
-    
-    try {
-      const res = await fetch(`http://localhost:8080/api/suppliers/${supplierToDelete.MaNCC}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
-        }
-      });
-      
-      if (res.status === 401 || res.status === 403) {
-        toast.error("Bạn không có quyền xóa nhà cung cấp!");
-        setSupplierToDelete(null);
-        setDeleteConfirmOpen(false);
-        return;
-      }
 
-      if (res.ok) {
-        setSuppliers((prev) => prev.filter((s) => s.MaNCC !== supplierToDelete.MaNCC));
+    try {
+      const response = await deleteSupplier(supplierToDelete.MaNCC);
+
+      if (response.success) {
+        setSuppliers((prev) =>
+          prev.filter((s) => s.MaNCC !== supplierToDelete.MaNCC)
+        );
         toast.success("Xóa nhà cung cấp thành công!");
       } else {
-        toast.error("Xóa nhà cung cấp thất bại!");
+        toast.error(response.message || "Xóa nhà cung cấp thất bại!");
       }
     } catch (error) {
       toast.error("Có lỗi xảy ra khi xóa nhà cung cấp!");
     }
-    
+
     setSupplierToDelete(null);
     setDeleteConfirmOpen(false);
   };
@@ -165,43 +167,31 @@ export const SupplierManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const supplierData = {
+      TenNCC: formData.TenNCC,
+      DiaChi: formData.DiaChi,
+      SDT: formData.SDT,
+      Email: formData.Email,
+    };
+
     if (editingSupplier) {
-      if (!canEdit) {
-        toast.error("Bạn không có quyền sửa nhà cung cấp");
-        return;
-      }
       // Update existing supplier via API
       try {
-        const res = await fetch(`http://localhost:8080/api/suppliers/${editingSupplier.MaNCC}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("token")}`
-          },
-          body: JSON.stringify({
-            TenNCC: formData.TenNCC,
-            DiaChi: formData.DiaChi,
-            SDT: formData.SDT,
-            Email: formData.Email,
-          }),
-          
-        });
-        if (res.status === 401 || res.status === 403) {
-          toast.error("Bạn không có quyền sửa nhà cung cấp");
-          return;
-        }
-        const data = await res.json();
-        if (res.ok && data.success) {
+        const response = await updateSupplier(
+          editingSupplier.MaNCC,
+          supplierData
+        );
+        if (response.success) {
           toast.success("Cập nhật thông tin nhà cung cấp thành công");
           setSuppliers((prev) =>
             prev.map((s) =>
-              s.MaNCC === editingSupplier.MaNCC
-                ? { ...s, ...formData }
-                : s
+              s.MaNCC === editingSupplier.MaNCC ? { ...s, ...formData } : s
             )
           );
         } else {
-          toast.error("Cập nhật thông tin nhà cung cấp thất bại!");
+          toast.error(
+            response.message || "Cập nhật thông tin nhà cung cấp thất bại!"
+          );
         }
       } catch (err) {
         toast.error("Có lỗi khi cập nhật nhà cung cấp!");
@@ -214,30 +204,12 @@ export const SupplierManagement = () => {
       }
       // Nếu qua được guard, mới gọi API
       try {
-        const res = await fetch("http://localhost:8080/api/suppliers", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("token")}`
-
-          },
-          body: JSON.stringify({
-            TenNCC: formData.TenNCC,
-            DiaChi: formData.DiaChi,
-            SDT: formData.SDT,
-            Email: formData.Email,
-          }),
-        });
-        if (res.status === 401 || res.status === 403) {
-          toast.error("Bạn không có quyền thêm nhà cung cấp");
-          return;
-        }
-        const data = await res.json();
-        if (res.ok && data.success && data.data) {
+        const response = await createSupplier(supplierData);
+        if (response.success && response.data) {
           toast.success("Thêm nhà cung cấp thành công");
-          setSuppliers((prev) => [...prev, data.data]);
+          setSuppliers((prev) => [...prev, response.data]);
         } else {
-          toast.error("Thêm nhà cung cấp thất bại!");
+          toast.error(response.message || "Thêm nhà cung cấp thất bại!");
         }
       } catch (err) {
         toast.error("Có lỗi khi thêm nhà cung cấp!");
@@ -257,12 +229,12 @@ export const SupplierManagement = () => {
   };
 
   // Filtered suppliers by search
-  const filteredSuppliers = suppliers.filter(sup =>
+  const filteredSuppliers = suppliers.filter((sup) =>
     sup.TenNCC.toLowerCase().includes(search.trim().toLowerCase())
   );
 
   return (
-    <div className="max-w-max">
+    <div className="max-w-full">
       <Toaster position="top-center" richColors />
       <AdminHeader title="Quản lý nhà cung cấp" />
 
@@ -279,7 +251,7 @@ export const SupplierManagement = () => {
                   Quản lý thông tin nhà cung cấp và đối tác
                 </p>
               </div>
-              <Button 
+              <Button
                 className="bg-[#825B32] hover:bg-[#6B4423] text-white text-sm py-2 px-4"
                 onClick={handleAdd}
                 disabled={!canCreate}
@@ -298,8 +270,12 @@ export const SupplierManagement = () => {
                       <Building2 className="h-6 w-6 text-[#825B32]" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng nhà cung cấp</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        Tổng nhà cung cấp
+                      </p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {stats.total}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -311,8 +287,12 @@ export const SupplierManagement = () => {
                       <Phone className="h-6 w-6 text-[#825B32]" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Có số điện thoại</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.withPhone}</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        Có số điện thoại
+                      </p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {stats.withPhone}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -324,8 +304,12 @@ export const SupplierManagement = () => {
                       <Mail className="h-6 w-6 text-[#825B32]" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Có email</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.withEmail}</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        Có email
+                      </p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {stats.withEmail}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -337,8 +321,12 @@ export const SupplierManagement = () => {
                       <MapPin className="h-6 w-6 text-[#825B32]" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Có địa chỉ</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.withAddress}</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        Có địa chỉ
+                      </p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {stats.withAddress}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -377,23 +365,39 @@ export const SupplierManagement = () => {
                   <table className="w-full min-w-[900px] border-collapse">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Thông tin nhà cung cấp</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Địa chỉ</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Liên hệ</th>
-                        <th className="text-center py-3 px-4 font-medium text-gray-900 dark:text-white">Thao tác</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+                          Thông tin nhà cung cấp
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+                          Địa chỉ
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+                          Liên hệ
+                        </th>
+                        <th className="text-center py-3 px-4 font-medium text-gray-900 dark:text-white">
+                          Thao tác
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {loading ? (
                         <tr>
-                          <td colSpan={4} className="text-center py-8 text-gray-500">
+                          <td
+                            colSpan={4}
+                            className="text-center py-8 text-gray-500"
+                          >
                             Đang tải dữ liệu...
                           </td>
                         </tr>
                       ) : filteredSuppliers.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="text-center py-8 text-gray-500">
-                            {suppliers.length === 0 ? "Chưa có nhà cung cấp nào" : "Không tìm thấy nhà cung cấp phù hợp"}
+                          <td
+                            colSpan={4}
+                            className="text-center py-8 text-gray-500"
+                          >
+                            {suppliers.length === 0
+                              ? "Chưa có nhà cung cấp nào"
+                              : "Không tìm thấy nhà cung cấp phù hợp"}
                           </td>
                         </tr>
                       ) : (
@@ -408,15 +412,21 @@ export const SupplierManagement = () => {
                                   <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <div className="font-medium text-gray-900 dark:text-white text-base">{supplier.TenNCC}</div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400">Mã NCC: {supplier.MaNCC}</div>
+                                  <div className="font-medium text-sm text-gray-900 dark:text-white ">
+                                    {supplier.TenNCC}
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                                    Mã NCC: {supplier.MaNCC}
+                                  </div>
                                 </div>
                               </div>
                             </td>
                             <td className="py-4 px-4">
                               <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
                                 <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-                                <span>{supplier.DiaChi || "Chưa cập nhật"}</span>
+                                <span>
+                                  {supplier.DiaChi || "Chưa cập nhật"}
+                                </span>
                               </div>
                             </td>
                             <td className="py-4 px-4">
@@ -427,7 +437,9 @@ export const SupplierManagement = () => {
                                 </div>
                                 <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
                                   <Mail className="w-4 h-4 mr-2 text-gray-400" />
-                                  <span>{supplier.Email || "Chưa cập nhật"}</span>
+                                  <span>
+                                    {supplier.Email || "Chưa cập nhật"}
+                                  </span>
                                 </div>
                               </div>
                             </td>
@@ -470,8 +482,8 @@ export const SupplierManagement = () => {
           viewMode === "details"
             ? `Chi tiết nhà cung cấp: ${editingSupplier?.TenNCC}`
             : editingSupplier
-              ? "Chỉnh sửa thông tin nhà cung cấp"
-              : "Thêm nhà cung cấp mới"
+            ? "Chỉnh sửa thông tin nhà cung cấp"
+            : "Thêm nhà cung cấp mới"
         }
         size="lg"
       >
@@ -512,21 +524,27 @@ export const SupplierManagement = () => {
                     <Phone className="w-5 h-5 text-gray-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500">Điện thoại</p>
-                      <p className="font-medium">{editingSupplier.SDT || "Chưa cập nhật"}</p>
+                      <p className="font-medium">
+                        {editingSupplier.SDT || "Chưa cập nhật"}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center">
                     <Mail className="w-5 h-5 text-gray-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500">Email</p>
-                      <p className="font-medium">{editingSupplier.Email || "Chưa cập nhật"}</p>
+                      <p className="font-medium">
+                        {editingSupplier.Email || "Chưa cập nhật"}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start">
                     <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
                     <div>
                       <p className="text-sm text-gray-500">Địa chỉ</p>
-                      <p className="font-medium">{editingSupplier.DiaChi || "Chưa cập nhật"}</p>
+                      <p className="font-medium">
+                        {editingSupplier.DiaChi || "Chưa cập nhật"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -534,15 +552,10 @@ export const SupplierManagement = () => {
             </div>
 
             <div className="flex justify-end space-x-3 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setIsModalOpen(false)}
-              >
+              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
                 Đóng
               </Button>
-              <Button onClick={() => setViewMode("form")}>
-                Chỉnh sửa
-              </Button>
+              <Button onClick={() => setViewMode("form")}>Chỉnh sửa</Button>
             </div>
           </div>
         ) : (
@@ -641,16 +654,13 @@ export const SupplierManagement = () => {
               Hành động này không thể hoàn tác!
             </div>
             <div className="flex justify-center gap-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setDeleteConfirmOpen(false)}
               >
                 Hủy
               </Button>
-              <Button 
-                variant="destructive" 
-                onClick={confirmDelete}
-              >
+              <Button variant="destructive" onClick={confirmDelete}>
                 Xóa
               </Button>
             </div>

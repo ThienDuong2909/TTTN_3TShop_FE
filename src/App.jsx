@@ -47,6 +47,7 @@ import Departments from './pages/Departments';
 import Colors from './pages/ColorManagement';
 import PermissionManagement from './pages/PermissionManagement';
 import ReturnManagement from './pages/ReturnManagement';
+import DiscountManagement from './pages/DiscountManagement';
 import AdminLayout from './layouts/AdminLayout';
 import UserAccountLayout from './layouts/UserAccountLayout';
 import CategoryPage from './pages/CategoryPage';
@@ -170,6 +171,13 @@ function App() {
             <ProtectedRoute requiredPermissions={['thongtin.xem', 'toanquyen']}>
               <AdminLayout>
                 <ReturnManagement />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/discount-management" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <DiscountManagement />
               </AdminLayout>
             </ProtectedRoute>
           } />

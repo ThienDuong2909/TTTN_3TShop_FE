@@ -142,7 +142,7 @@ export default function OrderManagement() {
         KichThuoc: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || '',
         MauSac: ct.ChiTietSanPham?.Mau?.TenMau || '',
         SoLuong: ct.SoLuong,
-        DonGia: ct.DonGia
+        DonGia: ct.DonGia || 0
       }));
 
     setReviewDialog({

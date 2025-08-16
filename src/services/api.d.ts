@@ -3,11 +3,43 @@ export function getPurchaseOrders(): Promise<any[]>;
 export function createPurchaseOrder(data: any): Promise<any>;
 export function getPurchaseOrderById(id: string): Promise<any>;
 export function updatePurchaseOrderStatus(id: string, statusId: number): Promise<any>;
-export function getSuppliers(): Promise<any[]>;
-export function getEmployees(): Promise<any[]>;
 export function getPurchaseOrderStatuses(): Promise<any[]>;
 export function getProductDetails(): Promise<any[]>;
 export function getPurchaseOrderReceivedStatus(id: string): Promise<any>;
+
+// Supplier functions
+export function getSuppliers(page?: number): Promise<any>;
+export function getAllSuppliers(): Promise<{data: any[]}>;
+export function createSupplier(data: any): Promise<any>;
+export function updateSupplier(supplierId: string | number, data: any): Promise<any>;
+export function deleteSupplier(supplierId: string | number): Promise<any>;
+export function getSupplierById(supplierId: string | number): Promise<any>;
+export function getProductDetails(): Promise<any[]>;
+export function getPurchaseOrderReceivedStatus(id: string): Promise<any>;
+
+// Supplier functions
+export function getSuppliers(page?: number): Promise<any>;
+export function getAllSuppliers(): Promise<{data: any[]}>;
+export function createSupplier(data: any): Promise<any>;
+export function updateSupplier(supplierId: string | number, data: any): Promise<any>;
+export function deleteSupplier(supplierId: string | number): Promise<any>;
+export function getSupplierById(supplierId: string | number): Promise<any>;
+
+// Department functions
+export function getDepartments(): Promise<any>;
+export function createDepartment(data: any): Promise<any>;
+export function updateDepartment(departmentId: string | number, data: any): Promise<any>;
+export function updateDepartmentStatus(departmentId: string | number, status: number): Promise<any>;
+export function getDepartmentById(departmentId: string | number): Promise<any>;
+
+// Employee functions
+export function getEmployees(): Promise<any>;
+export function getCurrentEmployee(): Promise<any>;
+export function createEmployee(data: any): Promise<any>;
+export function updateEmployee(employeeId: string | number, data: any): Promise<any>;
+export function transferEmployee(data: any): Promise<any>;
+export function getEmployeeWorkHistory(employeeId: string | number): Promise<any>;
+export function getEmployeeById(employeeId: string | number): Promise<any>;
 
 // Product Detail functions
 export function getProductDetailById(id: string | number): Promise<any>;
@@ -15,15 +47,46 @@ export function addProductDetail(data: any): Promise<any>;
 export function updateProductStock(stockUpdates: any[]): Promise<any>;
 
 // Lookup functions
-export function getSizes(): Promise<any[]>;
-export function getColors(): Promise<any[]>;
+export function getSizes(): Promise<{
+  success: boolean;
+  message: string;
+  data: any[];
+}>;
+export function getColors(): Promise<{
+  success: boolean;
+  message: string;
+  data: any[];
+}>;
+export function createColor(colorData: any): Promise<any>;
+export function updateColor(colorId: string | number, colorData: any): Promise<any>;
+export function deleteColor(colorId: string | number): Promise<any>;
+export function getCategories(): Promise<any[]>;
+export function getAllSuppliers(): Promise<{data: any[]}>;
+
+// Product functions  
+export function createProduct(productData: any): Promise<{
+  success: boolean;
+  data?: any;
+  message?: string;
+}>;
 
 // Orders functions
 export function getOrdersByStatus(status: string): Promise<any>;
 export function getOrderStatistics(): Promise<any>;
+export function getOrderDetailById(orderId: string | number): Promise<any>;
 export function updateOrderStatus(orderId: number, statusData: any): Promise<any>;
 export function updateBatchOrderStatus(ordersData: any): Promise<any>;
-export function getAvailableDeliveryStaff(address: string): Promise<any>;
+export function getAvailableDeliveryStaff(address: string): Promise<{
+  success: boolean;
+  message: string;
+  data: Array<{
+    MaNV: number;
+    TenNV: string;
+    DiaChi: string;
+    SoDonDangGiao: number;
+    KhuVucPhuTrach: string | null;
+  }>;
+}>;
 export function assignDelivery(assignmentData: any): Promise<any>;
 export function updateOrderDeliveryStaff(orderId: number, data: { maNVGiao: number }): Promise<ApiResponse>;
 
@@ -214,3 +277,250 @@ export function fetchEmployeePermissions(nhanVienId: number): Promise<number[]>;
 export function assignPermissionsToEmployee(nhanVienId: number, permissionIds: number[]): Promise<any>;
 
 
+// Return Request functions
+export function createReturnSlip(returnData: { 
+  maDDH: number; 
+  danhSachSanPham: Array<{ maCTDDH: number; soLuongTra: number }>; 
+  lyDo: string 
+}): Promise<any>;
+export function getReturnRequests(): Promise<any>;
+export function getReturnRequestsByStatus(status: number): Promise<any>;
+export function getReturnSlipsByStatus(status: number): Promise<any>;
+export function updateReturnSlipStatus(returnSlipId: string | number, statusData: any): Promise<any>;
+export function createReturnPayment(paymentData: any): Promise<any>;
+
+// Discount/Promotion functions
+export function getPromotions(): Promise<any>;
+export function getPromotionById(promotionId: string | number): Promise<any>;
+export function createPromotion(promotionData: any): Promise<any>;
+export function updatePromotion(promotionId: string | number, promotionData: any): Promise<any>;
+export function deletePromotion(promotionId: string | number): Promise<any>;
+export function getProductsForPromotion(): Promise<any>;
+export function getAvailableProductsForPromotion(): Promise<{
+  success: boolean;
+  message: string;
+  data: Array<{
+    MaSP: number;
+    TenSP: string;
+    MaLoaiSP: number;
+    MaNCC: number;
+    MoTa: string;
+    TrangThai: boolean;
+    NgayTao: string;
+    NhaCungCap: {
+      MaNCC: number;
+      TenNCC: string;
+      DiaChi: string;
+      SDT: string;
+      Email: string;
+    };
+    LoaiSP: {
+      MaLoaiSP: number;
+      TenLoai: string;
+      NgayTao: string;
+      HinhMinhHoa: string;
+    };
+    AnhSanPhams: Array<{
+      MaAnh: number;
+      MaSP: number;
+      TenFile: string;
+      DuongDan: string;
+      AnhChinh: boolean;
+      ThuTu: number;
+      MoTa: string;
+    }>;
+    ChiTietSanPhams: Array<{
+      MaCTSP: number;
+      MaKichThuoc: number;
+      MaMau: number;
+      SoLuongTon: number;
+      KichThuoc: {
+        TenKichThuoc: string;
+      };
+      Mau: {
+        TenMau: string;
+        MaHex: string;
+      };
+    }>;
+    CT_DotGiamGia: Array<any>;
+    ThayDoiGia: Array<{
+      Gia: string;
+      NgayApDung: string;
+    }>;
+  }>;
+}>;
+export function getDiscountProducts(): Promise<any>;
+export function removeProductFromPromotion(maDot: string | number, maSP: string | number): Promise<any>;
+export function addProductToPromotion(maDot: string | number, productData: {
+  danhSachSanPham: Array<{
+    maSP: number;
+    phanTramGiam: number;
+  }>;
+}): Promise<any>;
+export function validatePromotionPeriod(ngayBatDau: string, ngayKetThuc: string): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    valid: boolean;
+    message: string;
+    conflicts: Array<{
+      MaDot: number,
+      NgayBatDau: string,
+      NgayKetThuc: string,
+      MoTa: string
+    }>
+  };
+}>;
+
+// Areas functions
+export function getAreas(): Promise<Array<{
+  MaKhuVuc: string;
+  TenKhuVuc: string;
+}>>;
+
+// Category functions
+export function getCategories(): Promise<Array<{
+  MaLoaiSP: number;
+  TenLoai: string;
+  NgayTao: string;
+  HinhMinhHoa?: string;
+}>>;
+export function createCategory(data: {
+  TenLoai: string;
+  HinhMinhHoa: string;
+}): Promise<any>;
+export function updateCategory(categoryId: string | number, data: {
+  TenLoai: string;
+  HinhMinhHoa: string;
+}): Promise<any>;
+export function deleteCategory(categoryId: string | number): Promise<any>;
+export function getCategoryById(categoryId: string | number): Promise<any>;
+
+// Product Management functions
+export function getProducts(params?: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  category?: string;
+}): Promise<{
+  success: boolean;
+  data: Array<{
+    MaSP: number;
+    TenSP: string;
+    MaLoaiSP: number;
+    MaNCC: number;
+    MoTa: string;
+    TrangThai: boolean;
+    NhaCungCap: {
+      MaNCC: number;
+      TenNCC: string;
+      DiaChi: string;
+      SDT: string;
+      Email: string;
+    };
+    LoaiSP: {
+      MaLoaiSP: number;
+      TenLoai: string;
+      NgayTao: string;
+      HinhMinhHoa?: string;
+    };
+    AnhSanPhams: Array<{
+      MaAnh: number;
+      MaSP: number;
+      TenFile: string;
+      DuongDan: string;
+      AnhChinh: boolean;
+      ThuTu: number;
+      MoTa: string;
+    }>;
+    ThayDoiGia: Array<{
+      MaSP: number;
+      NgayThayDoi: string;
+      Gia: string;
+      NgayApDung: string;
+    }>;
+    ChiTietSanPhams: Array<{
+      MaCTSP: number;
+      MaKichThuoc: number;
+      MaMau: number;
+      SoLuongTon: number;
+      KichThuoc: {
+        TenKichThuoc: string;
+      };
+      Mau: {
+        TenMau: string;
+        MaHex: string;
+      };
+    }>;
+  }>;
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}>;
+
+export function updateProduct(productId: string | number, updateData: {
+  TenSP: string;
+  MaLoaiSP: number;
+  MoTa: string;
+  TrangThai: boolean;
+  images: Array<{
+    url: string;
+    TenFile: string;
+    AnhChinh: number;
+    ThuTu: number;
+    MoTa: string;
+  }>;
+  Gia?: number;
+  NgayApDung?: string;
+}): Promise<{
+  success: boolean;
+  message: string;
+  error?: string;
+  data?: any;
+}>;
+
+export function updateProductStatus(productId: string | number, status: boolean): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}>;
+
+export function getProductByIdForManagement(productId: string | number): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}>;
+
+export function createProduct(productData: {
+  TenSP: string;
+  MaLoaiSP: number;
+  MoTa: string;
+  TrangThai: boolean;
+  images: Array<{
+    url: string;
+    TenFile: string;
+    AnhChinh: number;
+    ThuTu: number;
+    MoTa: string;
+  }>;
+  Gia: number;
+  NgayApDung: string;
+}): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}>;
+
+export function deleteProduct(productId: string | number): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}>;
+
+// Invoice functions
+export function getInvoiceDetail(invoiceNumber: string | number): Promise<any>;
+export function getInvoiceByOrderId(orderId: string | number): Promise<any>;
+export function createInvoice(invoiceData: any): Promise<any>;
