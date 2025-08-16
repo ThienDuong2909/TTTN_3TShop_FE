@@ -3,6 +3,14 @@ import { Plus, X, Upload, Eye, Trash2, Save, ArrowLeft } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { CLOUDINARY_CONFIG } from "../config/cloudinary";
+import {
+  getCategories,
+  getAllSuppliers,
+  getColors,
+  getSizes,
+  createProduct,
+} from "../services/api";
+import { formatDate } from "@/lib/utils";
 
 interface ProductVariant {
   id: string;
@@ -70,7 +78,7 @@ export const ProductAdd = () => {
     MaNCC: 0,
     MoTa: "",
     Gia: 0,
-    NgayApDung: new Date().toISOString().split('T')[0], // Current date
+    NgayApDung: new Date().toISOString().split("T")[0], // Current date
     TrangThai: true, // Default to active
     images: [],
     details: [],
@@ -80,7 +88,7 @@ export const ProductAdd = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [colors, setColors] = useState<Color[]>([]);
   const [sizes, setSizes] = useState<Size[]>([]);
-  
+
   const [isAddingVariant, setIsAddingVariant] = useState(false);
   const [newVariant, setNewVariant] = useState({
     MaMau: 0,
@@ -95,39 +103,44 @@ export const ProductAdd = () => {
     const fetchData = async () => {
       try {
         // Fetch categories
-        const categoriesRes = await fetch("http://localhost:8080/api/category");
-        const categoriesData = await categoriesRes.json();
-        if (categoriesData.success) {
-          setCategories(categoriesData.data);
-        }
+        const categoriesData = await getCategories();
+        setCategories(categoriesData || []);
 
         // Fetch suppliers
-        const suppliersRes = await fetch("http://localhost:8080/api/suppliers");
-        const suppliersData = await suppliersRes.json();
+        const suppliersData = await getAllSuppliers();
         if (
-          suppliersData.success &&
+          suppliersData &&
           suppliersData.data &&
-          Array.isArray(suppliersData.data.data)
+          Array.isArray(suppliersData.data)
         ) {
-          setSuppliers(suppliersData.data.data);
+          setSuppliers(suppliersData.data);
         } else {
           setSuppliers([]);
         }
 
         // Fetch colors
-        const colorsRes = await fetch("http://localhost:8080/api/colors");
-        const colorsData = await colorsRes.json();
-        if (colorsData.success) {
+        const colorsData = await getColors();
+        console.log("Colors data:", colorsData);
+        // Data structure: { success: true, message: string, data: [...] }
+        if (
+          colorsData &&
+          colorsData.success &&
+          Array.isArray(colorsData.data)
+        ) {
           setColors(colorsData.data.filter((color: Color) => color.TrangThai));
+        } else {
+          setColors([]);
         }
 
         // Fetch sizes
-        const sizesRes = await fetch("http://localhost:8080/api/sizes");
-        const sizesData = await sizesRes.json();
-        if (sizesData.success) {
+        const sizesData = await getSizes();
+        console.log("Sizes data:", sizesData);
+        // Data structure: { success: true, message: string, data: [...] }
+        if (sizesData && sizesData.success && Array.isArray(sizesData.data)) {
           setSizes(sizesData.data);
+        } else {
+          setSizes([]);
         }
-
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error("Có lỗi xảy ra khi tải dữ liệu");
@@ -146,7 +159,8 @@ export const ProductAdd = () => {
 
     // Check if variant already exists
     const exists = formData.details.some(
-      (v) => v.MaMau === newVariant.MaMau && v.MaKichThuoc === newVariant.MaKichThuoc,
+      (v) =>
+        v.MaMau === newVariant.MaMau && v.MaKichThuoc === newVariant.MaKichThuoc
     );
 
     if (exists) {
@@ -154,8 +168,10 @@ export const ProductAdd = () => {
       return;
     }
 
-    const selectedColor = colors.find(c => c.MaMau === newVariant.MaMau);
-    const selectedSize = sizes.find(s => s.MaKichThuoc === newVariant.MaKichThuoc);
+    const selectedColor = colors.find((c) => c.MaMau === newVariant.MaMau);
+    const selectedSize = sizes.find(
+      (s) => s.MaKichThuoc === newVariant.MaKichThuoc
+    );
 
     const variant: ProductVariant = {
       id: Date.now().toString(),
@@ -191,21 +207,23 @@ export const ProductAdd = () => {
     setFormData({
       ...formData,
       details: formData.details.map((v) =>
-        v.id === variantId ? { ...v, SoLuongTon: quantity } : v,
+        v.id === variantId ? { ...v, SoLuongTon: quantity } : v
       ),
     });
   };
 
   // Upload image to Cloudinary
-  const uploadImageToCloudinary = async (file: File): Promise<string | null> => {
+  const uploadImageToCloudinary = async (
+    file: File
+  ): Promise<string | null> => {
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', CLOUDINARY_CONFIG.UPLOAD_PRESET);
-      formData.append('cloud_name', CLOUDINARY_CONFIG.CLOUD_NAME);
+      formData.append("file", file);
+      formData.append("upload_preset", CLOUDINARY_CONFIG.UPLOAD_PRESET);
+      formData.append("cloud_name", CLOUDINARY_CONFIG.CLOUD_NAME);
 
       const response = await fetch(CLOUDINARY_CONFIG.API_URL, {
-        method: 'POST',
+        method: "POST",
         body: formData,
       });
 
@@ -213,11 +231,11 @@ export const ProductAdd = () => {
       if (data.secure_url) {
         return data.secure_url;
       } else {
-        console.error('Cloudinary upload failed:', data);
+        console.error("Cloudinary upload failed:", data);
         return null;
       }
     } catch (error) {
-      console.error('Error uploading to Cloudinary:', error);
+      console.error("Error uploading to Cloudinary:", error);
       return null;
     }
   };
@@ -225,7 +243,7 @@ export const ProductAdd = () => {
   // Validate file before upload
   const validateFile = (file: File): boolean => {
     // Check file type
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith("image/")) {
       toast.error(`File "${file.name}" không phải là hình ảnh!`);
       return false;
     }
@@ -233,7 +251,9 @@ export const ProductAdd = () => {
     // Check file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      toast.error(`File "${file.name}" quá lớn! Vui lòng chọn file nhỏ hơn 5MB.`);
+      toast.error(
+        `File "${file.name}" quá lớn! Vui lòng chọn file nhỏ hơn 5MB.`
+      );
       return false;
     }
 
@@ -247,11 +267,11 @@ export const ProductAdd = () => {
       return;
     }
 
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
     input.multiple = true;
-    
+
     input.onchange = async (event) => {
       const files = (event.target as HTMLInputElement).files;
       if (!files) return;
@@ -266,7 +286,9 @@ export const ProductAdd = () => {
       }
 
       if (files.length > remainingSlots) {
-        toast.warning(`Chỉ có thể thêm ${remainingSlots} ảnh nữa. Đã chọn ${remainingSlots} ảnh đầu tiên.`);
+        toast.warning(
+          `Chỉ có thể thêm ${remainingSlots} ảnh nữa. Đã chọn ${remainingSlots} ảnh đầu tiên.`
+        );
       }
 
       setIsUploading(true);
@@ -282,30 +304,43 @@ export const ProductAdd = () => {
               TenFile: file.name,
               AnhChinh: formData.images.length === 0 && index === 0 ? 1 : 0,
               ThuTu: formData.images.length + index + 1,
-              MoTa: formData.images.length === 0 && index === 0 ? "Ảnh chính" : "Ảnh phụ",
+              MoTa:
+                formData.images.length === 0 && index === 0
+                  ? "Ảnh chính"
+                  : "Ảnh phụ",
             };
           }
           return null;
         });
 
         const uploadResults = await Promise.all(uploadPromises);
-        const successfulUploads = uploadResults.filter((result): result is ProductImage => result !== null);
+        const successfulUploads = uploadResults.filter(
+          (result): result is ProductImage => result !== null
+        );
 
         if (successfulUploads.length > 0) {
           setFormData({
             ...formData,
             images: [...formData.images, ...successfulUploads],
           });
-          toast.success(`Upload thành công ${successfulUploads.length}/${validFiles.length} hình ảnh!`);
+          toast.success(
+            `Upload thành công ${successfulUploads.length}/${validFiles.length} hình ảnh!`
+          );
         } else {
-          toast.error("Không thể upload hình ảnh. Vui lòng kiểm tra cấu hình Cloudinary!");
+          toast.error(
+            "Không thể upload hình ảnh. Vui lòng kiểm tra cấu hình Cloudinary!"
+          );
         }
 
         if (successfulUploads.length < validFiles.length) {
-          toast.warning(`${validFiles.length - successfulUploads.length} ảnh upload thất bại!`);
+          toast.warning(
+            `${
+              validFiles.length - successfulUploads.length
+            } ảnh upload thất bại!`
+          );
         }
       } catch (error) {
-        console.error('Error uploading images:', error);
+        console.error("Error uploading images:", error);
         toast.error("Có lỗi xảy ra khi upload hình ảnh!");
       } finally {
         setIsUploading(false);
@@ -325,7 +360,7 @@ export const ProductAdd = () => {
       AnhChinh: index === 0 ? 1 : 0,
       MoTa: index === 0 ? "Ảnh chính" : "Ảnh phụ",
     }));
-    
+
     setFormData({
       ...formData,
       images: reorderedImages,
@@ -350,9 +385,14 @@ export const ProductAdd = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-
     // Validation
-    if (!formData.TenSP || !formData.MaLoaiSP || !formData.MaNCC || !formData.Gia || !formData.NgayApDung) {
+    if (
+      !formData.TenSP ||
+      !formData.MaLoaiSP ||
+      !formData.MaNCC ||
+      !formData.Gia ||
+      !formData.NgayApDung
+    ) {
       toast.error("Vui lòng điền đầy đủ thông tin bắt buộc!");
       return;
     }
@@ -392,12 +432,12 @@ export const ProductAdd = () => {
         Gia: formData.Gia,
         NgayApDung: formData.NgayApDung,
         TrangThai: formData.TrangThai,
-        details: formData.details.map(detail => ({
+        details: formData.details.map((detail) => ({
           MaMau: detail.MaMau,
           MaKichThuoc: detail.MaKichThuoc,
           SoLuongTon: detail.SoLuongTon,
         })),
-        images: formData.images.map(img => ({
+        images: formData.images.map((img) => ({
           url: img.url,
           TenFile: img.TenFile,
           AnhChinh: img.AnhChinh,
@@ -406,17 +446,9 @@ export const ProductAdd = () => {
         })),
       };
 
-      const response = await fetch("http://localhost:8080/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(productData),
-      });
+      const result = await createProduct(productData);
 
-      const result = await response.json();
-
-      if (response.ok && result.success) {
+      if (result.success) {
         toast.success("Thêm sản phẩm thành công!");
         // Reset form
         setFormData({
@@ -425,7 +457,7 @@ export const ProductAdd = () => {
           MaNCC: 0,
           MoTa: "",
           Gia: 0,
-          NgayApDung: new Date().toISOString().split('T')[0], // Reset to current date
+          NgayApDung: new Date().toISOString().split("T")[0], // Reset to current date
           TrangThai: true, // Reset to active
           images: [],
           details: [],
@@ -441,20 +473,20 @@ export const ProductAdd = () => {
 
   const totalQuantity = formData.details.reduce(
     (sum, variant) => sum + variant.SoLuongTon,
-    0,
+    0
   );
 
   return (
     <>
       <Toaster position="top-center" richColors />
-      
+
       {/* Header with back button */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <button
               type="button"
-              onClick={() => navigate('/admin/products')}
+              onClick={() => navigate("/admin/products")}
               className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-[#825B32] hover:bg-gray-50 rounded-md transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -462,8 +494,12 @@ export const ProductAdd = () => {
             </button>
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Thêm sản phẩm mới</h1>
-            <p className="text-sm text-gray-600 mt-1">Nhập thông tin chi tiết để tạo sản phẩm</p>
+            <h1 className="text-xl font-semibold text-gray-900">
+              Thêm sản phẩm mới
+            </h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Nhập thông tin chi tiết để tạo sản phẩm
+            </p>
           </div>
         </div>
       </div>
@@ -523,7 +559,10 @@ export const ProductAdd = () => {
               <select
                 value={formData.MaNCC}
                 onChange={(e) =>
-                  setFormData({ ...formData, MaNCC: parseInt(e.target.value) || 0 })
+                  setFormData({
+                    ...formData,
+                    MaNCC: parseInt(e.target.value) || 0,
+                  })
                 }
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-[#825B32] focus:outline-none"
                 required
@@ -544,10 +583,9 @@ export const ProductAdd = () => {
               <div className="relative">
                 <input
                   type="text"
-                  value={formData.Gia.toLocaleString('vi-VN')}
+                  value={formData.Gia.toLocaleString("vi-VN")}
                   onChange={(e) => {
-                    // Remove all non-digit characters
-                    const raw = e.target.value.replace(/[^\d]/g, '');
+                    const raw = e.target.value.replace(/[^\d]/g, "");
                     setFormData({ ...formData, Gia: parseInt(raw) || 0 });
                   }}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-[#825B32] focus:outline-none pr-16"
@@ -555,9 +593,10 @@ export const ProductAdd = () => {
                   min="0"
                   required
                   inputMode="numeric"
-                  pattern="[0-9]*"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm select-none">₫</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm select-none">
+                  ₫
+                </span>
               </div>
             </div>
 
@@ -566,11 +605,10 @@ export const ProductAdd = () => {
                 Ngày áp dụng *
               </label>
               <input
-                type="date"
-                value={formData.NgayApDung}
-                onChange={(e) =>
-                  setFormData({ ...formData, NgayApDung: e.target.value })
-                }
+                type="text"
+                value={formatDate(formData.NgayApDung, false)}
+                readOnly
+                aria-readonly="true"
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-[#825B32] focus:outline-none"
                 required
               />
@@ -583,7 +621,10 @@ export const ProductAdd = () => {
               <select
                 value={formData.TrangThai ? "true" : "false"}
                 onChange={(e) =>
-                  setFormData({ ...formData, TrangThai: e.target.value === "true" })
+                  setFormData({
+                    ...formData,
+                    TrangThai: e.target.value === "true",
+                  })
                 }
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-[#825B32] focus:outline-none"
                 required
@@ -634,12 +675,12 @@ export const ProductAdd = () => {
               disabled={isUploading || formData.images.length >= 5}
               className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                 isUploading || formData.images.length >= 5
-                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                  : 'bg-[#825B32] text-white hover:bg-[#6d4a2a]'
+                  ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                  : "bg-[#825B32] text-white hover:bg-[#6d4a2a]"
               }`}
             >
               <Upload className="w-4 h-4 mr-2" />
-              {isUploading ? 'Đang upload...' : 'Thêm hình ảnh'}
+              {isUploading ? "Đang upload..." : "Thêm hình ảnh"}
             </button>
           </div>
 
@@ -726,7 +767,10 @@ export const ProductAdd = () => {
                   <select
                     value={newVariant.MaKichThuoc}
                     onChange={(e) =>
-                      setNewVariant({ ...newVariant, MaKichThuoc: parseInt(e.target.value) || 0 })
+                      setNewVariant({
+                        ...newVariant,
+                        MaKichThuoc: parseInt(e.target.value) || 0,
+                      })
                     }
                     className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-[#825B32] focus:outline-none"
                   >
@@ -746,7 +790,10 @@ export const ProductAdd = () => {
                   <select
                     value={newVariant.MaMau}
                     onChange={(e) =>
-                      setNewVariant({ ...newVariant, MaMau: parseInt(e.target.value) || 0 })
+                      setNewVariant({
+                        ...newVariant,
+                        MaMau: parseInt(e.target.value) || 0,
+                      })
                     }
                     className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-[#825B32] focus:outline-none"
                   >
@@ -831,7 +878,7 @@ export const ProductAdd = () => {
                       onChange={(e) =>
                         updateVariantQuantity(
                           variant.id!,
-                          parseInt(e.target.value) || 0,
+                          parseInt(e.target.value) || 0
                         )
                       }
                       className="w-16 px-2 py-1 text-sm border border-gray-300 rounded text-center focus:border-[#825B32] focus:outline-none"

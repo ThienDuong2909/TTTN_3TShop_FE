@@ -46,6 +46,7 @@ import Departments from './pages/Departments';
 import Colors from './pages/ColorManagement';
 import PermissionManagement from './pages/PermissionManagement';
 import ReturnManagement from './pages/ReturnManagement';
+import DiscountManagement from './pages/DiscountManagement';
 import AdminLayout from './layouts/AdminLayout';
 import CategoryPage from './pages/CategoryPage';
 import NewProducts from "./pages/NewProducts";
@@ -145,6 +146,13 @@ function App() {
             <ProtectedRoute requireAdmin>
               <AdminLayout>
                 <ReturnManagement />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/discount-management" element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout>
+                <DiscountManagement />
               </AdminLayout>
             </ProtectedRoute>
           } />

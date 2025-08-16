@@ -1,6 +1,12 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { Toaster } from "sonner";
+import {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from "../services/api";
 
 type Category = {
   MaLoaiSP: number;
@@ -57,18 +63,11 @@ export default function CategoriesManagement() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/category");
-        const result = await res.json();
-        console.log("Fetched categories:", result.data);
-        if (result && result.success && Array.isArray(result.data)) {
-          console.log("Fetched categories:", result.data);
-          setCategories(result.data);
-        } else if (Array.isArray(result)) {
-          setCategories(result);
-        } else {
-          setCategories([]);
-        }
+        const result = await getCategories();
+        console.log("Fetched categories:", result);
+        setCategories(result);
       } catch (err) {
+        console.error("Error fetching categories:", err);
         setCategories([]);
       }
     };
@@ -202,21 +201,17 @@ export default function CategoriesManagement() {
   const confirmDelete = async () => {
     if (categoryToDelete) {
       try {
-        const res = await fetch(
-          `http://localhost:8080/api/category/${categoryToDelete.MaLoaiSP}`,
-          {
-            method: "DELETE",
-          }
-        );
-        if (res.ok) {
+        const result = await deleteCategory(categoryToDelete.MaLoaiSP);
+        if (result && !result.error) {
           setCategories((prev) =>
             prev.filter((c) => c.MaLoaiSP !== categoryToDelete.MaLoaiSP)
           );
           toast.success("Xóa thành công!");
         } else {
-          toast.error("Xóa thất bại!");
+          toast.error(result?.message || "Xóa thất bại!");
         }
-      } catch {
+      } catch (error) {
+        console.error("Error deleting category:", error);
         toast.error("Xóa thất bại!");
       }
       setCategoryToDelete(null);
@@ -230,18 +225,12 @@ export default function CategoriesManagement() {
     if (editingCategory) {
       // Update category
       try {
-        const res = await fetch(
-          `http://localhost:8080/api/category/${editingCategory.MaLoaiSP}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              TenLoai: formData.TenLoai,
-              HinhMinhHoa: formData.HinhMinhHoa,
-            }),
-          }
-        );
-        if (res.ok) {
+        const result = await updateCategory(editingCategory.MaLoaiSP, {
+          TenLoai: formData.TenLoai,
+          HinhMinhHoa: formData.HinhMinhHoa,
+        });
+
+        if (result && !result.error) {
           toast.success("Cập nhật thành công!");
           setCategories((prev) =>
             prev.map((c) =>
@@ -255,33 +244,28 @@ export default function CategoriesManagement() {
             )
           );
         } else {
-          toast.error("Cập nhật thất bại!");
+          toast.error(result?.message || "Cập nhật thất bại!");
         }
-      } catch {
+      } catch (error) {
+        console.error("Error updating category:", error);
         toast.error("Cập nhật thất bại!");
       }
     } else {
       // Add new category
       try {
-        const res = await fetch("http://localhost:8080/api/category", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            TenLoai: formData.TenLoai,
-            HinhMinhHoa: formData.HinhMinhHoa,
-            NgayTao: new Date(),
-          }),
+        const result = await createCategory({
+          TenLoai: formData.TenLoai,
+          HinhMinhHoa: formData.HinhMinhHoa,
         });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.data) {
-            setCategories((prev) => [...prev, data.data]);
-          }
+
+        if (result && !result.error && result.data) {
+          setCategories((prev) => [...prev, result.data]);
           toast.success("Thêm thành công!");
         } else {
-          toast.error("Thêm thất bại!");
+          toast.error(result?.message || "Thêm thất bại!");
         }
-      } catch {
+      } catch (error) {
+        console.error("Error creating category:", error);
         toast.error("Thêm thất bại!");
       }
     }

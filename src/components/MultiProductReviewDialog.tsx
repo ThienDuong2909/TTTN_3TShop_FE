@@ -1,30 +1,30 @@
-import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Star, ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { formatVietnameseCurrency } from "@/lib/utils";
 import { submitMultipleReviews } from "@/services/api";
+import { ArrowLeft, ArrowRight, CheckCircle, Star } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 interface ProductToReview {
-  maCTSP: number;
-  tenSP: string;
-  tenMau: string;
-  tenKichThuoc: string;
-  soLuong: number;
-  donGia: number;
-  maCTDonDatHang: number;
+  MaCTSP: number;
+  TenSP: string;
+  MauSac: string;
+  KichThuoc: string;
+  SoLuong: number;
+  DonGia: number;
+  MaCTDonDatHang: number;
   imageUrl?: string;
   existingReview?: {
-    soSao: number;
-    moTa: string;
+    SoSao: number;
+    MoTa: string;
   };
 }
 
@@ -50,11 +50,19 @@ export const MultiProductReviewDialog: React.FC<
   const [hoveredRating, setHoveredRating] = useState(0);
 
   const currentProduct = productsToReview[currentProductIndex];
-  const currentReview = reviews[currentProduct?.maCTDonDatHang] || {
-    maCTDonDatHang: currentProduct?.maCTDonDatHang || 0,
-    soSao: currentProduct?.existingReview?.soSao || 0,
-    moTa: currentProduct?.existingReview?.moTa || "",
+  const currentReview = reviews[currentProduct?.MaCTDonDatHang] || {
+    maCTDonDatHang: currentProduct?.MaCTDonDatHang || 0,
+    soSao: currentProduct?.existingReview?.SoSao || 0,
+    moTa: currentProduct?.existingReview?.MoTa || "",
   };
+
+  // Debug logging
+  console.log("MultiProductReviewDialog - productsToReview:", productsToReview);
+  console.log(
+    "MultiProductReviewDialog - currentProductIndex:",
+    currentProductIndex
+  );
+  console.log("MultiProductReviewDialog - currentProduct:", currentProduct);
 
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -64,10 +72,10 @@ export const MultiProductReviewDialog: React.FC<
       const initialReviews: Record<number, ProductReview> = {};
       productsToReview.forEach((product) => {
         if (product.existingReview) {
-          initialReviews[product.maCTDonDatHang] = {
-            maCTDonDatHang: product.maCTDonDatHang,
-            soSao: product.existingReview.soSao,
-            moTa: product.existingReview.moTa,
+          initialReviews[product.MaCTDonDatHang] = {
+            maCTDonDatHang: product.MaCTDonDatHang,
+            soSao: product.existingReview.SoSao,
+            moTa: product.existingReview.MoTa,
           };
         }
       });
@@ -86,7 +94,7 @@ export const MultiProductReviewDialog: React.FC<
 
     setReviews((prev) => ({
       ...prev,
-      [currentProduct.maCTDonDatHang]: {
+      [currentProduct.MaCTDonDatHang]: {
         ...currentReview,
         [field]: value,
       },
@@ -96,7 +104,7 @@ export const MultiProductReviewDialog: React.FC<
   const hasReviewForProduct = (productIndex: number) => {
     const product = productsToReview[productIndex];
     if (!product) return false;
-    const review = reviews[product.maCTDonDatHang];
+    const review = reviews[product.MaCTDonDatHang];
     return review && review.soSao > 0 && review.moTa.trim().length > 0;
   };
 
@@ -160,7 +168,47 @@ export const MultiProductReviewDialog: React.FC<
     onClose();
   };
 
-  if (!currentProduct || productsToReview.length === 0) return null;
+  if (!isOpen) return null;
+
+  if (!productsToReview || productsToReview.length === 0) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Đánh giá sản phẩm</DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-8">
+            <p className="text-gray-600">Không có sản phẩm nào để đánh giá.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleClose}>
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (!currentProduct) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Đánh giá sản phẩm</DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-8">
+            <p className="text-gray-600">Không thể tải thông tin sản phẩm.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleClose}>
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const completedReviews = Object.values(reviews).filter(
     (review) => review.soSao >= 0 && review.moTa.trim().length > 0
@@ -182,24 +230,26 @@ export const MultiProductReviewDialog: React.FC<
           {/* Product Info */}
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center space-x-3">
-              {currentProduct.imageUrl && (
+              {currentProduct?.imageUrl && (
                 <div className="w-16 h-16 bg-white rounded overflow-hidden flex-shrink-0">
                   <img
                     src={currentProduct.imageUrl}
-                    alt={currentProduct.tenSP}
+                    alt={currentProduct?.TenSP || "Sản phẩm"}
                     className="object-cover w-full h-full"
                   />
                 </div>
               )}
               <div className="flex-1">
-                <p className="font-medium text-sm">{currentProduct.tenSP}</p>
-                <p className="text-xs text-gray-600">
-                  Màu: {currentProduct.tenMau} | Kích thước:{" "}
-                  {currentProduct.tenKichThuoc}
+                <p className="font-medium text-sm">
+                  {currentProduct?.TenSP || "Không có tên sản phẩm"}
                 </p>
                 <p className="text-xs text-gray-600">
-                  Số lượng: {currentProduct.soLuong} | Đơn giá:{" "}
-                  {currentProduct.donGia.toLocaleString()}₫
+                  Màu: {currentProduct?.MauSac || "N/A"} | Kích thước:{" "}
+                  {currentProduct?.KichThuoc || "N/A"}
+                </p>
+                <p className="text-xs text-gray-600">
+                  Số lượng: {currentProduct?.SoLuong || 0} | Đơn giá:{" "}
+                  {formatVietnameseCurrency(currentProduct?.DonGia)}
                 </p>
               </div>
             </div>

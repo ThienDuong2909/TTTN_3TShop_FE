@@ -27,65 +27,18 @@ import {
 import { Separator } from "../components/ui/separator";
 import { Label } from "../components/ui/label";
 import { InvoiceView } from "../components/Invoice";
+import {
+  OrderApprovalModal,
+  OrderCancelModal,
+  InvoiceModal,
+} from "../components/admin-order-detail";
 import { toast } from "sonner";
-import { updateOrderStatus } from "../services/api";
-
-// Additional API functions for order detail management
-const getOrderDetailById = async (orderId: string) => {
-  try {
-    const response = await fetch(
-      `http://localhost:8080/api/orders/${orderId}/detail`,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error("Error fetching order detail:", error);
-    return { success: false, message: "Không thể tải thông tin đơn hàng" };
-  }
-};
-
-const getInvoiceByOrderId = async (orderId: string) => {
-  try {
-    const response = await fetch(
-      `http://localhost:8080/api/invoices/order/${orderId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error("Error fetching invoice:", error);
-    return { success: false, message: "Không thể tải thông tin hóa đơn" };
-  }
-};
-
-const createInvoice = async (invoiceData: any) => {
-  try {
-    const response = await fetch("http://localhost:8080/api/invoices", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(invoiceData),
-    });
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error("Error creating invoice:", error);
-    return { success: false, message: "Không thể tạo hóa đơn" };
-  }
-};
+import {
+  updateOrderStatus,
+  getOrderDetailById,
+  getInvoiceByOrderId,
+  createInvoice,
+} from "../services/api";
 
 interface OrderDetail {
   ThongTinDonHang: {
@@ -507,11 +460,6 @@ export const OrderDetail = () => {
               {orderDetail.ThongTinHoaDon ? "Xem hóa đơn" : "Tạo hóa đơn"}
             </Button>
           )}
-
-          {/* <Button variant="outline" size="sm">
-            <FileText className="w-4 h-4 mr-2" />
-            In đơn hàng
-          </Button> */}
         </div>
       </div>
 
@@ -913,173 +861,30 @@ export const OrderDetail = () => {
         </div>
       </div>
 
-      {/* Approval Confirmation Modal */}
-      {showApprovalModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-[#825B32]/10 rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-[#825B32]" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Xác nhận duyệt đơn hàng
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Đơn hàng #{orderDetail?.ThongTinDonHang.MaDDH}
-                  </p>
-                </div>
-              </div>
+      {/* Modals */}
+      <OrderApprovalModal
+        isOpen={showApprovalModal}
+        onClose={() => setShowApprovalModal(false)}
+        orderDetail={orderDetail}
+        isApproving={approvingOrder}
+        onConfirm={confirmApproveOrder}
+      />
 
-              <p className="text-gray-700 mb-6">
-                Bạn có chắc chắn muốn duyệt đơn hàng này? Trạng thái đơn hàng sẽ
-                được chuyển thành "Đã duyệt".
-              </p>
+      <OrderCancelModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        orderDetail={orderDetail}
+        isCancelling={cancellingOrder}
+        onConfirm={confirmCancelOrder}
+      />
 
-              <div className="flex justify-end space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowApprovalModal(false)}
-                  disabled={approvingOrder}
-                >
-                  Hủy
-                </Button>
-                <Button
-                  onClick={confirmApproveOrder}
-                  disabled={approvingOrder}
-                  className="bg-[#825B32] hover:bg-[#825B32]/90 text-white"
-                >
-                  {approvingOrder ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Đang duyệt...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Duyệt đơn hàng
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Cancel Confirmation Modal */}
-      {showCancelModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Xác nhận hủy đơn hàng
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Đơn hàng #{orderDetail?.ThongTinDonHang.MaDDH}
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-gray-700 mb-6">
-                Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này không thể
-                hoàn tác.
-              </p>
-
-              <div className="flex justify-end space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowCancelModal(false)}
-                  disabled={cancellingOrder}
-                >
-                  Hủy bỏ
-                </Button>
-                <Button
-                  onClick={confirmCancelOrder}
-                  disabled={cancellingOrder}
-                  variant="destructive"
-                >
-                  {cancellingOrder ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Đang hủy...
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="w-4 h-4 mr-2" />
-                      Xác nhận hủy
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Invoice Creation Modal */}
-      {showInvoiceModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-[#825B32]/10 rounded-full flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-[#825B32]" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Tạo hóa đơn cho đơn hàng
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Đơn hàng #{orderDetail?.ThongTinDonHang.MaDDH}
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-gray-700 mb-6">
-                {orderDetail.ThongTinHoaDon
-                  ? "Đơn hàng này đã có hóa đơn. Bạn có muốn xem chi tiết hóa đơn?"
-                  : "Bạn có chắc chắn muốn tạo hóa đơn cho đơn hàng này? Hóa đơn sẽ được lưu vào hệ thống."}
-              </p>
-
-              <div className="flex justify-end space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowInvoiceModal(false)}
-                  disabled={creatingInvoice}
-                >
-                  Hủy
-                </Button>
-                <Button
-                  onClick={confirmCreateInvoice}
-                  disabled={creatingInvoice}
-                  className="bg-[#825B32] hover:bg-[#825B32]/90 text-white"
-                >
-                  {creatingInvoice ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Đang xử lý...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="w-4 h-4 mr-2" />
-                      {orderDetail.ThongTinHoaDon
-                        ? "Xem hóa đơn"
-                        : "Tạo hóa đơn"}
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <InvoiceModal
+        isOpen={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        orderDetail={orderDetail}
+        isCreating={creatingInvoice}
+        onConfirm={confirmCreateInvoice}
+      />
 
       {/* Invoice View Modal */}
       <InvoiceView

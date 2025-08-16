@@ -23,14 +23,48 @@ const formatDateForApi = (date) => {
 // ===================
 // EMPLOYEE API
 // ===================
+// EMPLOYEE API
+// ===================
 
 // Lấy danh sách nhân viên
 export const getEmployees = async () => {
   try {
     const response = await api.get("/employees");
-    return response.data;
+    const result = response.data;
+    
+    if (result.success && Array.isArray(result.data)) {
+      const mapped = result.data.map((item) => {
+        // Find latest department (most recent NgayBatDau) for all employee info
+        const latestDepartment = item.NhanVien_BoPhans?.reduce((latest, current) => {
+          if (!latest) return current;
+          return new Date(current.NgayBatDau) > new Date(latest.NgayBatDau) ? current : latest;
+        }, null) || {};
+        
+        const mappedEmployee = {
+          maNV: item.MaNV,
+          tenNV: item.TenNV || 'MISSING NAME',
+          ngaySinh: item.NgaySinh,
+          diaChi: item.DiaChi,
+          luong: item.Luong ? parseInt(item.Luong) : undefined,
+          maTK: item.MaTK,
+          department: latestDepartment.BoPhan?.MaBoPhan?.toString() || '',
+          departmentName: latestDepartment.BoPhan?.TenBoPhan || '',
+          username: item.TaiKhoan?.Email || 'MISSING EMAIL',
+          isActive: latestDepartment.TrangThai || '',
+          createdAt: latestDepartment.NgayBatDau || '',
+          updatedAt: latestDepartment.NgayKetThuc || '',
+          khuVucPhuTrach: item.KhuVucPhuTrach || [],
+        };
+        return mappedEmployee;
+      });
+      
+      return mapped;
+    } else {
+      return [];
+    }
   } catch (error) {
-    handleError(error);
+    console.error('Error fetching employees:', error);
+    throw new Error('Không thể tải danh sách nhân viên');
   }
 };
 
@@ -40,7 +74,85 @@ export const getCurrentEmployee = async () => {
     const response = await api.get("/auth/profile");
     return response.data;
   } catch (error) {
-    handleError(error);
+    return handleError(error);
+  }
+};
+
+// Tạo nhân viên mới
+export const createEmployee = async (data) => {
+  try {
+    const response = await api.post("/employees", data);
+    const result = response.data;
+    
+    if (result.success) {
+      return result;
+    } else {
+      throw new Error(result.message || "Không thể tạo nhân viên");
+    }
+  } catch (error) {
+    console.error('Error creating employee:', error);
+    throw new Error(error.response?.data?.message || "Lỗi khi tạo nhân viên");
+  }
+};
+
+// Cập nhật thông tin nhân viên
+export const updateEmployee = async (employeeId, data) => {
+  try {
+    const response = await api.put(`/employees/${employeeId}`, data);
+    const result = response.data;
+    
+    if (result.success) {
+      return result;
+    } else {
+      throw new Error(result.message || "Không thể cập nhật nhân viên");
+    }
+  } catch (error) {
+    console.error('Error updating employee:', error);
+    throw new Error(error.response?.data?.message || "Lỗi khi cập nhật nhân viên");
+  }
+};
+
+// Điều chuyển nhân viên
+export const transferEmployee = async (data) => {
+  try {
+    const response = await api.post("/employees/transfer", data);
+    const result = response.data;
+    
+    if (result.success) {
+      return result;
+    } else {
+      throw new Error(result.message || "Không thể điều chuyển nhân viên");
+    }
+  } catch (error) {
+    console.error('Error transferring employee:', error);
+    throw new Error(error.response?.data?.message || "Lỗi khi điều chuyển nhân viên");
+  }
+};
+
+// Lấy lịch sử làm việc của nhân viên
+export const getEmployeeWorkHistory = async (employeeId) => {
+  try {
+    const response = await api.get(`/employees/${employeeId}/department-history`);
+    const result = response.data;
+    
+    if (result.success && Array.isArray(result.data)) {
+      return result.data;
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching employee work history:', error);
+    return []; // Return empty array on error to prevent forEach issues
+  }
+};
+
+// Lấy thông tin chi tiết nhân viên
+export const getEmployeeById = async (employeeId) => {
+  try {
+    const response = await api.get(`/employees/${employeeId}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
   }
 };
 
@@ -48,13 +160,24 @@ export const getCurrentEmployee = async () => {
 // SUPPLIER API
 // ===================
 
-// Lấy danh sách nhà cung cấp
-export const getSuppliers = async () => {
+// Lấy danh sách nhà cung cấp với phân trang
+export const getSuppliers = async (page = 1) => {
   try {
-    const response = await api.get("/suppliers");
+    const response = await api.get(`/suppliers?page=${page}`);
     return response.data;
   } catch (error) {
-    handleError(error);
+    return handleError(error);
+  }
+};
+
+// Lấy tất cả nhà cung cấp (không phân trang) - dùng cho ProductAdd
+export const getAllSuppliers = async () => {
+  try {
+    const response = await api.get("/suppliers/get-all");
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching all suppliers:", error);
+    return [];
   }
 };
 
@@ -64,21 +187,167 @@ export const createSupplier = async (data) => {
     const response = await api.post("/suppliers", data);
     return response.data;
   } catch (error) {
-    handleError(error);
+    return handleError(error);
+  }
+};
+
+// Cập nhật thông tin nhà cung cấp
+export const updateSupplier = async (supplierId, data) => {
+  try {
+    const response = await api.put(`/suppliers/${supplierId}`, data);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Xóa nhà cung cấp
+export const deleteSupplier = async (supplierId) => {
+  try {
+    const response = await api.delete(`/suppliers/${supplierId}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy thông tin chi tiết nhà cung cấp
+export const getSupplierById = async (supplierId) => {
+  try {
+    const response = await api.get(`/suppliers/${supplierId}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
   }
 };
 
 // ===================
+// DEPARTMENT API
+// ===================
+
+// Lấy danh sách bộ phận
+export const getDepartments = async () => {
+  try {
+    const response = await api.get("/department");
+    const result = response.data;
+
+    if (result && result.success && Array.isArray(result.data)) {
+      return result;
+    } else if (Array.isArray(result)) {
+      return result;
+    } else {
+      return { success: false, data: [] };
+    }
+  } catch (error) {
+    console.error('Error fetching departments:', error);
+    return { success: false, data: [] };
+  }
+};
+
+// Tạo bộ phận mới
+export const createDepartment = async (data) => {
+  try {
+    const response = await api.post("/department", data);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Cập nhật thông tin bộ phận
+export const updateDepartment = async (departmentId, data) => {
+  try {
+    const response = await api.put(`/department/${departmentId}`, data);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Cập nhật trạng thái bộ phận (ẩn/hiển thị)
+export const updateDepartmentStatus = async (departmentId, status) => {
+  try {
+    const response = await api.put(`/department/${departmentId}`, { TrangThai: status });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy thông tin chi tiết bộ phận
+export const getDepartmentById = async (departmentId) => {
+  try {
+    const response = await api.get(`/department/${departmentId}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// ===================
+// ===================
 // PRODUCT API
 // ===================
 
-// Lấy danh sách sản phẩm
-export const getProducts = async () => {
+// Lấy danh sách sản phẩm với phân trang và filter
+export const getProducts = async (params = {}) => {
   try {
-    const response = await api.get("/products");
-    return response.data;
+    const { 
+      page = 1, 
+      pageSize = 8, 
+      search = "", 
+      category = "" 
+    } = params;
+    
+    // Build query parameters
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+    });
+    
+    if (search) queryParams.append('search', search);
+    // Nếu chọn "all" thì không truyền MaLoaiSP cho API
+    if (category && category !== "all") queryParams.append('MaLoaiSP', category);
+
+    const response = await api.get(`/products/get-all-products?${queryParams.toString()}`);
+    const result = response.data;
+    
+    if (result.success && result.data && result.data.data && Array.isArray(result.data.data)) {
+      return {
+        success: true,
+        data: result.data.data,
+        pagination: {
+          page: result.data.page || page,
+          pageSize: result.data.pageSize || pageSize,
+          total: result.data.total || 0,
+          totalPages: Math.ceil((result.data.total || 0) / (result.data.pageSize || pageSize))
+        }
+      };
+    } else {
+      console.error('Invalid products data structure:', result);
+      return {
+        success: false,
+        data: [],
+        pagination: {
+          page: 1,
+          pageSize: pageSize,
+          total: 0,
+          totalPages: 0
+        }
+      };
+    }
   } catch (error) {
-    handleError(error);
+    console.error('Error fetching products:', error);
+    return {
+      success: false,
+      data: [],
+      pagination: {
+        page: 1,
+        pageSize: params.pageSize || 8,
+        total: 0,
+        totalPages: 0
+      }
+    };
   }
 };
 
@@ -366,6 +635,39 @@ export const getColors = async () => {
   }
 };
 
+// Tạo màu mới
+export const createColor = async (colorData) => {
+  try {
+    const response = await api.post("/colors", colorData);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+// Cập nhật màu
+export const updateColor = async (colorId, colorData) => {
+  try {
+    const response = await api.put(`/colors/${colorId}`, colorData);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+// Xóa màu
+export const deleteColor = async (colorId) => {
+  try {
+    const response = await api.delete(`/colors/${colorId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
 // Lấy danh sách size
 export const getSizes = async () => {
   try {
@@ -448,6 +750,22 @@ export const updateBatchOrderStatus = async (ordersData) => {
 export const getAvailableDeliveryStaff = async (address) => {
   try {
     const response = await api.post("/employees/delivery/available", { diaChi: address });
+    
+    // Handle the new API response structure
+    if (response.data && response.data.success && Array.isArray(response.data.data)) {
+      return {
+        success: true,
+        message: response.data.message,
+        data: response.data.data.map(staff => ({
+          MaNV: staff.MaNV,
+          TenNV: staff.TenNV,
+          DiaChi: staff.DiaChi,
+          SoDonDangGiao: staff.SoDonDangGiao || 0,
+          KhuVucPhuTrach: staff.KhuVucPhuTrach || null
+        }))
+      };
+    }
+    
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -842,10 +1160,316 @@ export const getProductComments = async (productId) => {
 // RETURN REQUESTS API
 // ===================
 
+// Tạo phiếu trả hàng
+export const createReturnSlip = async (returnData) => {
+  try {
+    const response = await api.post("/return/slip", returnData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
 // Lấy danh sách yêu cầu trả hàng
 export const getReturnRequests = async () => {
   try {
     const response = await api.get("/return/requests");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy danh sách phiếu trả hàng theo trạng thái
+export const getReturnRequestsByStatus = async (status) => {
+  try {
+    const response = await api.get(`/return/requests?status=${status}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy danh sách phiếu trả hàng (slips) theo trạng thái
+export const getReturnSlipsByStatus = async (status) => {
+  try {
+    const response = await api.get(`/return/slips?trangThai=${status}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Cập nhật trạng thái phiếu trả hàng
+export const updateReturnSlipStatus = async (returnSlipId, statusData) => {
+  try {
+    const response = await api.put(`/return/slip/${returnSlipId}/approve`, statusData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Tạo phiếu chi cho phiếu trả hàng
+export const createReturnPayment = async (paymentData) => {
+  try {
+    const response = await api.post("/return/payment", paymentData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// ===================
+// PROMOTION/DISCOUNT API
+// ===================
+
+// Lấy danh sách đợt giảm giá
+export const getPromotions = async () => {
+  try {
+    const response = await api.get("/promotions");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Tạo đợt giảm giá mới
+export const createPromotion = async (promotionData) => {
+  try {
+    const response = await api.post("/promotions", promotionData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Cập nhật đợt giảm giá
+export const updatePromotion = async (promotionId, promotionData) => {
+  try {
+    const response = await api.put(`/promotions/${promotionId}`, promotionData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Xóa đợt giảm giá
+export const deletePromotion = async (promotionId) => {
+  try {
+    const response = await api.delete(`/promotions/${promotionId}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy thông tin chi tiết đợt giảm giá
+export const getPromotionById = async (promotionId) => {
+  try {
+    const response = await api.get(`/api/promotions/${promotionId}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy danh sách sản phẩm cho đợt giảm giá
+export const getProductsForPromotion = async () => {
+  try {
+    const response = await api.get("/products");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy danh sách sản phẩm available cho đợt giảm giá
+export const getAvailableProductsForPromotion = async () => {
+  try {
+    const response = await api.get("/products");
+    return {
+      success: response.data.success,
+      message: response.data.message,
+      data: response.data.data, // Direct access to data array
+    };
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Xóa sản phẩm khỏi đợt giảm giá
+export const removeProductFromPromotion = async (maDot, maSP) => {
+  try {
+    const response = await api.delete(`promotions/${maDot}/products/${maSP}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Thêm sản phẩm vào đợt giảm giá
+export const addProductToPromotion = async (maDot, productData) => {
+  try {
+    const response = await api.post(`/promotions/${maDot}/products`, productData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Validate promotion period for conflicts
+export const validatePromotionPeriod = async (ngayBatDau, ngayKetThuc) => {
+  try {
+    const response = await api.post("/promotions/validate-period", {
+      ngayBatDau,
+      ngayKetThuc
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Get areas
+export const getAreas = async () => {
+  try {
+    const response = await api.get('/areas');
+    const result = response.data;
+    
+    if (result.success && Array.isArray(result.data)) {
+      return result.data;
+    } else {
+      console.warn('Unexpected areas API response structure:', result);
+      return [];
+    }
+  } catch (error) {
+    console.error("🔥 getAreas error:", error);
+    return []; // Return empty array on error
+  }
+};
+
+// ===================
+// CATEGORY API
+// ===================
+
+// Lấy danh sách danh mục sản phẩm
+export const getCategories = async () => {
+  try {
+    const response = await api.get("/category");
+    const result = response.data;
+    
+    if (result && result.success && Array.isArray(result.data)) {
+      return result.data;
+    } else if (Array.isArray(result)) {
+      return result;
+    } else {
+      console.error('Categories data is not in expected format:', result);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
+};
+
+// Tạo danh mục mới
+export const createCategory = async (data) => {
+  try {
+    const response = await api.post("/category", {
+      TenLoai: data.TenLoai,
+      HinhMinhHoa: data.HinhMinhHoa,
+      NgayTao: new Date(),
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Cập nhật thông tin danh mục
+export const updateCategory = async (categoryId, data) => {
+  try {
+    const response = await api.put(`/category/${categoryId}`, {
+      TenLoai: data.TenLoai,
+      HinhMinhHoa: data.HinhMinhHoa,
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Xóa danh mục
+export const deleteCategory = async (categoryId) => {
+  try {
+    const response = await api.delete(`/category/${categoryId}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy thông tin chi tiết danh mục
+export const getCategoryById = async (categoryId) => {
+  try {
+    const response = await api.get(`/category/${categoryId}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// ===================
+// PRODUCT MANAGEMENT API
+// ===================
+
+// Cập nhật sản phẩm
+export const updateProduct = async (productId, updateData) => {
+  try {
+    const response = await api.put(`/products/${productId}/update`, updateData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Cập nhật trạng thái sản phẩm (ẩn/hiện)
+export const updateProductStatus = async (productId, status) => {
+  try {
+    const response = await api.put(`/products/${productId}`, {
+      TrangThai: status,
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy chi tiết sản phẩm cho quản lý
+export const getProductByIdForManagement = async (productId) => {
+  try {
+    const response = await api.get(`/products/${productId}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Tạo sản phẩm mới
+export const createProduct = async (productData) => {
+  try {
+    const response = await api.post('/products', productData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Xóa sản phẩm
+export const deleteProduct = async (productId) => {
+  try {
+    const response = await api.delete(`/products/${productId}`);
     return response.data;
   } catch (error) {
     return handleError(error);

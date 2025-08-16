@@ -1,9 +1,25 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, RefreshCw, Edit2, ArrowRight, History } from "lucide-react";
+import { Eye, EyeOff, Edit2, ArrowRight, History, Shield } from "lucide-react";
 import { DataTable, Column } from "../components/ui/DataTable";
-import { Modal } from "../components/ui/Modal";
 import { toast, Toaster } from "sonner";
-import districts from "../data/districts.json";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import {
+  getDepartments,
+  getEmployees,
+  createEmployee,
+  updateEmployee,
+  transferEmployee as transferEmployeeAPI,
+  getEmployeeWorkHistory,
+  getAreas,
+} from "../services/api";
 
 // Interface matching SQL structure
 interface Employee {
@@ -20,66 +36,102 @@ interface Employee {
   isActive: string; // Changed from boolean to string to match API
   createdAt: string;
   updatedAt?: string;
+  khuVucPhuTrach?: Array<{
+    MaKhuVuc: string;
+    TenKhuVuc: string;
+    NhanVien_KhuVuc: {
+      NgayTao: string;
+      TrangThai: number;
+    };
+  }>;
 }
 
 // ...existing code...
 
 export const EmployeeManagement = () => {
-  const [departments, setDepartments] = useState<{ id: string, name: string }[]>([]);
-  
+  const [departments, setDepartments] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [areas, setAreas] = useState<{ MaKhuVuc: string; TenKhuVuc: string }[]>(
+    []
+  );
+
+  // Helper functions for handling multi-select areas
+  const handleAreaToggle = (areaCode: string, isTransfer = false) => {
+    if (isTransfer) {
+      const currentAreas = transferData.selectedAreas;
+      const newAreas = currentAreas.includes(areaCode)
+        ? currentAreas.filter((code) => code !== areaCode)
+        : [...currentAreas, areaCode];
+      setTransferData({ ...transferData, selectedAreas: newAreas });
+    } else {
+      const currentAreas = formData.selectedAreas;
+      const newAreas = currentAreas.includes(areaCode)
+        ? currentAreas.filter((code) => code !== areaCode)
+        : [...currentAreas, areaCode];
+      setFormData({ ...formData, selectedAreas: newAreas });
+    }
+  };
+
+  const isAreaSelected = (areaCode: string, isTransfer = false) => {
+    return isTransfer
+      ? transferData.selectedAreas.includes(areaCode)
+      : formData.selectedAreas.includes(areaCode);
+  };
+
   // Helper functions for currency formatting
   const formatCurrency = (value: number): string => {
-    if (!value || value === 0) return '';
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
+    if (!value || value === 0) return "";
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
   const unformatCurrency = (value: string): number => {
     if (!value) return 0;
     // Remove all non-digit characters
-    const numberString = value.replace(/\D/g, '');
+    const numberString = value.replace(/\D/g, "");
     return parseInt(numberString) || 0;
   };
 
   const handleSalaryChange = (value: string) => {
     // Allow only numbers and common currency characters
-    const cleanValue = value.replace(/[^\d.,₫]/g, '');
+    const cleanValue = value.replace(/[^\d.,₫]/g, "");
     const numericValue = unformatCurrency(cleanValue);
     setFormData({ ...formData, luong: numericValue });
   };
-  
+
   // Helper functions for work history
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+    return new Date(dateString).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     });
   };
 
   const calculateWorkDuration = (startDate: string, endDate: string) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+
     // Đảm bảo endDate >= startDate
     if (end < start) {
-      return '0 ngày';
+      return "0 ngày";
     }
-    
+
     // Tính số năm, tháng chính xác
     let years = end.getFullYear() - start.getFullYear();
     let months = end.getMonth() - start.getMonth();
-    
+
     // Điều chỉnh nếu tháng âm
     if (months < 0) {
       years--;
       months += 12;
     }
-    
+
     // Điều chỉnh nếu ngày trong tháng chưa đủ
     if (end.getDate() < start.getDate()) {
       months--;
@@ -88,7 +140,7 @@ export const EmployeeManagement = () => {
         months += 12;
       }
     }
-    
+
     // Format kết quả theo định dạng: X năm Y tháng
     const parts = [];
     if (years > 0) {
@@ -97,19 +149,19 @@ export const EmployeeManagement = () => {
     if (months > 0) {
       parts.push(`${months} tháng`);
     }
-    
+
     // Nếu chưa đủ 1 tháng thì hiển thị "Dưới 1 tháng"
     if (years === 0 && months === 0) {
-      return 'Dưới 1 tháng';
+      return "Dưới 1 tháng";
     }
-    
-    return parts.join(' ');
+
+    return parts.join(" ");
   };
 
   // Hàm tính tổng thời gian làm việc từ tất cả lịch sử
   const calculateTotalWorkDuration = (workHistoryList: any[]) => {
     if (!workHistoryList || workHistoryList.length === 0) {
-      return 'Dưới 1 tháng';
+      return "Dưới 1 tháng";
     }
 
     let totalYears = 0;
@@ -117,7 +169,7 @@ export const EmployeeManagement = () => {
 
     workHistoryList.forEach((history: any) => {
       const startDate = new Date(history.NgayBatDau);
-      const endDate = history.NgayKetThuc 
+      const endDate = history.NgayKetThuc
         ? new Date(history.NgayKetThuc)
         : new Date(); // Nếu chưa kết thúc thì tính đến hiện tại
 
@@ -163,93 +215,65 @@ export const EmployeeManagement = () => {
       parts.push(`${totalMonths} tháng`);
     }
 
-    return parts.length > 0 ? parts.join(' ') : 'Dưới 1 tháng';
+    return parts.length > 0 ? parts.join(" ") : "Dưới 1 tháng";
   };
 
   // Fetch work history for specific employee
   const fetchWorkHistory = async (maNV: number) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/employees/${maNV}/department-history`);
-      const result = await response.json();
-      
-      if (result.success && Array.isArray(result.data)) {
-        setWorkHistory(result.data);
-      } else {
-        setWorkHistory([]);
-        toast.error("Không thể tải lịch sử làm việc");
-      }
+      const workHistoryData = await getEmployeeWorkHistory(maNV);
+      setWorkHistory(workHistoryData);
     } catch (error) {
-      console.error('Error fetching work history:', error);
+      console.error("Error fetching work history:", error);
       setWorkHistory([]);
       toast.error("Lỗi khi tải lịch sử làm việc");
     }
   };
 
-  // Handle view history
-  const handleViewHistory = async (employee: Employee) => {
-    setSelectedEmployeeHistory(employee);
-    await fetchWorkHistory(employee.maNV);
-    setIsHistoryModalOpen(true);
-  };
   // Fetch departments with TrangThai === true
   React.useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/department');
-        const result = await res.json();
-        if (result.success && Array.isArray(result.data)) {
-          const filtered = result.data
-            .filter((item: any) => item.TrangThai === true)
-            .map((item: any) => ({
-              id: item.MaBoPhan?.toString(),
-              name: item.TenBoPhan || '',
-            }));
-          setDepartments(filtered);
-        }
+        const departmentsData = await getDepartments();
+        const filtered = departmentsData
+          .filter((item: any) => item.TrangThai === true)
+          .map((item: any) => ({
+            id: item.MaBoPhan?.toString(),
+            name: item.TenBoPhan || "",
+          }));
+        setDepartments(filtered);
       } catch (error) {
         setDepartments([]);
       }
     };
     fetchDepartments();
   }, []);
+
+  // Fetch areas
+  React.useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const areasData = await getAreas();
+        setAreas(Array.isArray(areasData) ? areasData : []);
+      } catch (error) {
+        console.error("Error fetching areas:", error);
+        setAreas([]);
+      }
+    };
+    fetchAreas();
+  }, []);
   const [employees, setEmployees] = useState<Employee[]>([]);
 
   // Fetch employees from API
   const refreshEmployees = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/employees');
-      const result = await res.json();
-      
-      if (result.success && Array.isArray(result.data)) {
-        const mapped = result.data.map((item: any) => {
-          // Find latest department (most recent NgayBatDau) for all employee info
-          const latestDepartment = item.NhanVien_BoPhans?.reduce((latest: any, current: any) => {
-            if (!latest) return current;
-            return new Date(current.NgayBatDau) > new Date(latest.NgayBatDau) ? current : latest;
-          }, null) || {};
-          
-          const mappedEmployee = {
-            maNV: item.MaNV,
-            tenNV: item.TenNV || 'MISSING NAME',
-            ngaySinh: item.NgaySinh,
-            diaChi: item.DiaChi,
-            luong: item.Luong ? parseInt(item.Luong) : undefined,
-            maTK: item.MaTK,
-            department: latestDepartment.BoPhan?.MaBoPhan?.toString() || '',
-            departmentName: latestDepartment.BoPhan?.TenBoPhan || '',
-            username: item.TaiKhoan?.Email || 'MISSING EMAIL',
-            isActive: latestDepartment.TrangThai || '',
-            createdAt: latestDepartment.NgayBatDau || '',
-            updatedAt: latestDepartment.NgayKetThuc || '',
-          };
-          return mappedEmployee;
-        });
-        
-        setEmployees(mapped);
-      }
+      const employeesData = await getEmployees();
+      // Ensure we always set an array
+      setEmployees(Array.isArray(employeesData) ? employeesData : []);
     } catch (error) {
-      console.error('💥 Fetch Error:', error);
+      console.error("💥 Fetch Error:", error);
       setEmployees([]);
+      toast.error("Lỗi khi tải danh sách nhân viên");
     }
   };
   React.useEffect(() => {
@@ -258,16 +282,24 @@ export const EmployeeManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [openFromDetail, setOpenFromDetail] = useState(false); // Track if modal opened from detail
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
+    null
+  );
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const [transferEmployee, setTransferEmployee] = useState<Employee | null>(null);
-  const [selectedEmployeeHistory, setSelectedEmployeeHistory] = useState<Employee | null>(null);
+  const [transferEmployee, setTransferEmployee] = useState<Employee | null>(
+    null
+  );
+  const [selectedEmployeeHistory, setSelectedEmployeeHistory] =
+    useState<Employee | null>(null);
   const [workHistory, setWorkHistory] = useState<any[]>([]);
   const [transferData, setTransferData] = useState({
     newDepartment: "",
     transferDate: new Date().toISOString().slice(0, 10),
     position: "Nhân viên",
     notes: "",
-    district: "" // Thêm trường khu vực
+    selectedAreas: [] as string[], // Changed from district to selectedAreas array
   });
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -281,10 +313,67 @@ export const EmployeeManagement = () => {
     chucVu: "Nhân viên",
     ghiChu: "",
     username: "",
-    password: "3TShop@2025",
+    password: "",
     isActive: "DANGLAMVIEC",
-    district: "", // Thêm trường khu vực cho nhân viên mới
+    selectedAreas: [] as string[], // Changed from district to selectedAreas array
   });
+
+  // Handle view employee detail
+  const handleViewDetail = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsDetailModalOpen(true);
+  };
+
+  // Handle edit from detail dialog
+  const handleEditFromDetail = () => {
+    if (selectedEmployee) {
+      setEditingEmployee(selectedEmployee);
+      setFormData({
+        tenNV: selectedEmployee.tenNV || "",
+        ngaySinh: selectedEmployee.ngaySinh || "",
+        diaChi: selectedEmployee.diaChi || "",
+        luong: selectedEmployee.luong || 0,
+        department: selectedEmployee.department || "",
+        chucVu: "Nhân viên",
+        ghiChu: "",
+        username: selectedEmployee.username || "",
+        password: "",
+        isActive: selectedEmployee.isActive || "DANGLAMVIEC",
+        selectedAreas:
+          selectedEmployee.khuVucPhuTrach?.map((kv) => kv.MaKhuVuc) || [],
+      });
+      setIsDetailModalOpen(false);
+      setOpenFromDetail(true);
+      setIsModalOpen(true);
+    }
+  };
+
+  // Handle transfer from detail dialog
+  const handleTransferFromDetail = () => {
+    if (selectedEmployee) {
+      setTransferEmployee(selectedEmployee);
+      setTransferData({
+        newDepartment: "",
+        transferDate: new Date().toISOString().slice(0, 10),
+        position: "Nhân viên",
+        notes: "",
+        selectedAreas: [],
+      });
+      setIsDetailModalOpen(false);
+      setOpenFromDetail(true);
+      setIsTransferModalOpen(true);
+    }
+  };
+
+  // Handle view history from detail dialog
+  const handleViewHistoryFromDetail = async () => {
+    if (selectedEmployee) {
+      setSelectedEmployeeHistory(selectedEmployee);
+      await fetchWorkHistory(selectedEmployee.maNV);
+      setIsDetailModalOpen(false);
+      setIsHistoryModalOpen(true);
+    }
+  };
 
   const handleAdd = () => {
     setEditingEmployee(null);
@@ -297,27 +386,9 @@ export const EmployeeManagement = () => {
       chucVu: "Nhân viên",
       ghiChu: "",
       username: "",
-      password: "3TShop@2025",
-      isActive: "DANGLAMVIEC",
-      district: "",
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleEdit = (employee: Employee) => {
-    setEditingEmployee(employee);
-    setFormData({
-      tenNV: employee.tenNV,
-      ngaySinh: employee.ngaySinh || "",
-      diaChi: employee.diaChi || "",
-      luong: employee.luong || 0,
-      department: employee.department || "",
-      chucVu: "Nhân viên",
-      ghiChu: "", 
-      username: employee.username || "",
       password: "",
-      isActive: employee.isActive,
-      district: "", // Không cần hiển thị khu vực khi sửa nhân viên
+      isActive: "DANGLAMVIEC",
+      selectedAreas: [],
     });
     setIsModalOpen(true);
   };
@@ -335,8 +406,10 @@ export const EmployeeManagement = () => {
 
     // Kiểm tra nếu chuyển sang bộ phận giao hàng (mã 11) thì phải chọn khu vực
     const isDeliveryDepartment = transferData.newDepartment === "11";
-    if (isDeliveryDepartment && !transferData.district) {
-      toast.warning("Vui lòng chọn khu vực phụ trách cho bộ phận giao hàng!");
+    if (isDeliveryDepartment && transferData.selectedAreas.length === 0) {
+      toast.warning(
+        "Vui lòng chọn ít nhất một khu vực phụ trách cho bộ phận giao hàng!"
+      );
       return;
     }
 
@@ -347,76 +420,37 @@ export const EmployeeManagement = () => {
         NgayChuyen: transferData.transferDate,
         ChucVu: transferData.position,
         GhiChu: transferData.notes,
-        ...(isDeliveryDepartment && { KhuVuc: transferData.district }) // Chỉ gửi KhuVuc nếu là bộ phận giao hàng
+        ...(isDeliveryDepartment && {
+          KhuVucPhuTrach: transferData.selectedAreas,
+        }), // Chỉ gửi KhuVucPhuTrach nếu là bộ phận giao hàng
       };
 
-      const response = await fetch('http://localhost:8080/api/employees/transfer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
+      await transferEmployeeAPI(payload);
+      toast.success(`Điều chuyển ${transferEmployee.tenNV} thành công!`);
+      setIsTransferModalOpen(false);
+      setTransferEmployee(null);
+      setTransferData({
+        newDepartment: "",
+        transferDate: new Date().toISOString().slice(0, 10),
+        position: "Nhân viên",
+        notes: "",
+        selectedAreas: [],
       });
+      refreshEmployees(); // Refresh lại danh sách nhân viên
 
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success(`Điều chuyển ${transferEmployee.tenNV} thành công!`);
-        setIsTransferModalOpen(false);
-        setTransferEmployee(null);
-        setTransferData({
-          newDepartment: "",
-          transferDate: new Date().toISOString().slice(0, 10),
-          position: "Nhân viên",
-          notes: "",
-          district: ""
-        });
-        refreshEmployees(); // Refresh lại danh sách nhân viên
-      } else {
-        toast.error(result.message || "Điều chuyển nhân viên thất bại!");
+      // Reopen detail dialog if it was opened from there
+      if (selectedEmployee) {
+        setIsDetailModalOpen(true);
       }
     } catch (error) {
-      console.error('Transfer error:', error);
+      console.error("Transfer error:", error);
       toast.error("Có lỗi xảy ra khi điều chuyển nhân viên!");
     }
   };
 
-  // Password generator function
-  const generatePassword = () => {
-    const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const lowercase = "abcdefghijklmnopqrstuvwxyz";
-    const numbers = "0123456789";
-    const specials = '!@#$%^&*(),.?":{}|<>';
-
-    let password = "";
-
-    // Ensure at least one character from each required type
-    password += uppercase[Math.floor(Math.random() * uppercase.length)];
-    password += numbers[Math.floor(Math.random() * numbers.length)];
-    password += specials[Math.floor(Math.random() * specials.length)];
-
-    // Fill the rest randomly from all character sets
-    const allChars = uppercase + lowercase + numbers + specials;
-    for (let i = 3; i < 12; i++) {
-      password += allChars[Math.floor(Math.random() * allChars.length)];
-    }
-
-    // Shuffle the password
-    password = password
-      .split("")
-      .sort(() => Math.random() - 0.5)
-      .join("");
-
-    setFormData({
-      ...formData,
-      password: password,
-      // confirmPassword: password,
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate required fields
     if (!formData.username || !formData.tenNV) {
       toast.warning("Vui lòng nhập đầy đủ thông tin bắt buộc!");
@@ -429,9 +463,15 @@ export const EmployeeManagement = () => {
       return;
     }
 
-    // For new employees in delivery department, district is required
-    if (!editingEmployee && formData.department === "11" && !formData.district) {
-      toast.warning("Vui lòng chọn khu vực phụ trách cho bộ phận giao hàng!");
+    // For new employees in delivery department, areas are required
+    if (
+      !editingEmployee &&
+      formData.department === "11" &&
+      formData.selectedAreas.length === 0
+    ) {
+      toast.warning(
+        "Vui lòng chọn ít nhất một khu vực phụ trách cho bộ phận giao hàng!"
+      );
       return;
     }
 
@@ -444,120 +484,97 @@ export const EmployeeManagement = () => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.username)) {
-      toast.error('Email không hợp lệ');
+      toast.error("Email không hợp lệ");
       return;
     }
 
     // Validate password only when it's provided (for both new and edit cases)
-    if (formData.password && formData.password.trim() !== '') {
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (formData.password && formData.password.trim() !== "") {
+      const passwordRegex =
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
       if (!passwordRegex.test(formData.password)) {
-        toast.error('Mật khẩu phải có ít nhất 8 ký tự, gồm chữ thường, chữ hoa, số và ký tự đặc biệt');
+        toast.error(
+          "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ thường, chữ hoa, số và ký tự đặc biệt"
+        );
         return;
       }
     }
 
-    // Chuẩn bị payload
-    const today = new Date().toISOString().slice(0, 10);
-    const employeePayload: any = {
-      Email: formData.username,
-      TenNV: formData.tenNV,
-      NgaySinh: formData.ngaySinh,
-      DiaChi: formData.diaChi,
-      Luong: formData.luong,
-    };
+    try {
+      if (editingEmployee) {
+        // Prepare edit payload with only basic employee fields
+        const editPayload: any = {
+          Email: formData.username,
+          TenNV: formData.tenNV,
+          NgaySinh: formData.ngaySinh,
+          DiaChi: formData.diaChi,
+          Luong: formData.luong,
+        };
 
-    // Nếu là bộ phận giao hàng, thêm trường KhuVuc
-    if (!editingEmployee && formData.department === "11" && formData.district) {
-      employeePayload.KhuVuc = formData.district;
-    }
+        // Only add password when it's provided (not empty)
+        if (formData.password && formData.password.trim() !== "") {
+          editPayload.Password = formData.password;
+        }
 
-    // For new employees, always include departments array
-    if (!editingEmployee) {
-      employeePayload.departments = [
-        {
-          MaBoPhan: parseInt(formData.department),
-          NgayBatDau: today,
-          ChucVu: formData.chucVu,
-          TrangThai: formData.isActive,
-          GhiChu: formData.ghiChu,
-        },
-      ];
-    }
+        await updateEmployee(editingEmployee.maNV, editPayload);
+        toast.success("Cập nhật nhân viên thành công");
+        setIsModalOpen(false);
+        setEditingEmployee(null);
+        refreshEmployees();
+      } else {
+        // Chuẩn bị payload cho nhân viên mới
+        const today = new Date().toISOString().slice(0, 10);
+        const employeePayload: any = {
+          Email: formData.username,
+          TenNV: formData.tenNV,
+          NgaySinh: formData.ngaySinh,
+          DiaChi: formData.diaChi,
+          Luong: formData.luong,
+        };
 
-    // For editing employees - only send basic employee info, not department info
-    if (editingEmployee) {
-      // Prepare edit payload with only basic employee fields
-      const editPayload: any = {
-        Email: formData.username,
-        TenNV: formData.tenNV,
-        NgaySinh: formData.ngaySinh,
-        DiaChi: formData.diaChi,
-        Luong: formData.luong,
-      };
+        // Nếu là bộ phận giao hàng, thêm trường KhuVuc
+        if (formData.department === "11" && formData.selectedAreas.length > 0) {
+          employeePayload.KhuVucPhuTrach = formData.selectedAreas; // Send array of selected areas
+        }
 
-      // Only add password when it's provided (not empty)
-      if (formData.password && formData.password.trim() !== '') {
-        editPayload.Password = formData.password;
+        // For new employees, always include departments array
+        employeePayload.BoPhan = [
+          {
+            MaBoPhan: parseInt(formData.department),
+            NgayBatDau: today,
+            TrangThai: formData.isActive,
+            ChucVu: formData.chucVu,
+            GhiChu: formData.ghiChu,
+          },
+        ];
+
+        // Only add password when it's provided (not empty)
+        if (formData.password && formData.password.trim() !== "") {
+          employeePayload.MatKhau = formData.password;
+        }
+
+        await createEmployee(employeePayload);
+        toast.success("Tạo nhân viên thành công");
+        setIsModalOpen(false);
+        setEditingEmployee(null);
+        refreshEmployees();
       }
-
-      // Update employee info
-      fetch(`http://localhost:8080/api/employees/${editingEmployee.maNV}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editPayload),
-      })
-        .then((res) => res.json())
-        .then((result) => {
-          if (result.success) {
-            toast.success("Cập nhật nhân viên thành công");
-            setIsModalOpen(false);
-            setEditingEmployee(null);
-            refreshEmployees();
-          } else {
-            toast.error(result.message || "Cập nhật nhân viên thất bại");
-          }
-        })
-        .catch((error) => {
-          console.error('Error updating employee:', error);
-          toast.error("Lỗi khi cập nhật nhân viên");
-        });
-      return; // Exit early for edit case
-    }
-
-    // Normal case for new employee, edit case is handled above
-    if (!editingEmployee) {
-      // Only add password when it's provided (not empty)
-      if (formData.password && formData.password.trim() !== '') {
-        employeePayload.Password = formData.password;
+    } catch (error) {
+      console.error("Error with employee operation:", error);
+      if (editingEmployee) {
+        toast.error("Lỗi khi cập nhật nhân viên");
+      } else {
+        toast.error("Lỗi khi tạo nhân viên");
       }
-
-      fetch("http://localhost:8080/api/employees", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(employeePayload),
-      })
-        .then((res) => res.json())
-        .then((result) => {
-          if (result.success) {
-            toast.success("Tạo nhân viên thành công");
-            setIsModalOpen(false);
-            setEditingEmployee(null);
-            refreshEmployees();
-          } else {
-            toast.error("Tạo nhân viên thất bại");
-          }
-        })
-        .catch(() => {
-          toast.error("Lỗi khi tạo nhân viên");
-        });
     }
   };
 
   // Filter employees
   const filteredEmployees = employees.filter((employee) => {
-    const matchesDepartment = filterDepartment === "all" || employee.department === filterDepartment;
-    const matchesStatus = filterStatus === "all" || 
+    const matchesDepartment =
+      filterDepartment === "all" || employee.department === filterDepartment;
+    const matchesStatus =
+      filterStatus === "all" ||
       (filterStatus === "active" && employee.isActive === "DANGLAMVIEC") ||
       (filterStatus === "inactive" && employee.isActive !== "DANGLAMVIEC");
     return matchesDepartment && matchesStatus;
@@ -583,9 +600,17 @@ export const EmployeeManagement = () => {
       width: "180px",
       render: (_, record) => {
         return (
-          <div className="min-w-0">
-            <div className="font-medium text-gray-900 text-xs truncate">{record.tenNV}</div>
-            <div className="text-xs text-gray-500 truncate">{record.username}</div>
+          <div
+            className="min-w-0 cursor-pointer hover:bg-blue-50 p-2 rounded transition-colors"
+            onClick={() => handleViewDetail(record)}
+            title="Click để xem chi tiết"
+          >
+            <div className="font-medium text-gray-900 text-xs truncate">
+              {record.tenNV}
+            </div>
+            <div className="text-xs text-gray-500 truncate">
+              {record.username}
+            </div>
           </div>
         );
       },
@@ -606,18 +631,29 @@ export const EmployeeManagement = () => {
       sortable: true,
       width: "120px",
       render: (value) => (
-        <span className="text-xs" title={value ? formatCurrency(value) : "Chưa có"}>
-          {value ? `${(value/1000000).toFixed(1)}M` : "0"}
+        <span
+          className="text-xs"
+          title={value ? formatCurrency(value) : "Chưa có"}
+        >
+          {value ? `${(value / 1000000).toFixed(1)}M` : "0"}
         </span>
       ),
     },
     {
       key: "ngaySinh",
-      title: "Sinh",
+      title: "Ngày sinh",
       dataIndex: "ngaySinh",
       width: "80px",
       render: (value) => (
-        <span className="text-xs">{value ? new Date(value).toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit', year: '2-digit'}) : "-"}</span>
+        <span className="text-xs">
+          {value
+            ? new Date(value).toLocaleDateString("vi-VN", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "2-digit",
+              })
+            : "-"}
+        </span>
       ),
     },
     {
@@ -626,10 +662,62 @@ export const EmployeeManagement = () => {
       dataIndex: "diaChi",
       width: "120px",
       render: (value) => (
-        <span className="text-xs truncate block max-w-[110px]" title={value || "Chưa có"}>
+        <span
+          className="text-xs truncate block max-w-[110px]"
+          title={value || "Chưa có"}
+        >
           {value || "Chưa có"}
         </span>
       ),
+    },
+    {
+      key: "khuVucPhuTrach",
+      title: "Khu vực",
+      dataIndex: "khuVucPhuTrach",
+      width: "120px",
+      render: (value, record) => {
+        if (!value || value.length === 0) {
+          return <span className="text-xs text-gray-500">-</span>;
+        }
+
+        // Chỉ hiển thị cho nhân viên giao hàng (bộ phận 11)
+        if (record.department !== "11") {
+          return <span className="text-xs text-gray-500">-</span>;
+        }
+
+        const activeAreas = value.filter(
+          (area: any) => area.NhanVien_KhuVuc?.TrangThai === 1
+        );
+
+        if (activeAreas.length === 0) {
+          return <span className="text-xs text-gray-500">Chưa có</span>;
+        }
+
+        if (activeAreas.length === 1) {
+          return (
+            <span
+              className="text-xs truncate block max-w-[110px]"
+              title={activeAreas[0].TenKhuVuc}
+            >
+              {activeAreas[0].TenKhuVuc}
+            </span>
+          );
+        }
+
+        return (
+          <div className="text-xs">
+            <span
+              className="truncate block max-w-[110px]"
+              title={activeAreas.map((area: any) => area.TenKhuVuc).join(", ")}
+            >
+              {activeAreas[0].TenKhuVuc}
+            </span>
+            <span className="text-gray-500">
+              +{activeAreas.length - 1} khác
+            </span>
+          </div>
+        );
+      },
     },
     {
       key: "isActive",
@@ -651,39 +739,25 @@ export const EmployeeManagement = () => {
     {
       key: "actions",
       title: "Thao tác",
-      width: "120px",
+      width: "80px",
       render: (_, record) => (
         <div className="flex gap-2 justify-center">
           <button
-            onClick={() => handleEdit(record)}
-            className="group relative bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
-            title="Sửa thông tin"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => {
-              setTransferEmployee(record);
-        setTransferData({
-          newDepartment: "",
-          transferDate: new Date().toISOString().slice(0, 10),
-          position: "Nhân viên",
-          notes: "",
-          district: ""
-        });
-              setIsTransferModalOpen(true);
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent row click
+              handleViewDetail(record);
             }}
-            className="group relative bg-emerald-50 hover:bg-emerald-100 text-emerald-600 hover:text-emerald-700 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
-            title="Điều chuyển bộ phận"
+            className="group relative bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
+            title="Xem chi tiết"
           >
-            <ArrowRight className="w-4 h-4" />
+            <Eye className="w-4 h-4" />
           </button>
           <button
-            onClick={() => handleViewHistory(record)}
-            className="group relative bg-purple-50 hover:bg-purple-100 text-purple-600 hover:text-purple-700 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
-            title="Xem lịch sử làm việc"
+            onClick={() => {}}
+            className="group relative bg-amber-50 hover:bg-amber-100 text-amber-600 hover:text-amber-700 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
+            title="Xem/Gán quyền"
           >
-            <History className="w-4 h-4" />
+            <Shield className="w-4 h-4" />
           </button>
         </div>
       ),
@@ -697,8 +771,6 @@ export const EmployeeManagement = () => {
         columns={columns}
         data={filteredEmployees}
         onAdd={handleAdd}
-        // onEdit={handleEdit} // Removed because we have edit button in actions column
-        // onDelete={handleDelete}
         addButtonText="Thêm nhân viên"
         searchPlaceholder="Tìm kiếm nhân viên..."
         filterComponent={
@@ -741,454 +813,1052 @@ export const EmployeeManagement = () => {
 
       <Toaster position="top-center" richColors />
 
-      {/* Add/Edit Employee Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingEmployee ? "Sửa thông tin nhân viên" : "Thêm nhân viên mới"}
-        size="md"
-      >
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Bộ phận {!editingEmployee ? '*' : '(Không thể thay đổi)'}
-              </label>
-              <select
-                value={formData.department}
-                onChange={(e) => setFormData({ ...formData, department: e.target.value, district: "" })}
-                className={`w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs ${
-                  editingEmployee ? 'bg-gray-100 cursor-not-allowed' : ''
-                }`}
-                required={!editingEmployee}
-                disabled={!!editingEmployee}
-              >
-                <option value="">Chọn bộ phận</option>
-                {departments.map((dept) => (
-                  <option key={dept.id} value={dept.id}>{dept.name}</option>
-                ))}
-              </select>
-              {editingEmployee && (
-                <div className="mt-1 text-xs text-gray-500">
-                  Sử dụng nút "Chuyển" để thay đổi bộ phận
+      {/* Add/Edit Employee Dialog */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">
+              {editingEmployee
+                ? "Sửa thông tin nhân viên"
+                : "Thêm nhân viên mới"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Thông tin cơ bản */}
+            <div className="bg-gray-50 p-4 rounded-lg border">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                Thông tin cơ bản
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <Label
+                    htmlFor="tenNV"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Họ và tên *
+                  </Label>
+                  <Input
+                    id="tenNV"
+                    type="text"
+                    value={formData.tenNV}
+                    onChange={(e) =>
+                      setFormData({ ...formData, tenNV: e.target.value })
+                    }
+                    className="mt-1"
+                    placeholder="Nhập họ và tên"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="username"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Email *
+                  </Label>
+                  <Input
+                    id="username"
+                    type="email"
+                    value={formData.username}
+                    onChange={(e) =>
+                      setFormData({ ...formData, username: e.target.value })
+                    }
+                    className="mt-1"
+                    placeholder="example@domain.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="ngaySinh"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Ngày sinh
+                  </Label>
+                  <Input
+                    id="ngaySinh"
+                    type="date"
+                    value={formData.ngaySinh}
+                    onChange={(e) =>
+                      setFormData({ ...formData, ngaySinh: e.target.value })
+                    }
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label
+                    htmlFor="diaChi"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Địa chỉ
+                  </Label>
+                  <Input
+                    id="diaChi"
+                    type="text"
+                    value={formData.diaChi}
+                    onChange={(e) =>
+                      setFormData({ ...formData, diaChi: e.target.value })
+                    }
+                    className="mt-1"
+                    placeholder="Nhập địa chỉ"
+                  />
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="luong"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Lương
+                  </Label>
+                  <Input
+                    id="luong"
+                    type="text"
+                    value={formData.luong ? formatCurrency(formData.luong) : ""}
+                    onChange={(e) => handleSalaryChange(e.target.value)}
+                    className="mt-1"
+                    placeholder="0 ₫"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Thông tin công việc */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                Thông tin công việc
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label
+                    htmlFor="department"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Bộ phận {!editingEmployee ? "*" : "(Không thể thay đổi)"}
+                  </Label>
+                  <select
+                    id="department"
+                    value={formData.department}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        department: e.target.value,
+                        selectedAreas: [],
+                      })
+                    }
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none text-sm ${
+                      editingEmployee ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
+                    required={!editingEmployee}
+                    disabled={!!editingEmployee}
+                  >
+                    <option value="">Chọn bộ phận</option>
+                    {departments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </select>
+                  {editingEmployee && (
+                    <div className="mt-1 text-xs text-gray-500">
+                      Sử dụng nút "Điều chuyển" để thay đổi bộ phận
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="chucVu"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Chức vụ
+                  </Label>
+                  <Input
+                    id="chucVu"
+                    type="text"
+                    value={formData.chucVu}
+                    onChange={(e) =>
+                      setFormData({ ...formData, chucVu: e.target.value })
+                    }
+                    className="mt-1"
+                    placeholder="Nhân viên"
+                  />
+                </div>
+
+                {!editingEmployee && (
+                  <div className="flex items-center space-x-4 mt-6">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="isActive"
+                        checked={formData.isActive === "DANGLAMVIEC"}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            isActive: e.target.checked
+                              ? "DANGLAMVIEC"
+                              : "NGHIVIEC",
+                          })
+                        }
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <Label
+                        htmlFor="isActive"
+                        className="ml-2 text-sm text-gray-700 cursor-pointer"
+                      >
+                        Đang làm việc
+                      </Label>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Khu vực phụ trách cho bộ phận giao hàng */}
+              {!editingEmployee && formData.department === "11" && (
+                <div className="mt-4">
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                    Khu vực phụ trách * (có thể chọn nhiều)
+                  </Label>
+                  <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-3 bg-white">
+                    {areas.length === 0 ? (
+                      <div className="text-sm text-gray-500 text-center py-4">
+                        Đang tải danh sách khu vực...
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {areas.map((area) => (
+                          <label
+                            key={area.MaKhuVuc}
+                            className="flex items-center space-x-2 text-sm hover:bg-gray-50 p-2 rounded cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isAreaSelected(area.MaKhuVuc)}
+                              onChange={() => handleAreaToggle(area.MaKhuVuc)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span
+                              className="flex-1 truncate"
+                              title={area.TenKhuVuc}
+                            >
+                              {area.TenKhuVuc}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {formData.selectedAreas.length > 0 && (
+                    <div className="mt-3 p-3 bg-blue-50 rounded-md">
+                      <div className="text-sm font-medium text-gray-700 mb-2">
+                        Đã chọn {formData.selectedAreas.length} khu vực:
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {formData.selectedAreas.slice(0, 5).map((areaCode) => {
+                          const area = areas.find(
+                            (a) => a.MaKhuVuc === areaCode
+                          );
+                          return area ? (
+                            <span
+                              key={areaCode}
+                              className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+                            >
+                              {area.TenKhuVuc}
+                            </span>
+                          ) : null;
+                        })}
+                        {formData.selectedAreas.length > 5 && (
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            +{formData.selectedAreas.length - 5} khác
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!editingEmployee && (
+                <div className="mt-4">
+                  <Label
+                    htmlFor="ghiChu"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Ghi chú
+                  </Label>
+                  <textarea
+                    id="ghiChu"
+                    value={formData.ghiChu}
+                    onChange={(e) =>
+                      setFormData({ ...formData, ghiChu: e.target.value })
+                    }
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none text-sm"
+                    rows={3}
+                    placeholder="Ghi chú về nhân viên..."
+                  />
                 </div>
               )}
             </div>
 
-            {/* Hiển thị dropdown chọn khu vực chỉ khi thêm mới và chọn bộ phận giao hàng (mã 11) */}
-            {!editingEmployee && formData.department === "11" && (
+            {/* Thông tin bảo mật */}
+            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+                Thông tin bảo mật
+              </h3>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Chọn khu vực phụ trách *
-                </label>
-                <select
-                  value={formData.district}
-                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                  className="w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-                  required
+                <Label
+                  htmlFor="password"
+                  className="text-sm font-medium text-gray-700"
                 >
-                  <option value="">Chọn phường/xã</option>
-                  {districts.map((district, index) => (
-                    <option key={index} value={district}>
-                      {district}
-                    </option>
-                  ))}
-                </select>
-                <div className="mt-1 text-xs text-gray-500">
-                  Nhân viên sẽ phụ trách giao hàng tại khu vực này
+                  Mật khẩu{" "}
+                  {!editingEmployee
+                    ? "*"
+                    : "(Để trống nếu không muốn thay đổi)"}
+                </Label>
+                <div className="flex items-center space-x-2 mt-1">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    className="flex-1"
+                    required={!editingEmployee}
+                    minLength={8}
+                    placeholder={
+                      editingEmployee
+                        ? "Nhập mật khẩu mới nếu muốn thay đổi"
+                        : "Nhập mật khẩu"
+                    }
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="px-3"
+                    title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+                <div className="mt-2 text-xs text-gray-600">
+                  {!editingEmployee
+                    ? "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ thường, chữ hoa, số và ký tự đặc biệt"
+                    : "Để trống nếu không muốn thay đổi mật khẩu hiện tại"}
                 </div>
               </div>
-            )}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Họ và tên *</label>
-              <input
-                type="text"
-                value={formData.tenNV}
-                onChange={(e) => setFormData({ ...formData, tenNV: e.target.value })}
-                className="w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-                required
-              />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Email *</label>
-              <input
-                type="email"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                className="w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Ngày sinh</label>
-              <input
-                type="date"
-                value={formData.ngaySinh}
-                onChange={(e) => setFormData({ ...formData, ngaySinh: e.target.value })}
-                className="w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Địa chỉ</label>
-              <input
-                type="text"
-                value={formData.diaChi}
-                onChange={(e) => setFormData({ ...formData, diaChi: e.target.value })}
-                className="w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-              />
-            </div>
-            {!editingEmployee && (
+
+            {/* Action buttons */}
+            <div className="flex justify-between pt-6 border-t">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Chức vụ</label>
-                <input
+                {openFromDetail && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setOpenFromDetail(false);
+                      setIsDetailModalOpen(true);
+                    }}
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    ← Quay lại
+                  </Button>
+                )}
+              </div>
+              <div className="flex space-x-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setOpenFromDetail(false);
+                  }}
+                >
+                  Hủy
+                </Button>
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                  {editingEmployee ? "Cập nhật" : "Thêm nhân viên"}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transfer Department Dialog */}
+      <Dialog open={isTransferModalOpen} onOpenChange={setIsTransferModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader className="pb-3">
+            <DialogTitle className="text-lg font-medium">
+              Điều chuyển nhân viên
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            {/* Thông tin nhân viên - Compact */}
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <div className="flex items-center space-x-3">
+                <div className="bg-blue-500 text-white text-sm font-bold rounded-full w-10 h-10 flex items-center justify-center">
+                  {transferEmployee?.maNV}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-gray-900 text-base truncate">
+                    {transferEmployee?.tenNV}
+                  </h3>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-600 truncate">
+                      <span className="font-medium">
+                        {transferEmployee?.departmentName}
+                      </span>
+                    </p>
+                    {/* Hiển thị khu vực hiện tại cho nhân viên giao hàng - Inline */}
+                    {transferEmployee?.department === "11" &&
+                      transferEmployee?.khuVucPhuTrach &&
+                      transferEmployee.khuVucPhuTrach.length > 0 && (
+                        <div className="flex items-center space-x-1">
+                          <span className="text-xs text-gray-500">
+                            Khu vực:
+                          </span>
+                          <div className="flex flex-wrap gap-1 max-w-[200px]">
+                            {transferEmployee.khuVucPhuTrach
+                              .filter(
+                                (area: any) =>
+                                  area.NhanVien_KhuVuc?.TrangThai === 1
+                              )
+                              .slice(0, 2)
+                              .map((area: any) => (
+                                <span
+                                  key={area.MaKhuVuc}
+                                  className="inline-block bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded-full"
+                                  title={area.TenKhuVuc}
+                                >
+                                  {area.TenKhuVuc.length > 8
+                                    ? area.TenKhuVuc.substring(0, 8) + "..."
+                                    : area.TenKhuVuc}
+                                </span>
+                              ))}
+                            {transferEmployee.khuVucPhuTrach.filter(
+                              (area: any) =>
+                                area.NhanVien_KhuVuc?.TrangThai === 1
+                            ).length > 2 && (
+                              <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                                +
+                                {transferEmployee.khuVucPhuTrach.filter(
+                                  (area: any) =>
+                                    area.NhanVien_KhuVuc?.TrangThai === 1
+                                ).length - 2}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Form điều chuyển */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <Label
+                    htmlFor="newDepartment"
+                    className="text-sm font-medium text-gray-700 mb-1 block"
+                  >
+                    Bộ phận mới *
+                  </Label>
+                  <select
+                    id="newDepartment"
+                    value={transferData.newDepartment}
+                    onChange={(e) =>
+                      setTransferData({
+                        ...transferData,
+                        newDepartment: e.target.value,
+                        selectedAreas: [],
+                      })
+                    }
+                    className="w-full px-2 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none text-sm"
+                    required
+                  >
+                    <option value="">Chọn bộ phận</option>
+                    {departments
+                      .filter(
+                        (dept) => dept.id !== transferEmployee?.department
+                      )
+                      .map((dept) => (
+                        <option key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </option>
+                      ))}
+                  </select>
+
+                  {/* Hiển thị thông báo khi chuyển từ giao hàng sang bộ phận khác */}
+                  {transferEmployee?.department === "11" &&
+                    transferData.newDepartment &&
+                    transferData.newDepartment !== "11" && (
+                      <div className="mt-1 p-2 bg-orange-50 border border-orange-200 rounded-md">
+                        <div className="text-xs text-orange-700">
+                          ⚠️ Nhân viên sẽ không còn phụ trách khu vực giao hàng
+                        </div>
+                      </div>
+                    )}
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="transferDate"
+                    className="text-sm font-medium text-gray-700 mb-1 block"
+                  >
+                    Ngày chuyển *
+                  </Label>
+                  <Input
+                    id="transferDate"
+                    type="date"
+                    value={transferData.transferDate}
+                    onChange={(e) =>
+                      setTransferData({
+                        ...transferData,
+                        transferDate: e.target.value,
+                      })
+                    }
+                    className="text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="position"
+                  className="text-sm font-medium text-gray-700 mb-1 block"
+                >
+                  Chức vụ mới
+                </Label>
+                <Input
+                  id="position"
                   type="text"
-                  value={formData.chucVu}
-                  onChange={(e) => setFormData({ ...formData, chucVu: e.target.value })}
-                  className="w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
+                  value={transferData.position}
+                  onChange={(e) =>
+                    setTransferData({
+                      ...transferData,
+                      position: e.target.value,
+                    })
+                  }
+                  className="text-sm"
                   placeholder="Nhân viên"
                 />
               </div>
-            )}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Lương</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formData.luong ? formatCurrency(formData.luong) : ''}
-                  onChange={(e) => handleSalaryChange(e.target.value)}
-                  className="w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-                  placeholder="0 ₫"
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <span className="text-gray-400 text-xs">₫</span>
-                </div>
-              </div>
-              {formData.luong > 0 && (
-                <div className="mt-1 text-xs text-gray-500">
-                  {formatCurrency(formData.luong)}
+
+              {/* Khu vực phụ trách cho bộ phận giao hàng - Compact */}
+              {transferData.newDepartment === "11" && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                    Khu vực phụ trách giao hàng *
+                    <span className="text-xs text-blue-600 ml-1">
+                      (có thể chọn nhiều)
+                    </span>
+                  </Label>
+                  <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2 bg-white">
+                    {areas.length === 0 ? (
+                      <div className="text-sm text-gray-500 text-center py-3">
+                        Đang tải...
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-1">
+                        {areas.map((area) => (
+                          <label
+                            key={area.MaKhuVuc}
+                            className="flex items-center space-x-1.5 text-sm hover:bg-gray-50 p-1.5 rounded cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isAreaSelected(area.MaKhuVuc, true)}
+                              onChange={() =>
+                                handleAreaToggle(area.MaKhuVuc, true)
+                              }
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
+                            />
+                            <span
+                              className="flex-1 truncate text-xs"
+                              title={area.TenKhuVuc}
+                            >
+                              {area.TenKhuVuc}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {transferData.selectedAreas.length > 0 && (
+                    <div className="mt-2 p-2 bg-blue-50 rounded-md">
+                      <div className="text-xs font-medium text-gray-700">
+                        ✅ Đã chọn {transferData.selectedAreas.length} khu vực
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-            {!editingEmployee && (
-              <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Ghi chú</label>
-                <textarea
-                  value={formData.ghiChu}
-                  onChange={(e) => setFormData({ ...formData, ghiChu: e.target.value })}
-                  className="w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-                  rows={2}
-                  placeholder="Ghi chú về nhân viên..."
-                />
-              </div>
-            )}
-            {!editingEmployee && (
-              <div className="flex items-center mt-2">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.isActive === "DANGLAMVIEC"}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked ? "DANGLAMVIEC" : "NGHIVIEC" })}
-                  className="rounded border-gray-300 text-[#825B32] focus:ring-[#825B32]"
-                />
-                <label htmlFor="isActive" className="ml-2 text-xs text-gray-700">
-                  Đang làm việc
-                </label>
-              </div>
-            )}
-            {/* Trường mật khẩu - bắt buộc khi thêm mới, tùy chọn khi sửa */}
-            <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Mật khẩu {!editingEmployee ? '*' : '(Để trống nếu không muốn thay đổi)'}
-              </label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-2 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-                  required={!editingEmployee}
-                  minLength={8}
-                  placeholder={editingEmployee ? "Nhập mật khẩu mới nếu muốn thay đổi" : "Nhập mật khẩu"}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="px-2 py-2 text-xs bg-[#825B32] text-white rounded hover:bg-[#6B4A2A] flex items-center justify-center"
-                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                >{showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
-                <button
-                  type="button"
-                  onClick={generatePassword}
-                  className="px-2 py-2 text-xs bg-[#825B32] text-white rounded hover:bg-[#6B4A2A] flex items-center justify-center"
-                  title="Tạo mật khẩu ngẫu nhiên"
-                ><RefreshCw className="w-4 h-4" /></button>
-              </div>
-              <div className="mt-1 text-xs text-gray-500">
-                {!editingEmployee 
-                  ? "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ thường, chữ hoa, số, ký tự đặc biệt"
-                  : "Để trống nếu không muốn thay đổi mật khẩu hiện tại"
-                }
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="px-3 py-2 text-xs font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
-            >Hủy</button>
-            <button
-              type="submit"
-              className="px-3 py-2 text-xs font-medium text-white bg-[#825B32] rounded hover:bg-[#6B4A2A] transition-colors"
-            >Xác nhận</button>
-          </div>
-        </form>
-      </Modal>
 
-      {/* Transfer Department Modal */}
-      <Modal
-        isOpen={isTransferModalOpen}
-        onClose={() => setIsTransferModalOpen(false)}
-        title="Điều chuyển nhân viên"
-        size="md"
-      >
-        <div className="space-y-4">
-          <div>
-            <p className="text-xs text-gray-700">
-              Điều chuyển nhân viên: <strong>{transferEmployee?.tenNV}</strong>
-            </p>
-            <p className="text-xs text-gray-500">
-              Bộ phận hiện tại: {transferEmployee?.departmentName}
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Chọn bộ phận mới *
-            </label>
-            <select
-              value={transferData.newDepartment}
-              onChange={(e) => setTransferData({ ...transferData, newDepartment: e.target.value, district: "" })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-              required
-            >
-              <option value="">Chọn bộ phận</option>
-              {departments
-                .filter((dept) => dept.id !== transferEmployee?.department)
-                .map((dept) => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          {/* Hiển thị dropdown chọn khu vực chỉ khi chọn bộ phận giao hàng (mã 11) */}
-          {transferData.newDepartment === "11" && (
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Chọn khu vực phụ trách *
-              </label>
-              <select
-                value={transferData.district}
-                onChange={(e) => setTransferData({ ...transferData, district: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-                required
-              >
-                <option value="">Chọn phường/xã</option>
-                {districts.map((district, index) => (
-                  <option key={index} value={district}>
-                    {district}
-                  </option>
-                ))}
-              </select>
-              <div className="mt-1 text-xs text-gray-500">
-                Nhân viên sẽ phụ trách giao hàng tại khu vực này
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Ngày chuyển *
-            </label>
-            <input
-              type="date"
-              value={transferData.transferDate}
-              onChange={(e) => setTransferData({ ...transferData, transferDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Chức vụ mới
-            </label>
-            <input
-              type="text"
-              value={transferData.position}
-              onChange={(e) => setTransferData({ ...transferData, position: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-              placeholder="Nhân viên"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Ghi chú
-            </label>
-            <textarea
-              value={transferData.notes}
-              onChange={(e) => setTransferData({ ...transferData, notes: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#825B32] focus:border-transparent focus:outline-none text-xs"
-              rows={3}
-              placeholder="Lý do điều chuyển..."
-            />
-          </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              onClick={() => setIsTransferModalOpen(false)}
-              className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-200 border border-gray-300 rounded-md hover:bg-gray-300 transition-colors"
-            >
-              Hủy
-            </button>
-            <button
-              onClick={handleTransfer}
-              className="px-4 py-2 text-xs font-medium text-white bg-[#825B32] rounded-md hover:bg-[#6B4A2A] transition-colors"
-            >
-              Xác nhận điều chuyển
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Work History Modal */}
-      <Modal
-        isOpen={isHistoryModalOpen}
-        onClose={() => setIsHistoryModalOpen(false)}
-        title={`Lịch sử làm việc - ${selectedEmployeeHistory?.tenNV}`}
-        size="lg"
-      >
-        <div className="space-y-4">
-          {/* Employee Info */}
-          <div className="bg-blue-50 p-3 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className="bg-blue-500 text-white text-xs font-bold rounded-full w-8 h-8 flex items-center justify-center">
-                {selectedEmployeeHistory?.maNV}
-              </div>
               <div>
-                <h3 className="font-semibold text-gray-900 text-sm">{selectedEmployeeHistory?.tenNV}</h3>
-                <p className="text-xs text-gray-600">{selectedEmployeeHistory?.departmentName || "Chưa phân công"}</p>
+                <Label
+                  htmlFor="notes"
+                  className="text-sm font-medium text-gray-700 mb-1 block"
+                >
+                  Ghi chú
+                </Label>
+                <textarea
+                  id="notes"
+                  value={transferData.notes}
+                  onChange={(e) =>
+                    setTransferData({ ...transferData, notes: e.target.value })
+                  }
+                  className="w-full px-2 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none text-sm"
+                  rows={2}
+                  placeholder="Lý do điều chuyển..."
+                />
               </div>
-              <div className="ml-auto">
-                <div className="text-xs text-gray-500">Tổng thời gian</div>
-                <div className="font-semibold text-gray-900 text-sm">
-                  {calculateTotalWorkDuration(workHistory)}
+            </div>
+
+            <div className="flex justify-between pt-3 border-t">
+              <div>
+                {openFromDetail && selectedEmployee && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsTransferModalOpen(false);
+                      setOpenFromDetail(false);
+                      setIsDetailModalOpen(true);
+                    }}
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50 text-sm px-3 py-1.5"
+                  >
+                    ← Quay lại
+                  </Button>
+                )}
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsTransferModalOpen(false);
+                    setOpenFromDetail(false);
+                  }}
+                  className="text-sm px-3 py-1.5"
+                >
+                  Hủy
+                </Button>
+                <Button
+                  onClick={handleTransfer}
+                  className="bg-blue-600 hover:bg-blue-700 text-sm px-3 py-1.5"
+                >
+                  Xác nhận điều chuyển
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Work History Dialog */}
+      <Dialog open={isHistoryModalOpen} onOpenChange={setIsHistoryModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader className="pb-3">
+            <DialogTitle className="text-lg font-medium">
+              Lịch sử làm việc - {selectedEmployeeHistory?.tenNV}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            {/* Employee Info - Compact */}
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-blue-500 text-white text-sm font-bold rounded-full w-10 h-10 flex items-center justify-center">
+                    {selectedEmployeeHistory?.maNV}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-gray-900 text-base truncate">
+                      {selectedEmployeeHistory?.tenNV}
+                    </h3>
+                    <div className="flex items-center space-x-2">
+                      <p className="text-sm text-gray-600 truncate">
+                        {selectedEmployeeHistory?.departmentName ||
+                          "Chưa phân công"}
+                      </p>
+                      {/* Hiển thị khu vực phụ trách cho nhân viên giao hàng - Inline */}
+                      {selectedEmployeeHistory?.department === "11" &&
+                        selectedEmployeeHistory?.khuVucPhuTrach &&
+                        selectedEmployeeHistory.khuVucPhuTrach.length > 0 && (
+                          <div className="flex items-center space-x-1">
+                            <span className="text-xs text-gray-500">•</span>
+                            <div className="flex flex-wrap gap-1">
+                              {selectedEmployeeHistory.khuVucPhuTrach
+                                .filter(
+                                  (area: any) =>
+                                    area.NhanVien_KhuVuc?.TrangThai === 1
+                                )
+                                .slice(0, 2)
+                                .map((area: any) => (
+                                  <span
+                                    key={area.MaKhuVuc}
+                                    className="inline-block bg-green-100 text-green-800 text-xs px-1.5 py-0.5 rounded"
+                                    title={area.TenKhuVuc}
+                                  >
+                                    {area.TenKhuVuc.length > 6
+                                      ? area.TenKhuVuc.substring(0, 6) + "..."
+                                      : area.TenKhuVuc}
+                                  </span>
+                                ))}
+                              {selectedEmployeeHistory.khuVucPhuTrach.filter(
+                                (area: any) =>
+                                  area.NhanVien_KhuVuc?.TrangThai === 1
+                              ).length > 2 && (
+                                <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                  +
+                                  {selectedEmployeeHistory.khuVucPhuTrach.filter(
+                                    (area: any) =>
+                                      area.NhanVien_KhuVuc?.TrangThai === 1
+                                  ).length - 2}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-gray-600">Tổng thời gian</div>
+                  <div className="font-medium text-gray-900 text-sm">
+                    {calculateTotalWorkDuration(workHistory)}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Work History Timeline */}
-          <div className="max-h-96 overflow-y-auto">
-            {workHistory.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-gray-400 text-4xl mb-3">📋</div>
-                <p className="text-gray-500">Chưa có lịch sử làm việc</p>
+            {/* Work History Timeline - Compact */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 border-b pb-1">
+                Lịch sử công tác ({workHistory.length})
+              </h4>
+
+              <div className="max-h-64 overflow-y-auto space-y-2">
+                {workHistory.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-gray-400 text-4xl mb-2">📋</div>
+                    <p className="text-gray-500 text-sm">
+                      Chưa có lịch sử làm việc
+                    </p>
+                  </div>
+                ) : (
+                  workHistory
+                    .sort(
+                      (a: any, b: any) =>
+                        new Date(b.NgayBatDau).getTime() -
+                        new Date(a.NgayBatDau).getTime()
+                    )
+                    .map((history: any, index: number) => (
+                      <div
+                        key={`${history.MaBoPhan}-${history.NgayBatDau}`}
+                        className={`p-3 rounded-lg border transition-all hover:shadow-sm ${
+                          history.TrangThai === "DANGLAMVIEC"
+                            ? "bg-green-50 border-green-200"
+                            : "bg-gray-50 border-gray-200"
+                        }`}
+                      >
+                        {/* Header - Compact */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <div className="bg-blue-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                              {workHistory.length - index}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h5 className="font-medium text-gray-900 text-sm truncate">
+                                {history.BoPhan?.TenBoPhan ||
+                                  "Bộ phận chưa xác định"}
+                              </h5>
+                              <p className="text-xs text-gray-600">
+                                {history.ChucVu || "Nhân viên"}
+                              </p>
+                            </div>
+                          </div>
+                          <span
+                            className={`px-2 py-1 text-xs font-medium rounded ${
+                              history.TrangThai === "DANGLAMVIEC"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {history.TrangThai === "DANGLAMVIEC"
+                              ? "Đang làm"
+                              : "Đã nghỉ"}
+                          </span>
+                        </div>
+
+                        {/* Timeline - Compact Grid */}
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="bg-white p-2 rounded border">
+                            <div className="text-gray-600 font-medium mb-1">
+                              Bắt đầu
+                            </div>
+                            <div className="text-gray-900 font-medium">
+                              {formatDate(history.NgayBatDau)}
+                            </div>
+                          </div>
+                          <div className="bg-white p-2 rounded border">
+                            <div className="text-gray-600 font-medium mb-1">
+                              {history.NgayKetThuc ? "Kết thúc" : "Hiện tại"}
+                            </div>
+                            <div className="text-gray-900 font-medium">
+                              {history.NgayKetThuc
+                                ? formatDate(history.NgayKetThuc)
+                                : "Đang làm"}
+                            </div>
+                          </div>
+                          <div className="bg-white p-2 rounded border">
+                            <div className="text-gray-600 font-medium mb-1">
+                              Thời gian
+                            </div>
+                            <div className="text-blue-600 font-medium">
+                              {calculateWorkDuration(
+                                history.NgayBatDau,
+                                history.NgayKetThuc ||
+                                  new Date().toISOString().split("T")[0]
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Notes - Compact */}
+                        {history.GhiChu && (
+                          <div className="mt-2 bg-white p-2 rounded border">
+                            <div className="text-gray-600 font-medium text-xs mb-1">
+                              Ghi chú
+                            </div>
+                            <div className="text-gray-700 text-xs">
+                              {history.GhiChu}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                )}
               </div>
-            ) : (
-              <div className="space-y-3">
-                {workHistory
-                  .sort((a: any, b: any) => new Date(b.NgayBatDau).getTime() - new Date(a.NgayBatDau).getTime())
-                  .map((history: any, index: number) => (
-                    <div
-                      key={`${history.MaBoPhan}-${history.NgayBatDau}`}
-                      className={`p-3 rounded-lg border-2 ${
-                        history.TrangThai === "DANGLAMVIEC"
-                          ? "bg-green-50 border-green-200"
-                          : "bg-gray-50 border-gray-200"
-                      }`}
-                    >
-                      {/* Header */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <div className="bg-blue-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                            {workHistory.length - index}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-900 text-sm">
-                              {history.BoPhan?.TenBoPhan || "Bộ phận chưa xác định"}
-                            </h4>
-                            <p className="text-xs text-gray-600">{history.ChucVu || "Nhân viên"}</p>
-                          </div>
-                        </div>
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            history.TrangThai === "DANGLAMVIEC"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {history.TrangThai === "DANGLAMVIEC" ? "Đang làm việc" : "Đã nghỉ"}
-                        </span>
-                      </div>
-
-                      {/* Timeline */}
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <div className="text-gray-600 font-medium mb-1">Ngày bắt đầu</div>
-                          <div className="text-gray-900">{formatDate(history.NgayBatDau)}</div>
-                        </div>
-                        <div>
-                          <div className="text-gray-600 font-medium mb-1">
-                            {history.NgayKetThuc ? "Ngày kết thúc" : "Hiện tại"}
-                          </div>
-                          <div className="text-gray-900">
-                            {history.NgayKetThuc ? formatDate(history.NgayKetThuc) : "Đang làm việc"}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Duration */}
-                      <div className="mt-2 pt-2 border-t border-gray-200">
-                        <div className="text-gray-600 font-medium text-xs mb-1">Thời gian làm việc</div>
-                        <div className="text-gray-900 font-semibold text-xs">
-                          {calculateWorkDuration(
-                            history.NgayBatDau,
-                            history.NgayKetThuc || new Date().toISOString().split("T")[0]
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Notes */}
-                      {history.GhiChu && (
-                        <div className="mt-2 pt-2 border-t border-gray-200">
-                          <div className="text-gray-600 font-medium text-xs mb-1">Ghi chú</div>
-                          <div className="text-gray-700 text-xs">{history.GhiChu}</div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-            <div className="text-xs text-gray-500">
-              Hiển thị {workHistory.length} bản ghi
             </div>
-            <button
-              onClick={() => setIsHistoryModalOpen(false)}
-              className="px-3 py-1 text-xs font-medium text-white bg-[#825B32] border border-transparent rounded-lg hover:bg-[#6B4A2A] transition-colors focus:outline-none"
-            >
-              Đóng
-            </button>
+
+            {/* Footer - Compact */}
+            <div className="flex justify-between items-center pt-3 border-t">
+              <div className="text-xs text-gray-500">
+                {workHistory.length} bản ghi
+              </div>
+              <Button
+                onClick={() => setIsHistoryModalOpen(false)}
+                className="bg-blue-600 hover:bg-blue-700 text-sm px-3 py-1.5"
+              >
+                Đóng
+              </Button>
+            </div>
           </div>
-        </div>
-      </Modal>
+        </DialogContent>
+      </Dialog>
+
+      {/* Employee Detail Dialog */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-medium">
+              Thông tin chi tiết - {selectedEmployee?.tenNV}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Employee Info Header */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-blue-500 text-white text-sm font-medium rounded-full w-10 h-10 flex items-center justify-center">
+                    {selectedEmployee?.maNV}
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-gray-900 text-base">
+                      {selectedEmployee?.tenNV}
+                    </h3>
+                    <p className="text-xs text-gray-600">
+                      <span className="font-medium">Bộ phận:</span>{" "}
+                      {selectedEmployee?.departmentName || "Chưa phân công"}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      <span className="font-medium">Email:</span>{" "}
+                      {selectedEmployee?.username}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded ${
+                      selectedEmployee?.isActive === "DANGLAMVIEC"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {selectedEmployee?.isActive === "DANGLAMVIEC"
+                      ? "Đang làm việc"
+                      : "Nghỉ việc"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Personal Information */}
+            <div className="bg-gray-50 p-3 rounded-lg border">
+              <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                Thông tin cá nhân
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-600">
+                    Ngày sinh
+                  </label>
+                  <p className="text-xs text-gray-900 mt-1">
+                    {selectedEmployee?.ngaySinh
+                      ? new Date(selectedEmployee.ngaySinh).toLocaleDateString(
+                          "vi-VN"
+                        )
+                      : "Chưa có thông tin"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600">
+                    Địa chỉ
+                  </label>
+                  <p className="text-xs text-gray-900 mt-1">
+                    {selectedEmployee?.diaChi || "Chưa có thông tin"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600">
+                    Lương
+                  </label>
+                  <p className="text-xs text-gray-900 mt-1 font-medium">
+                    {selectedEmployee?.luong
+                      ? formatCurrency(selectedEmployee.luong)
+                      : "Chưa có thông tin"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Work Information */}
+            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+              <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                Thông tin công việc
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-600">
+                    Bộ phận
+                  </label>
+                  <p className="text-xs text-gray-900 mt-1">
+                    {selectedEmployee?.departmentName || "Chưa được phân công"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600">
+                    Ngày bắt đầu làm việc
+                  </label>
+                  <p className="text-xs text-gray-900 mt-1">
+                    {selectedEmployee?.createdAt
+                      ? new Date(selectedEmployee.createdAt).toLocaleDateString(
+                          "vi-VN"
+                        )
+                      : "Chưa có thông tin"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Areas for delivery employees */}
+              {selectedEmployee?.department === "11" &&
+                selectedEmployee?.khuVucPhuTrach &&
+                selectedEmployee.khuVucPhuTrach.length > 0 && (
+                  <div className="mt-3">
+                    <label className="text-xs font-medium text-gray-600">
+                      Khu vực phụ trách
+                    </label>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {selectedEmployee.khuVucPhuTrach
+                        .filter(
+                          (area: any) => area.NhanVien_KhuVuc?.TrangThai === 1
+                        )
+                        .map((area: any) => (
+                          <span
+                            key={area.MaKhuVuc}
+                            className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded"
+                            title={area.TenKhuVuc}
+                          >
+                            {area.TenKhuVuc}
+                          </span>
+                        ))}
+                    </div>
+                  </div>
+                )}
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex justify-between items-center pt-4 border-t">
+              <div className="flex space-x-2">
+                <Button
+                  onClick={handleEditFromDetail}
+                  className="bg-blue-600 hover:bg-blue-700 flex items-center space-x-1 text-xs px-3 py-2"
+                >
+                  <Edit2 className="w-3 h-3" />
+                  <span>Sửa thông tin</span>
+                </Button>
+                <Button
+                  onClick={handleTransferFromDetail}
+                  variant="outline"
+                  className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 flex items-center space-x-1 text-xs px-3 py-2"
+                >
+                  <ArrowRight className="w-3 h-3" />
+                  <span>Điều chuyển</span>
+                </Button>
+                <Button
+                  onClick={handleViewHistoryFromDetail}
+                  variant="outline"
+                  className="border-purple-300 text-purple-700 hover:bg-purple-50 flex items-center space-x-1 text-xs px-3 py-2"
+                >
+                  <History className="w-3 h-3" />
+                  <span>Lịch sử</span>
+                </Button>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setIsDetailModalOpen(false)}
+                className="text-xs px-3 py-2"
+              >
+                Đóng
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

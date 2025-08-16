@@ -24,8 +24,7 @@ import { Separator } from "./ui/separator";
 import { Checkbox } from "./ui/checkbox";
 import { Input } from "./ui/input";
 import { useToast } from "../hooks/use-toast";
-// @ts-ignore
-import api from "../services/fetch";
+import { createReturnSlip } from "../services/api";
 
 interface Product {
   MaCTDDH: number;
@@ -210,6 +209,7 @@ export function ReturnRequestDialog({
           soLuongTra: returnItem.returnQuantity,
         })),
         lyDo: returnReason.trim(),
+        trangThaiPhieu: 1,
       };
 
       console.log("Creating return request:", returnRequestData);
@@ -217,11 +217,9 @@ export function ReturnRequestDialog({
       console.log("Return reason:", returnReason.trim());
 
       // Call API to create return request
-      const response = await api.post("/return/request", returnRequestData);
-      const result = response.data;
+      const result = await createReturnSlip(returnRequestData);
 
       console.log("API Response:", result);
-      console.log("Response status:", response.status);
 
       if (result && result.success) {
         toast({

@@ -119,7 +119,7 @@ export default function AdminSidebar({
       id: "discounts",
       icon: Tags,
       permission: "admin.*",
-      route: "/admin/discounts",
+      route: "/admin/discount-management",
     },
     // {
     //   name: "Bình luận",

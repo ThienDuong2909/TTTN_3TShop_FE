@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
-  Save,
+  // Save,
   // Edit3,
   Package,
   Eye,
-  Plus,
+  // Plus,
   // Minus,
   History,
   TrendingUp,
@@ -17,8 +17,10 @@ import {
   MapPin,
   Phone,
   Mail,
+  MessageSquare,
+  Star,
 } from "lucide-react";
-import { toast } from "sonner";
+// import { toast } from "sonner";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import {
@@ -27,7 +29,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-import { Input } from "../components/ui/input";
+// import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import {
   Table,
@@ -37,19 +39,25 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "../components/ui/dialog";
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogDescription,
+//   DialogHeader,
+//   DialogTitle,
+// } from "../components/ui/dialog";
 import { Separator } from "../components/ui/separator";
 import {
+  AddProductDetailDialog,
+  StockHistoryDialog,
+  PriceHistoryDialog,
+  CommentsDialog,
+} from "../components/admin-product-detail";
+import {
   getProductDetailById,
-  addProductDetail,
-  getSizes,
-  getColors,
+  // addProductDetail,
+  // getSizes,
+  // getColors,
 } from "../services/api.js"; // API interfaces
 interface ApiProductVariant {
   MaCTSP: number;
@@ -80,6 +88,20 @@ interface ApiProductImage {
   MoTa: string;
 }
 
+interface ApiBinhLuan {
+  MaBL: number;
+  MoTa: string;
+  SoSao: number;
+  NgayBinhLuan: string;
+  MaKH: number;
+  TenKH: string;
+  MaKichThuoc: number;
+  MaMau: number;
+  TenKichThuoc: string;
+  TenMau: string;
+  MaHex: string;
+}
+
 interface ApiProductDetail {
   MaSP: number;
   TenSP: string;
@@ -87,6 +109,8 @@ interface ApiProductDetail {
   MaNCC: number;
   MoTa: string;
   TrangThai: boolean;
+  SoLuongBinhLuan?: number;
+  SoSaoTrungBinh?: string;
   NhaCungCap: {
     MaNCC: number;
     TenNCC: string;
@@ -108,252 +132,8 @@ interface ApiProductDetail {
     NgayApDung: string;
   }>;
   ChiTietSanPhams: ApiProductVariant[];
+  BinhLuans?: ApiBinhLuan[];
 }
-
-interface Size {
-  MaKichThuoc: number;
-  TenKichThuoc: string;
-}
-
-interface Color {
-  MaMau: number;
-  TenMau: string;
-  MaHex: string;
-  TrangThai: boolean;
-}
-
-// AddProductDetailDialog component
-const AddProductDetailDialog: React.FC<{
-  productId: number;
-  onAdded: () => void;
-}> = ({ productId, onAdded }) => {
-  const [open, setOpen] = useState(false);
-  const [sizes, setSizes] = useState<Size[]>([]);
-  const [colors, setColors] = useState<Color[]>([]);
-  const [selectedSize, setSelectedSize] = useState<number | null>(null);
-  const [selectedColor, setSelectedColor] = useState<number | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-
-    // Fetch sizes
-    const fetchSizes = async () => {
-      try {
-        const result = await getSizes();
-        console.log("Sizes API result:", result);
-
-        if (result) {
-          // Check if result is an array or has a data property
-          let sizesArray;
-          if (Array.isArray(result)) {
-            sizesArray = result;
-          } else if (
-            (result as any).data &&
-            Array.isArray((result as any).data)
-          ) {
-            sizesArray = (result as any).data;
-          } else if (
-            (result as any).success &&
-            (result as any).data &&
-            Array.isArray((result as any).data)
-          ) {
-            sizesArray = (result as any).data;
-          } else {
-            console.error("Unexpected sizes response format:", result);
-            return;
-          }
-
-          console.log("Sizes array:", sizesArray);
-          setSizes(sizesArray);
-        }
-      } catch (error) {
-        console.error("Error fetching sizes:", error);
-      }
-    };
-
-    // Fetch colors
-    const fetchColors = async () => {
-      try {
-        const result = await getColors();
-        console.log("Colors API result:", result);
-
-        if (result) {
-          // Check if result is an array or has a data property
-          let colorsArray;
-          if (Array.isArray(result)) {
-            colorsArray = result;
-          } else if (
-            (result as any).data &&
-            Array.isArray((result as any).data)
-          ) {
-            colorsArray = (result as any).data;
-          } else if (
-            (result as any).success &&
-            (result as any).data &&
-            Array.isArray((result as any).data)
-          ) {
-            colorsArray = (result as any).data;
-          } else {
-            console.error("Unexpected colors response format:", result);
-            return;
-          }
-
-          console.log("Colors array:", colorsArray);
-          setColors(colorsArray.filter((c: Color) => c.TrangThai));
-        }
-      } catch (error) {
-        console.error("Error fetching colors:", error);
-      }
-    };
-
-    fetchSizes();
-    fetchColors();
-  }, [open]);
-
-  const handleAdd = async () => {
-    if (!selectedSize || !selectedColor || quantity < 1) return;
-
-    setLoading(true);
-    try {
-      const body = {
-        MaSP: productId,
-        MaKichThuoc: selectedSize,
-        MaMau: selectedColor,
-        SoLuongTon: quantity,
-      };
-
-      const result = await addProductDetail(body);
-
-      if (result && result.success) {
-        toast.success("Đã thêm chi tiết sản phẩm thành công!");
-        setOpen(false);
-        setSelectedSize(null);
-        setSelectedColor(null);
-        setQuantity(1);
-        onAdded();
-      } else {
-        toast.error(result?.message || "Thêm chi tiết sản phẩm thất bại");
-      }
-    } catch (error) {
-      console.error("Error adding product detail:", error);
-
-      // Xử lý lỗi authentication
-      if ((error as any)?.message === "Authentication failed") {
-        // Error đã được xử lý bởi interceptor, không cần thông báo thêm
-        return;
-      }
-
-      // Xử lý các lỗi khác
-      if ((error as any)?.response?.status === 401) {
-        toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-      } else {
-        toast.error("Không thể kết nối đến server");
-      }
-    }
-    setLoading(false);
-  };
-
-  return (
-    <>
-      <Button className="bg-[#825B32] text-white" onClick={() => setOpen(true)}>
-        <Plus className="w-2 h-2 mr-2" /> Thêm chi tiết sản phẩm
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Thêm chi tiết sản phẩm</DialogTitle>
-            <DialogDescription>
-              Chọn size, màu sắc và nhập số lượng để thêm biến thể mới cho sản
-              phẩm.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div>
-              <Label className="text-[#825B32] font-medium">Kích thước</Label>
-              <select
-                className="w-full mt-1 p-2 border rounded text-sm"
-                value={selectedSize ?? ""}
-                onChange={(e) => setSelectedSize(Number(e.target.value))}
-              >
-                <option value="">Chọn kích thước</option>
-                {sizes.map((size) => (
-                  <option key={size.MaKichThuoc} value={size.MaKichThuoc}>
-                    {size.TenKichThuoc}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label className="text-[#825B32] font-medium">Màu sắc</Label>
-              <select
-                className="w-full mt-1 p-2 border rounded text-sm"
-                value={selectedColor ?? ""}
-                onChange={(e) => setSelectedColor(Number(e.target.value))}
-              >
-                <option value="">Chọn màu sắc</option>
-                {colors.map((color) => (
-                  <option key={color.MaMau} value={color.MaMau}>
-                    {color.TenMau}
-                  </option>
-                ))}
-              </select>
-              {/* Color preview */}
-              {selectedColor && (
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="text-xs">Mã màu:</span>
-                  <span
-                    style={{
-                      background: colors.find((c) => c.MaMau === selectedColor)
-                        ?.MaHex,
-                      width: 24,
-                      height: 24,
-                      borderRadius: 6,
-                      border: "1px solid #ccc",
-                      display: "inline-block",
-                    }}
-                  ></span>
-                  <span className="text-xs">
-                    {colors.find((c) => c.MaMau === selectedColor)?.MaHex}
-                  </span>
-                </div>
-              )}
-            </div>
-            <div>
-              <Label className="text-[#825B32] font-medium">Số lượng</Label>
-              <Input
-                type="number"
-                min={1}
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                className="w-full mt-1"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={loading}
-            >
-              Hủy
-            </Button>
-            <Button
-              className="bg-[#825B32] text-white"
-              onClick={handleAdd}
-              disabled={
-                loading || !selectedSize || !selectedColor || quantity < 1
-              }
-            >
-              <Save className="w-4 h-4 mr-2" /> Thêm
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-};
 
 export const AdminProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -361,14 +141,11 @@ export const AdminProductDetail: React.FC = () => {
 
   const [product, setProduct] = useState<ApiProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  // const [isEditing, setIsEditing] = useState(false);
-  // const [editingVariants, setEditingVariants] = useState<{
-  //   [key: string]: number;
-  // }>({});
   const [selectedImage, setSelectedImage] = useState(0);
   const [showStockHistory, setShowStockHistory] = useState(false);
   // const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showPriceHistory, setShowPriceHistory] = useState(false);
+  const [showComments, setShowComments] = useState(false);
 
   // Fetch product data from API
   useEffect(() => {
@@ -596,7 +373,7 @@ export const AdminProductDetail: React.FC = () => {
       </div>
 
       {/* Product Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
@@ -647,6 +424,40 @@ export const AdminProductDetail: React.FC = () => {
               >
                 <History className="w-4 h-4 mr-2" />
                 Lịch sử
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <MessageSquare className="h-8 w-8 text-[#825B32]" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">Đánh giá</p>
+                  <div className="flex items-center space-x-2">
+                    <p className="text-xl font-bold text-[#825B32]">
+                      {product.SoSaoTrungBinh
+                        ? parseFloat(product.SoSaoTrungBinh).toFixed(1)
+                        : "0.0"}
+                    </p>
+                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {product.SoLuongBinhLuan || 0} bình luận
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowComments(true)}
+                className="text-[#825B32] border-[#825B32] hover:bg-[#825B32] hover:text-white"
+                disabled={!product.BinhLuans || product.BinhLuans.length === 0}
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Xem
               </Button>
             </div>
           </CardContent>
@@ -1012,62 +823,10 @@ export const AdminProductDetail: React.FC = () => {
                   </div>
                 )} */}
               </div>
-              <Dialog
-                open={showStockHistory}
-                onOpenChange={setShowStockHistory}
-              >
-                {/* <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <History className="w-4 h-4 mr-2" />
-                    Lịch sử tồn kho
-                  </Button>
-                </DialogTrigger> */}
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Lịch sử điều chỉnh tồn kho</DialogTitle>
-                    <DialogDescription>
-                      Lịch sử các lần thay đổi số lượng tồn kho của sản phẩm
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    {/* Mock stock history */}
-                    <div className="space-y-3">
-                      <div className="border-l-4 border-green-500 pl-4 py-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium">
-                              Nhập hàng từ nhà cung cấp
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              Cập nhật: +50 sản phẩm các size
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              20/01/2024 13:15
-                            </p>
-                          </div>
-                          <Badge className="bg-green-100 text-green-800">
-                            +50
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="border-l-4 border-red-500 pl-4 py-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium">Điều chỉnh kiểm kê</p>
-                            <p className="text-sm text-gray-600">
-                              Hiệu chỉnh sau kiểm kê định kỳ
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              18/01/2024 16:30
-                            </p>
-                          </div>
-                          <Badge className="bg-red-100 text-red-800">-12</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <StockHistoryDialog
+                isOpen={showStockHistory}
+                onClose={() => setShowStockHistory(false)}
+              />
             </div>
           </CardTitle>
         </CardHeader>
@@ -1163,11 +922,6 @@ export const AdminProductDetail: React.FC = () => {
                         {stockStatus.label}
                       </Badge>
                     </TableCell>
-                    {/* <TableCell>
-                      <span className="text-sm text-gray-500">
-                        {formatDateTime(variant.Mau.NgayTao)}
-                      </span>
-                    </TableCell> */}
                   </TableRow>
                 );
               })}
@@ -1177,181 +931,23 @@ export const AdminProductDetail: React.FC = () => {
       </Card>
 
       {/* Price History Modal */}
-      <Dialog open={showPriceHistory} onOpenChange={setShowPriceHistory}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center text-[#825B32]">
-              <TrendingUp className="w-5 h-5 mr-2" />
-              Lịch sử thay đổi giá bán
-            </DialogTitle>
-            <DialogDescription>
-              Toàn bộ lịch sử các lần thay đổi giá của sản phẩm {product.TenSP}
-            </DialogDescription>
-          </DialogHeader>
+      <PriceHistoryDialog
+        isOpen={showPriceHistory}
+        onClose={() => setShowPriceHistory(false)}
+        productName={product.TenSP}
+        priceHistory={product.ThayDoiGia}
+        formatCurrency={formatCurrency}
+      />
 
-          <div className="space-y-4">
-            {product.ThayDoiGia && product.ThayDoiGia.length > 0 ? (
-              <div className="space-y-3">
-                {product.ThayDoiGia.sort(
-                  (a, b) =>
-                    new Date(b.NgayApDung).getTime() -
-                    new Date(a.NgayApDung).getTime()
-                ).map((priceChange, index) => (
-                  <div
-                    key={`${priceChange.NgayThayDoi}-${index}`}
-                    className={`relative p-4 rounded-lg border transition-all hover:shadow-sm ${
-                      index === 0
-                        ? "bg-gradient-to-r from-[#825B32]/5 to-[#825B32]/10 border-[#825B32]/20"
-                        : "bg-gray-50/50 border-gray-200 hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`p-2 rounded-full ${
-                              index === 0
-                                ? "bg-[#825B32] text-white"
-                                : "bg-gray-200 text-gray-600"
-                            }`}
-                          >
-                            <TrendingUp className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p
-                              className={`font-bold text-lg ${
-                                index === 0 ? "text-[#825B32]" : "text-gray-700"
-                              }`}
-                            >
-                              {formatCurrency(priceChange.Gia)}
-                            </p>
-                            <div className="flex items-center gap-4 text-sm text-gray-600">
-                              <span>
-                                Thay đổi:{" "}
-                                {new Date(
-                                  priceChange.NgayThayDoi
-                                ).toLocaleDateString("vi-VN")}
-                              </span>
-                              <span>•</span>
-                              <span>
-                                Áp dụng:{" "}
-                                {new Date(
-                                  priceChange.NgayApDung
-                                ).toLocaleDateString("vi-VN")}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        {index === 0 && (
-                          <Badge className="bg-[#825B32] hover:bg-[#825B32]/90">
-                            Giá hiện tại
-                          </Badge>
-                        )}
-                        {index > 0 && (
-                          <Badge
-                            variant="outline"
-                            className="text-gray-600 border-gray-300"
-                          >
-                            #{product.ThayDoiGia.length - index}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                  <TrendingUp className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Chưa có lịch sử giá
-                </h3>
-                <p className="text-gray-500 text-sm">
-                  Sản phẩm này chưa có thông tin về các lần thay đổi giá
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={() => setShowPriceHistory(false)}
-              className="text-[#825B32] border-[#825B32] hover:bg-[#825B32] hover:text-white"
-            >
-              Đóng
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Confirm Stock Update Modal */}
-      {/* <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center text-[#825B32]">
-              <Package className="w-5 h-5 mr-2" />
-              Xác nhận cập nhật tồn kho
-            </DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn cập nhật số lượng tồn kho cho {stockChangeCount} biến thể sản phẩm không?
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-3 py-4">
-            {Object.entries(editingVariants).map(([variantId, newQuantity]) => {
-              const variant = product?.ChiTietSanPhams.find(v => v.MaCTSP.toString() === variantId);
-              if (!variant) return null;
-              
-              const oldQuantity = variant.SoLuongTon;
-              const difference = newQuantity - oldQuantity;
-              
-              return (
-                <div key={variantId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div
-                      className="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0"
-                      style={{ backgroundColor: variant.Mau.MaHex }}
-                    />
-                    <div>
-                      <p className="font-medium text-sm">
-                        {variant.KichThuoc.TenKichThuoc} - {variant.Mau.TenMau}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        {oldQuantity} → {newQuantity}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge className={difference >= 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
-                    {difference >= 0 ? `+${difference}` : difference}
-                  </Badge>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowConfirmModal(false)}
-              className="text-gray-600 border-gray-300"
-            >
-              Hủy
-            </Button>
-            <Button
-              onClick={confirmStockUpdate}
-              className="bg-[#825B32] hover:bg-[#825B32]/90"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Xác nhận cập nhật
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog> */}
+      {/* Comments Modal */}
+      <CommentsDialog
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+        productName={product.TenSP}
+        averageRating={product.SoSaoTrungBinh}
+        totalComments={product.SoLuongBinhLuan}
+        comments={product.BinhLuans}
+      />
     </div>
   );
 };

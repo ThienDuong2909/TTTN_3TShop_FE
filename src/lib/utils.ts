@@ -11,7 +11,7 @@ export function cn(...inputs: ClassValue[]) {
  * @param currency - Ký hiệu tiền tệ (mặc định: "₫")
  * @returns Chuỗi đã format (ví dụ: "12,000 ₫")
  */
-export function formatVietnameseCurrency(amount: number, currency: string = "₫"): string {
+export function formatVietnameseCurrency(amount: number, currency: string = "VND"): string {
   if (amount === 0) return `0 ${currency}`;
   
   return new Intl.NumberFormat('vi-VN', {
@@ -156,3 +156,112 @@ export function comparePricesFlexibly(price1: number, price2: number): boolean {
   console.log(`No match found for ${p1} and ${p2}`);
   return false;
 }
+
+export const convertNumberToWords = (amount: number) => {
+    const ones = [
+      "",
+      "một",
+      "hai",
+      "ba",
+      "bốn",
+      "năm",
+      "sáu",
+      "bảy",
+      "tám",
+      "chín",
+    ];
+    const tens = [
+      "",
+      "",
+      "hai mươi",
+      "ba mươi",
+      "bốn mươi",
+      "năm mươi",
+      "sáu mươi",
+      "bảy mươi",
+      "tám mươi",
+      "chín mươi",
+    ];
+    const scales = ["", "nghìn", "triệu", "tỷ"];
+
+    if (amount === 0) return "không đồng";
+
+    function convertThreeDigits(num: number): string {
+      let result = "";
+      const hundreds = Math.floor(num / 100);
+      const remainder = num % 100;
+      const tensDigit = Math.floor(remainder / 10);
+      const onesDigit = remainder % 10;
+
+      if (hundreds > 0) {
+        result += ones[hundreds] + " trăm";
+        if (remainder > 0) result += " ";
+      }
+
+      if (tensDigit > 1) {
+        result += tens[tensDigit];
+        if (onesDigit > 0) {
+          if (onesDigit === 1) {
+            result += " một";
+          } else if (onesDigit === 5 && tensDigit > 1) {
+            result += " lăm";
+          } else {
+            result += " " + ones[onesDigit];
+          }
+        }
+      } else if (tensDigit === 1) {
+        if (onesDigit === 0) {
+          result += "mười";
+        } else if (onesDigit === 5) {
+          result += "mười lăm";
+        } else {
+          result += "mười " + ones[onesDigit];
+        }
+      } else if (onesDigit > 0) {
+        if (hundreds > 0) {
+          result += "lẻ " + ones[onesDigit];
+        } else {
+          result += ones[onesDigit];
+        }
+      }
+
+      return result.trim();
+    }
+
+    let result = "";
+    let scaleIndex = 0;
+    let tempAmount = amount;
+
+    while (tempAmount > 0) {
+      const threeDigits = tempAmount % 1000;
+      if (threeDigits > 0) {
+        const threeDigitWords = convertThreeDigits(threeDigits);
+        if (scaleIndex > 0) {
+          result = threeDigitWords + " " + scales[scaleIndex] + " " + result;
+        } else {
+          result = threeDigitWords;
+        }
+      }
+      tempAmount = Math.floor(tempAmount / 1000);
+      scaleIndex++;
+    }
+
+    // Capitalize first letter
+    result = result.charAt(0).toUpperCase() + result.slice(1);
+
+    return result.trim() + " đồng";
+  };
+
+  export const formatDate = (dateString: string, isShowTime: boolean = true) => {
+    return isShowTime ? new Date(dateString).toLocaleDateString('vi-VN', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }) : new Date(dateString).toLocaleDateString('vi-VN', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
