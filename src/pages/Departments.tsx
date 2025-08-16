@@ -8,8 +8,13 @@ import {
   updateDepartment,
   updateDepartmentStatus,
 } from "../services/api";
+import { usePermission } from "@/components/PermissionGuard";
 
 const Departments = () => {
+  const { hasPermission } = usePermission();
+  const canCreate = hasPermission("toanquyen");
+  const canEdit = hasPermission("toanquyen");
+  const canToggle = hasPermission("toanquyen");
   const [departments, setDepartments] = useState<any[]>([]);
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"
@@ -81,6 +86,10 @@ const Departments = () => {
   }, []);
 
   const handleAdd = () => {
+    if (!canCreate) {
+      toast.error("Bạn không có quyền thêm bộ phận");
+      return;
+    }
     setEditingDepartment(null);
     setFormData({
       name: "",
@@ -95,6 +104,10 @@ const Departments = () => {
   };
 
   const handleEdit = (department: any) => {
+    if (!canEdit) {
+      toast.error("Bạn không có quyền sửa bộ phận");
+      return;
+    }
     setEditingDepartment(department);
     setFormData({
       name: department.name || "",
@@ -114,6 +127,10 @@ const Departments = () => {
   }>({ open: false, department: null });
 
   const handleToggleDepartment = (department: any) => {
+    if (!canToggle) {
+    toast.error("Bạn không có quyền cập nhật bộ phận");
+    return;
+  }
     setConfirmHideModal({ open: true, department });
   };
 
@@ -198,6 +215,10 @@ const Departments = () => {
 
     try {
       if (editingDepartment) {
+        if (!canEdit) {
+          toast.error("Bạn không có quyền sửa bộ phận");
+          return;
+        }
         // Update department
         const result = await updateDepartment(editingDepartment.id, payload);
         if (result.success) {
@@ -235,6 +256,10 @@ const Departments = () => {
           toast.error(result.message || "Cập nhật bộ phận thất bại!");
         }
       } else {
+        if (!canCreate) {
+          toast.error("Bạn không có quyền thêm bộ phận");
+          return;
+        }
         // Add new department
         const result = await createDepartment(payload);
         if (result.success) {

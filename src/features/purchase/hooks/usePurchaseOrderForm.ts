@@ -65,6 +65,8 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
               MaCTSP: item.MaCTSP || ctsp.MaCTSP || '',
               colorName,
               sizeName,
+              colorId: item.Mau?.MaMau || ctsp.Mau?.MaMau || undefined,
+              sizeId: item.KichThuoc?.MaKichThuoc || ctsp.KichThuoc?.MaKichThuoc || undefined,
               quantity: Number(item.SoLuong) || 0,
               unitPrice: Number(item.DonGia) || 0,
             };
@@ -80,15 +82,17 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
           supplierId: po.supplierId.toString(),
           expectedDeliveryDate: po.expectedDeliveryDate || "",
           notes: po.notes || "",
-                  items: po.items.map(item => ({
-          MaSP: item.MaSP,
-          productName: item.productName,
-          MaCTSP: item.MaCTSP,
-          colorName: item.colorName,
-          sizeName: item.sizeName,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-        })),
+          items: po.items.map(item => ({
+            MaSP: item.MaSP,
+            productName: item.productName,
+            MaCTSP: item.MaCTSP,
+            colorName: item.colorName,
+            sizeName: item.sizeName,
+            colorId: item.colorId,
+            sizeId: item.sizeId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+          })),
         });
         
         setIsEditMode(true);
@@ -107,6 +111,8 @@ export const usePurchaseOrderForm = (currentUserId: string) => {
           MaCTSP: item.MaCTSP,
           colorName: item.colorName,
           sizeName: item.sizeName,
+          colorId: item.colorId,
+          sizeId: item.sizeId,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
         })),

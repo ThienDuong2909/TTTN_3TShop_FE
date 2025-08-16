@@ -1,25 +1,24 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import {
-  Plus,
-  Filter,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   Edit,
   Eye,
-  Upload,
+  EyeOff,
+  ImagePlus,
+  Info,
+  Plus,
   Save,
   Star,
-  EyeOff,
-  Info,
+  Upload,
   X,
-  ImagePlus,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast, Toaster } from "sonner";
 import AdminHeader from "../components/AdminHeader";
+import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
 import {
   Card,
   CardContent,
@@ -28,14 +27,14 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/ui/table";
-import { Badge } from "../components/ui/badge";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 import {
   Select,
   SelectContent,
@@ -44,23 +43,24 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "../components/ui/dialog";
-import { Label } from "../components/ui/label";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 import { Textarea } from "../components/ui/textarea";
 import { CLOUDINARY_CONFIG } from "../config/cloudinary";
 
 // Import API functions
 import {
-  getProducts,
   getCategories,
+  getProducts,
   updateProduct,
   updateProductStatus,
 } from "../services/api";
+import { useApp } from "@/contexts/AppContext";
 
 // API interfaces
 interface ApiProduct {
@@ -119,6 +119,7 @@ interface Category {
 }
 
 export default function ProductManagement() {
+  const { state } = useApp();
   const navigate = useNavigate();
   const isInitialized = useRef(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -341,10 +342,32 @@ export default function ProductManagement() {
     const end = start + pagination.pageSize;
     setProducts(sortedProducts.slice(start, end));
   }, [sortedProducts, pagination.page, pagination.pageSize]);
+  // Check permissions
+  if (
+    !state.user ||
+    (!state.user.permissions?.includes("sanpham.xem") &&
+      !state.user.permissions?.includes("toanquyen"))
+  ) {
+    navigate("/");
+    return null;
+  }
 
-  const canEdit = true;
-  // state.user.role === "admin" ||
-  // state.user.permissions?.includes("manage_products");
+  useEffect(() => {
+    if (
+      !state.user ||
+      (!state.user.permissions?.includes("sanpham.xem") &&
+        !state.user.permissions?.includes("toanquyen"))
+    ) {
+      navigate("/");
+    }
+  }, [state.user, navigate]);
+
+  const canCreate =
+    state.user?.permissions?.includes("sanpham.tao") ||
+    state.user?.permissions?.includes("toanquyen");
+  const canEdit =
+    state.user?.permissions?.includes("sanpham.sua") ||
+    state.user?.permissions?.includes("toanquyen");
 
   function getLatestPrice(product: ApiProduct) {
     if (!product.ThayDoiGia || product.ThayDoiGia.length === 0) {
@@ -517,10 +540,17 @@ export default function ProductManagement() {
   };
 
   const handleAddProduct = () => {
+    if (!canCreate) {
+      toast.error("Bạn không có quyền thêm sản phẩm");
+      return;
+    }
     navigate("/admin/add-product");
   };
 
   const handleEditProduct = (product: ApiProduct) => {
+    if (!canEdit) {
+      return toast.error("Bạn không có quyền sửa sản phẩm");
+    }
     const latestPrice = getLatestPrice(product);
     const priceValue = latestPrice ? parseFloat(latestPrice.Gia) : 0;
 
@@ -611,6 +641,9 @@ export default function ProductManagement() {
   };
 
   const handleToggleProductStatus = (product: ApiProduct) => {
+    if (!canEdit) {
+      return toast.error("Bạn không có quyền cập nhật sản phẩm");
+    }
     setSelectedProduct(product);
     setStatusModalOpen(true);
   };
@@ -1039,7 +1072,7 @@ export default function ProductManagement() {
                   Quản lý thông tin sản phẩm, kho và giá cả
                 </p>
               </div>
-              {canEdit && (
+              {canCreate && (
                 <Button
                   className="bg-[#825B32] hover:bg-[#6B4423] text-white text-sm py-2 px-4"
                   onClick={handleAddProduct}

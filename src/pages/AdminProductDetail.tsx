@@ -1,35 +1,29 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
-  // Save,
-  // Edit3,
-  Package,
-  Eye,
-  // Plus,
-  // Minus,
-  History,
-  TrendingUp,
-  Palette,
-  Camera,
-  User,
   Calendar,
-  MapPin,
-  Phone,
+  Camera,
+  Eye,
+  History,
   Mail,
+  MapPin,
   MessageSquare,
+  Package,
+  Palette,
+  Phone,
   Star,
+  TrendingUp,
+  User,
 } from "lucide-react";
-// import { toast } from "sonner";
-import { Button } from "../components/ui/button";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-// import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import {
   Table,
@@ -39,26 +33,14 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-// import {
-//   Dialog,
-//   DialogContent,
-//   DialogDescription,
-//   DialogHeader,
-//   DialogTitle,
-// } from "../components/ui/dialog";
-import { Separator } from "../components/ui/separator";
 import {
   AddProductDetailDialog,
-  StockHistoryDialog,
-  PriceHistoryDialog,
   CommentsDialog,
+  PriceHistoryDialog,
+  StockHistoryDialog,
 } from "../components/admin-product-detail";
-import {
-  getProductDetailById,
-  // addProductDetail,
-  // getSizes,
-  // getColors,
-} from "../services/api.js"; // API interfaces
+import { Separator } from "../components/ui/separator";
+import { getProductDetailById } from "../services/api.js"; // API interfaces
 interface ApiProductVariant {
   MaCTSP: number;
   MaSP: number;
@@ -132,7 +114,11 @@ interface ApiProductDetail {
     NgayApDung: string;
   }>;
   ChiTietSanPhams: ApiProductVariant[];
-  BinhLuans?: ApiBinhLuan[];
+  BinhLuan?: {
+    avgRate: number;
+    luotBinhLuan: number;
+    DanhSachBinhLuan: ApiBinhLuan[];
+  };
 }
 
 export const AdminProductDetail: React.FC = () => {
@@ -143,11 +129,9 @@ export const AdminProductDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [showStockHistory, setShowStockHistory] = useState(false);
-  // const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showPriceHistory, setShowPriceHistory] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
-  // Fetch product data from API
   useEffect(() => {
     const fetchProduct = async () => {
       if (!id) return;
@@ -173,7 +157,6 @@ export const AdminProductDetail: React.FC = () => {
     fetchProduct();
   }, [id, navigate]);
 
-  // Helper function to get latest price
   const getLatestPrice = (product: ApiProductDetail) => {
     if (!product.ThayDoiGia || product.ThayDoiGia.length === 0) {
       return null;
@@ -222,72 +205,6 @@ export const AdminProductDetail: React.FC = () => {
     }
   };
 
-  // const handleQuantityChange = (variantId: string, newQuantity: number) => {
-  //   if (newQuantity < 0) return;
-
-  //   setEditingVariants((prev) => ({
-  //     ...prev,
-  //     [variantId]: newQuantity,
-  //   }));
-  // };
-
-  // const confirmStockUpdate = async () => {
-  //   if (!product) return;
-
-  //   try {
-  //     // Prepare data for API call
-  //     const stockUpdates = Object.entries(editingVariants).map(([variantId, newQuantity]) => ({
-  //       MaCTSP: parseInt(variantId),
-  //       SoLuongTon: newQuantity,
-  //     }));
-
-  //     const response = await fetch('http://localhost:8080/api/products/update-stock', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify(stockUpdates),
-  //     });
-
-  //     const result = await response.json();
-
-  //     if (result.success) {
-  //       // Refresh product data
-  //       const productResponse = await fetch(`http://localhost:8080/api/products/${id}`);
-  //       const productResult = await productResponse.json();
-
-  //       if (productResult.success) {
-  //         setProduct(productResult.data);
-  //       }
-
-  //       setEditingVariants({});
-  //       setIsEditing(false);
-  //       setShowConfirmModal(false);
-
-  //       toast.success("Đã cập nhật số lượng tồn kho thành công!", {
-  //         description: `Đã cập nhật ${stockUpdates.length} biến thể sản phẩm`,
-  //         duration: 3000,
-  //       });
-  //     } else {
-  //       toast.error("Có lỗi xảy ra khi cập nhật tồn kho!", {
-  //         description: result.message || "Vui lòng thử lại sau",
-  //         duration: 5000,
-  //       });
-  //     }
-  //   } catch (error) {
-  //     console.error("Error updating stock:", error);
-  //     toast.error("Có lỗi xảy ra khi cập nhật tồn kho!", {
-  //       description: "Không thể kết nối đến server, vui lòng thử lại sau",
-  //       duration: 5000,
-  //     });
-  //   }
-  // };
-
-  // const cancelEditing = () => {
-  //   setEditingVariants({});
-  //   setIsEditing(false);
-  // };
-
   const refreshProductData = async () => {
     if (!id) return;
 
@@ -300,9 +217,6 @@ export const AdminProductDetail: React.FC = () => {
       console.error("Error refreshing product data:", error);
     }
   };
-
-  // const stockChangeCount = Object.keys(editingVariants).length;
-  // const hasChanges = stockChangeCount > 0;
 
   // Loading state
   if (loading) {
@@ -438,14 +352,14 @@ export const AdminProductDetail: React.FC = () => {
                   <p className="text-sm font-medium text-gray-500">Đánh giá</p>
                   <div className="flex items-center space-x-2">
                     <p className="text-xl font-bold text-[#825B32]">
-                      {product.SoSaoTrungBinh
-                        ? parseFloat(product.SoSaoTrungBinh).toFixed(1)
+                      {product.BinhLuan?.avgRate
+                        ? product.BinhLuan.avgRate.toFixed(1)
                         : "0.0"}
                     </p>
                     <Star className="w-4 h-4 text-yellow-500 fill-current" />
                   </div>
                   <p className="text-xs text-gray-500">
-                    {product.SoLuongBinhLuan || 0} bình luận
+                    {product.BinhLuan?.luotBinhLuan || 0} bình luận
                   </p>
                 </div>
               </div>
@@ -454,7 +368,10 @@ export const AdminProductDetail: React.FC = () => {
                 size="sm"
                 onClick={() => setShowComments(true)}
                 className="text-[#825B32] border-[#825B32] hover:bg-[#825B32] hover:text-white"
-                disabled={!product.BinhLuans || product.BinhLuans.length === 0}
+                disabled={
+                  !product.BinhLuan?.DanhSachBinhLuan ||
+                  product.BinhLuan.DanhSachBinhLuan.length === 0
+                }
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Xem
@@ -944,9 +861,9 @@ export const AdminProductDetail: React.FC = () => {
         isOpen={showComments}
         onClose={() => setShowComments(false)}
         productName={product.TenSP}
-        averageRating={product.SoSaoTrungBinh}
-        totalComments={product.SoLuongBinhLuan}
-        comments={product.BinhLuans}
+        averageRating={product.BinhLuan?.avgRate?.toString()}
+        totalComments={product.BinhLuan?.luotBinhLuan}
+        comments={product.BinhLuan?.DanhSachBinhLuan}
       />
     </div>
   );

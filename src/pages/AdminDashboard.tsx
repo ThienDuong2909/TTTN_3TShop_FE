@@ -55,6 +55,9 @@ import { useApp } from "../contexts/AppContext";
 import AdminHeader from "../components/AdminHeader";
 import AdminSidebar from "../components/AdminSidebar";
 import RevenueReport from '../pages/RevenueReport';
+// import PermissionDebug from "../components/PermissionDebug";
+// import PermissionTest from "../components/PermissionTest";
+// import UserStateTest from "../components/UserStateTest";
 import {
   products,
   orders,
@@ -73,9 +76,9 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
 
   // Check if user has permission to access admin dashboard
-  const hasAdminAccess = state.user?.permissions?.includes('admin.*');
-  const hasOrderAssignedAccess = state.user?.permissions?.includes('order.view_assigned');
-  const hasOrderViewAccess = state.user?.permissions?.includes('order.view');
+  const hasAdminAccess = state.user?.permissions?.includes('toanquyen');
+  const hasOrderAssignedAccess = state.user?.permissions?.includes('donhang.xem_duoc_giao');
+  const hasOrderViewAccess = state.user?.permissions?.includes('donhang.xem');
   
   if (!state.user || (!hasAdminAccess && !hasOrderAssignedAccess && !hasOrderViewAccess)) {
     return (
@@ -95,8 +98,8 @@ export default function AdminDashboard() {
     );
   }
 
-  const isAdmin = state.user.role === "admin";
-  const isStaff = state.user.role === "staff";
+  const isAdmin = state.user.role === "Admin";
+  const isStaff = state.user.role === "NhanVienCuaHang";
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -267,7 +270,8 @@ export default function AdminDashboard() {
             <Button variant="outline">Quản lý chi tiết</Button>
           </Link>
           {(isAdmin ||
-            state.user?.permissions?.includes("manage_products")) && (
+            state.user?.permissions?.includes("sanpham.tao") ||
+            state.user?.permissions?.includes("toanquyen")) && (
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               Thêm sản phẩm
@@ -375,7 +379,8 @@ export default function AdminDashboard() {
                       <Edit className="h-3 w-3" />
                     </Button>
                     {(isAdmin ||
-                      state.user?.permissions?.includes("manage_products")) && (
+                      state.user?.permissions?.includes("sanpham.xoa") ||
+                      state.user?.permissions?.includes("toanquyen")) && (
                       <Button variant="outline" size="sm">
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -469,7 +474,8 @@ export default function AdminDashboard() {
                       <Eye className="h-3 w-3" />
                     </Button>
                     {(isAdmin ||
-                      state.user?.permissions?.includes("manage_orders")) && (
+                      state.user?.permissions?.includes("donhang.capnhat_trangthai") ||
+                      state.user?.permissions?.includes("toanquyen")) && (
                       <>
                         {order.status === "pending" && (
                           <Button size="sm" variant="default">
@@ -576,7 +582,9 @@ export default function AdminDashboard() {
       <AdminHeader title="Dashboard" />
 
       <main className="py-8">
-        <div className="px-4 sm:px-6 lg:px-8">{getTabContent()}</div>
+        <div className="px-4 sm:px-6 lg:px-8">
+          {getTabContent()}
+        </div>
       </main>
     </div>
   );

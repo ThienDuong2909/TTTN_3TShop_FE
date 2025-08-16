@@ -3,6 +3,7 @@ import { toast, Toaster } from "sonner";
 import { Column, DataTable } from "../components/ui/DataTable";
 import { Modal } from "../components/ui/Modal";
 import { createColor, getColors, updateColor } from "../services/api";
+import { usePermission } from "../components/PermissionGuard";
 
 interface Color {
   MaMau: number;
@@ -13,6 +14,9 @@ interface Color {
 }
 
 export const ColorManagement = () => {
+  const { hasPermission } = usePermission();
+  const canCreate = hasPermission("mausac.tao") || hasPermission("toanquyen");
+  const canEdit = hasPermission("mausac.sua") || hasPermission("toanquyen");
   const [colors, setColors] = useState<Color[]>([]);
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"
@@ -58,12 +62,20 @@ export const ColorManagement = () => {
   }, []);
 
   const handleAdd = () => {
+    if (!canCreate) {
+      toast.error("Bạn không có quyền thêm màu sắc");
+      return;
+    }
     setEditingColor(null);
     setFormData({ TenMau: "", MaHex: "#FFFFFF", TrangThai: true });
     setIsModalOpen(true);
   };
 
   const handleEdit = (color: Color) => {
+    if (!canEdit) {
+      toast.error("Bạn không có quyền sửa màu sắc");
+      return;
+    }
     setEditingColor(color);
     setFormData({
       TenMau: color.TenMau,
@@ -92,24 +104,36 @@ export const ColorManagement = () => {
 
     try {
       if (editingColor) {
+        if (!canEdit) {
+          toast.error("Bạn không có quyền sửa màu sắc");
+          return;
+        }
         const response = await updateColor(editingColor.MaMau, payload);
         if (response && response.success) {
-          toast.success("Cập nhật màu thành công");
-        } else {
-          toast.error("Lỗi khi cập nhật màu");
+          toast.success("Cập nhật màu sắc thành công");
         }
       } else {
         const response = await createColor(payload);
         if (response && response.success) {
-          toast.success("Thêm màu thành công");
-        } else {
-          toast.error("Lỗi khi thêm màu");
+          if (!canCreate) {
+            toast.error("Bạn không có quyền thêm màu sắc");
+            return;
+          }
         }
       }
       setIsModalOpen(false);
       fetchColors();
-    } catch (error) {
-      toast.error("Lỗi khi thêm/sửa màu");
+    } catch (error: any) {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        toast.error(
+          editingColor
+            ? "Bạn không có quyền sửa màu sắc"
+            : "Bạn không có quyền thêm màu sắc"
+        );
+      } else {
+        toast.error("Lỗi khi thêm/sửa màu");
+      }
     }
   };
 
@@ -200,8 +224,8 @@ export const ColorManagement = () => {
           title="Quản lý màu sắc sản phẩm"
           columns={columns}
           data={filteredColors}
-          onAdd={handleAdd}
-          onEdit={handleEdit}
+          onAdd={canCreate ? handleAdd : undefined}
+          onEdit={canEdit ? handleEdit : undefined}
           addButtonText="Thêm màu sắc"
           searchPlaceholder="Tìm kiếm màu sắc..."
           filterComponent={

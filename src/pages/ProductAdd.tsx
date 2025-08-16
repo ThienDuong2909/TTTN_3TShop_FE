@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, X, Upload, Eye, Trash2, Save, ArrowLeft } from "lucide-react";
+import { Plus, X, Upload, Eye, Trash2, Save, ArrowLeft, Sparkles } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { CLOUDINARY_CONFIG } from "../config/cloudinary";
@@ -11,6 +11,17 @@ import {
   createProduct,
 } from "../services/api";
 import { formatDate } from "@/lib/utils";
+
+// Khai báo kiểu cho import.meta.env
+declare global {
+  interface ImportMetaEnv {
+    readonly VITE_OPENAI_API_KEY: string;
+  }
+
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
+  }
+}
 
 interface ProductVariant {
   id: string;
@@ -97,6 +108,7 @@ export const ProductAdd = () => {
   });
 
   const [isUploading, setIsUploading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Fetch data from APIs
   useEffect(() => {
@@ -260,6 +272,121 @@ export const ProductAdd = () => {
     return true;
   };
 
+  // Analyze image with AI
+  const analyzeImageWithAI = async (imageUrl: string) => {
+    try {
+      setIsAnalyzing(true);
+      toast.info("Đang phân tích ảnh với AI...");
+
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error("OpenAI API key không được cấu hình. Vui lòng kiểm tra file .env");
+      }
+
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: `Hãy phân tích ảnh sau và trả lời CHỈ với JSON thuần túy, không có markdown, không có text khác:
+
+{
+  "type": "Tên loại sản phẩm (ví dụ: Áo thun, Quần short, Quần jean, Váy...)",
+  "gender": "Nam / Nữ / Unisex",
+  "main_color": "Tên màu sắc chính",
+  "suggested_name": "Tên sản phẩm gợi ý",
+  "description": "Mô tả ngắn về dáng, họa tiết, phong cách, dịp phù hợp, giới tính, mô tả cực hay và dài để marketing"
+}
+
+QUAN TRỌNG: Chỉ trả về JSON thuần túy, không có \`\`\`json, không có \`\`\`, không có text giải thích.`
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: imageUrl
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 1000
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content;
+
+      if (!content) {
+        throw new Error("Không nhận được phản hồi từ AI");
+      }
+
+      console.log('AI Response:', content);
+
+      // Parse JSON response - handle markdown formatting
+      let cleanContent = content.trim();
+
+      // Remove markdown code blocks if present
+      if (cleanContent.startsWith('```json')) {
+        cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (cleanContent.startsWith('```')) {
+        cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+
+      // Try to parse the cleaned content
+      let analysis;
+      try {
+        analysis = JSON.parse(cleanContent);
+      } catch (parseError) {
+        console.error('Failed to parse AI response:', cleanContent);
+
+        // Try to extract JSON from the response if it contains markdown
+        const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            analysis = JSON.parse(jsonMatch[0]);
+          } catch (secondError) {
+            console.error('Failed to extract JSON from response:', jsonMatch[0]);
+            throw new Error('AI trả về dữ liệu không đúng định dạng JSON');
+          }
+        } else {
+          throw new Error('AI trả về dữ liệu không đúng định dạng JSON');
+        }
+      }
+
+      // Validate analysis structure
+      if (!analysis || typeof analysis !== 'object') {
+        throw new Error('AI trả về dữ liệu không hợp lệ');
+      }
+
+      // Auto-fill form with AI suggestions
+      setFormData(prev => ({
+        ...prev,
+        TenSP: analysis.suggested_name || prev.TenSP,
+        MoTa: analysis.description || prev.MoTa,
+      }));
+
+      toast.success("Phân tích AI thành công! Đã cập nhật tên và mô tả sản phẩm.");
+    } catch (error) {
+      console.error('AI Analysis error:', error);
+      toast.error(error instanceof Error ? error.message : "Có lỗi xảy ra khi phân tích AI");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   // Add image from file upload
   const addImage = async () => {
     if (formData.images.length >= 5) {
@@ -323,9 +450,15 @@ export const ProductAdd = () => {
             ...formData,
             images: [...formData.images, ...successfulUploads],
           });
-          toast.success(
-            `Upload thành công ${successfulUploads.length}/${validFiles.length} hình ảnh!`
-          );
+          toast.success(`Upload thành công ${successfulUploads.length}/${validFiles.length} hình ảnh!`);
+
+          // Auto-analyze the first image with AI
+          if (successfulUploads.length > 0 && formData.images.length === 0) {
+            // Only analyze if this is the first image
+            setTimeout(() => {
+              analyzeImageWithAI(successfulUploads[0].url);
+            }, 1000);
+          }
         } else {
           toast.error(
             "Không thể upload hình ảnh. Vui lòng kiểm tra cấu hình Cloudinary!"
@@ -666,22 +799,39 @@ export const ProductAdd = () => {
                 Hình ảnh sản phẩm ({formData.images.length}/5)
               </h2>
               <p className="text-xs text-gray-600 mt-1">
-                Upload từ 1-5 hình ảnh. Ảnh đầu tiên sẽ là ảnh chính.
+                Upload từ 1-5 hình ảnh. Ảnh đầu tiên sẽ là ảnh chính và được phân tích AI.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={addImage}
-              disabled={isUploading || formData.images.length >= 5}
-              className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                isUploading || formData.images.length >= 5
-                  ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-                  : "bg-[#825B32] text-white hover:bg-[#6d4a2a]"
-              }`}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {isUploading ? "Đang upload..." : "Thêm hình ảnh"}
-            </button>
+            <div className="flex gap-2">
+              {formData.images.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => analyzeImageWithAI(formData.images[0].url)}
+                  disabled={isAnalyzing}
+                  className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                    isAnalyzing
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  {isAnalyzing ? 'Đang phân tích...' : 'Phân tích AI'}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={addImage}
+                disabled={isUploading || formData.images.length >= 5}
+                className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                  isUploading || formData.images.length >= 5
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-[#825B32] text-white hover:bg-[#6d4a2a]'
+                }`}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {isUploading ? 'Đang upload...' : 'Thêm hình ảnh'}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -700,6 +850,15 @@ export const ProductAdd = () => {
                   </div>
                 )}
                 <div className="absolute top-1 right-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    onClick={() => analyzeImageWithAI(image.url)}
+                    disabled={isAnalyzing}
+                    className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                    title="Phân tích ảnh với AI"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                  </button>
                   {image.AnhChinh !== 1 && (
                     <button
                       type="button"
@@ -728,6 +887,11 @@ export const ProductAdd = () => {
               <p className="text-xs text-gray-400 mt-1">
                 Click "Thêm hình ảnh" để upload từ máy tính (tối đa 5 ảnh)
               </p>
+              <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-700 font-medium">
+                  ✨ Ảnh đầu tiên sẽ được tự động phân tích bằng AI để gợi ý thông tin sản phẩm
+                </p>
+              </div>
             </div>
           )}
         </div>

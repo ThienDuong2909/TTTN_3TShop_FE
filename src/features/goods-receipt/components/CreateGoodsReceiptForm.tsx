@@ -48,6 +48,15 @@ import ExcelImport from "./ExcelImport";
 import clsx from "clsx";
 import { formatVietnameseCurrency } from "../../../lib/utils";
 
+// Normalize hex color to ensure a single leading '#'
+function normalizeHexColor(input?: string): string {
+  if (!input) return "";
+  const trimmed = String(input).trim();
+  if (!trimmed) return "";
+  const withoutHashes = trimmed.replace(/^#+/, "");
+  return withoutHashes ? `#${withoutHashes}` : "";
+}
+
 interface GoodsReceiptItem {
   purchaseOrderItemId: string;
   productId: string;
@@ -187,7 +196,10 @@ export default function CreateGoodsReceiptForm({
   const calculateTotalReceived = () => {
     // Tính tổng từ TẤT CẢ items, không lọc bỏ lỗi validation
     return (grForm.items || []).reduce(
-      (sum, item) => sum + item.receivedQuantity * item.unitPrice,
+      (sum, item) => {
+        const quantity = typeof item.receivedQuantity === 'number' ? item.receivedQuantity : 0;
+        return sum + quantity * item.unitPrice;
+      },
       0
     );
   };
@@ -232,7 +244,10 @@ export default function CreateGoodsReceiptForm({
     }
     // Nếu nhập tay, chỉ lấy các item có receivedQuantity > 0
     if (inputMethod === "manual") {
-      return grForm.items.filter(item => item.receivedQuantity > 0);
+      return grForm.items.filter(item => {
+        const quantity = typeof item.receivedQuantity === 'number' ? item.receivedQuantity : 0;
+        return quantity > 0;
+      });
     }
     // Nếu không có lỗi hoặc không xác định, trả về tất cả items
     return grForm.items;
@@ -295,7 +310,7 @@ export default function CreateGoodsReceiptForm({
           purchaseOrderItemId: ct.MaCTSP,
           productId: ct.MaCTSP,
           productName: ct.ChiTietSanPham?.SanPham?.TenSP || ct.TenSP || "",
-          selectedColor: ct.ChiTietSanPham?.Mau?.MaHex ? `#${ct.ChiTietSanPham.Mau.MaHex}` : (ct.Mau?.MaHex ? `#${ct.Mau.MaHex}` : ""),
+          selectedColor: normalizeHexColor(ct.ChiTietSanPham?.Mau?.MaHex || ct.Mau?.MaHex),
           colorName: ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
           selectedSize: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ct.KichThuoc?.TenKichThuoc || "",
           orderedQuantity: ct.SoLuong,
@@ -370,7 +385,8 @@ export default function CreateGoodsReceiptForm({
     // Tổng số đã nhập cho sản phẩm này trong form (trừ dòng hiện tại)
     const totalEnteredOtherRows = grForm.items.reduce((sum, it, idx) => {
       if (idx !== index && String(it.purchaseOrderItemId) === String(item.purchaseOrderItemId)) {
-        return sum + (it.receivedQuantity || 0);
+        const quantity = typeof it.receivedQuantity === 'number' ? it.receivedQuantity : 0;
+        return sum + quantity;
       }
       return sum;
     }, 0);
@@ -483,7 +499,7 @@ export default function CreateGoodsReceiptForm({
                     purchaseOrderItemId: ct.MaCTSP,
                     productId: ct.MaCTSP,
                     productName: ct.ChiTietSanPham?.SanPham?.TenSP || ct.TenSP || "",
-                    selectedColor: ct.ChiTietSanPham?.Mau?.MaHex ? `#${ct.ChiTietSanPham.Mau.MaHex}` : (ct.Mau?.MaHex ? `#${ct.Mau.MaHex}` : ""),
+                    selectedColor: normalizeHexColor(ct.ChiTietSanPham?.Mau?.MaHex || ct.Mau?.MaHex),
                     colorName: ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
                     selectedSize: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ct.KichThuoc?.TenKichThuoc || "",
                     orderedQuantity: ct.SoLuong,
@@ -531,7 +547,6 @@ export default function CreateGoodsReceiptForm({
                           <TableHead>Đặt hàng</TableHead>
                           <TableHead>Nhận thực tế</TableHead>
                           <TableHead>Thành tiền</TableHead>
-                          <TableHead>Ghi chú</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -545,7 +560,10 @@ export default function CreateGoodsReceiptForm({
                                 <div className="flex items-center gap-2">
                                   <div
                                     className="w-4 h-4 rounded border"
-                                    style={{ backgroundColor: item.selectedColor }}
+                                    style={{ 
+                                      backgroundColor: item.selectedColor || undefined,
+                                      borderColor: item.selectedColor ? '#e5e7eb' : '#d1d5db'
+                                    }}
                                   />
                                   <span>{item.colorName}</span>
                                 </div>
@@ -560,8 +578,18 @@ export default function CreateGoodsReceiptForm({
                                 type="number"
                                 value={item.receivedQuantity}
                                 onChange={(e) => {
-                                  const val = parseInt(e.target.value) || 0;
-                                  handleReceivedQuantityChange(index, val);
+                                  const value = e.target.value;
+                                  if (value === "") {
+                                    updateGRItem(index, 'receivedQuantity', "");
+                                  } else {
+                                    const val = parseInt(value);
+                                    if (!isNaN(val) && val >= 1) {
+                                      handleReceivedQuantityChange(index, val);
+                                    } else {
+                                      // Keep the string value if it's not a valid number
+                                      updateGRItem(index, 'receivedQuantity', value);
+                                    }
+                                  }
                                 }}
                                 onBlur={() => setTouched(t => ({...t, [`receivedQuantity_${index}`]: true}))}
                                 min="1"
@@ -573,9 +601,9 @@ export default function CreateGoodsReceiptForm({
                               )}
                             </TableCell>
                             <TableCell className="font-medium">
-                              {formatVietnameseCurrency(item.receivedQuantity * item.unitPrice)}
+                              {formatVietnameseCurrency((typeof item.receivedQuantity === 'number' ? item.receivedQuantity : 0) * item.unitPrice)}
                             </TableCell>
-                            <TableCell>
+                            {/* <TableCell>
                               <Input
                                 value={item.notes || ""}
                                 onChange={(e) =>
@@ -584,7 +612,7 @@ export default function CreateGoodsReceiptForm({
                                 placeholder="Ghi chú..."
                                 className="w-32 focus:outline-none"
                               />
-                            </TableCell>
+                            </TableCell> */}
                           </TableRow>
                         ))}
                       </TableBody>
@@ -682,7 +710,10 @@ export default function CreateGoodsReceiptForm({
                                     <div className="flex items-center gap-2">
                                       <div
                                         className="w-3 h-3 rounded border"
-                                        style={{ backgroundColor: item.selectedColor }}
+                                        style={{ 
+                                          backgroundColor: item.selectedColor || undefined,
+                                          borderColor: item.selectedColor ? '#e5e7eb' : '#d1d5db'
+                                        }}
                                       />
                                       <span className="text-sm">{item.colorName || item.selectedColor}</span>
                                     </div>
@@ -697,7 +728,8 @@ export default function CreateGoodsReceiptForm({
                                 </TableCell>
                                 <TableCell>
                                   {(() => {
-                                    const formattedPrice = formatVietnameseCurrency(item.unitPrice);
+                                    // Hiển thị đơn giá với dấu chấm ngăn cách phần nghìn
+                                    const formattedPrice = item.unitPrice.toLocaleString('vi-VN');
                                     console.log(`Displaying unitPrice for ${item.productName}:`, {
                                       rawValue: item.unitPrice,
                                       formattedValue: formattedPrice,
@@ -708,7 +740,8 @@ export default function CreateGoodsReceiptForm({
                                 </TableCell>
                                 <TableCell className="font-medium">
                                   {(() => {
-                                    const total = item.receivedQuantity * item.unitPrice;
+                                    const quantity = typeof item.receivedQuantity === 'number' ? item.receivedQuantity : 0;
+                                    const total = quantity * item.unitPrice;
                                     const formattedTotal = formatVietnameseCurrency(total);
                                     console.log(`Displaying total for ${item.productName}:`, {
                                       receivedQuantity: item.receivedQuantity,
@@ -740,7 +773,7 @@ export default function CreateGoodsReceiptForm({
       </div>
 
       {/* Notes */}
-      <div>
+      {/* <div>
         <Label htmlFor="grNotes">Ghi chú nhập kho</Label>
         <Textarea
           id="grNotes"
@@ -749,7 +782,7 @@ export default function CreateGoodsReceiptForm({
           placeholder="Ghi chú về tình trạng hàng nhận, vấn đề phát sinh..."
           rows={3}
         />
-      </div>
+      </div> */}
 
       {/* Error Summary */}
       {inputMethod === "excel" && excelValidationErrors.length > 0 && (

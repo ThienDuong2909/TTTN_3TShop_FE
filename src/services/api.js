@@ -23,15 +23,13 @@ const formatDateForApi = (date) => {
 // ===================
 // EMPLOYEE API
 // ===================
-// EMPLOYEE API
-// ===================
 
 // Lấy danh sách nhân viên
 export const getEmployees = async () => {
   try {
     const response = await api.get("/employees");
     const result = response.data;
-    
+
     if (result.success && Array.isArray(result.data)) {
       const mapped = result.data.map((item) => {
         // Find latest department (most recent NgayBatDau) for all employee info
@@ -39,7 +37,7 @@ export const getEmployees = async () => {
           if (!latest) return current;
           return new Date(current.NgayBatDau) > new Date(latest.NgayBatDau) ? current : latest;
         }, null) || {};
-        
+
         const mappedEmployee = {
           maNV: item.MaNV,
           tenNV: item.TenNV || 'MISSING NAME',
@@ -57,7 +55,7 @@ export const getEmployees = async () => {
         };
         return mappedEmployee;
       });
-      
+
       return mapped;
     } else {
       return [];
@@ -83,7 +81,7 @@ export const createEmployee = async (data) => {
   try {
     const response = await api.post("/employees", data);
     const result = response.data;
-    
+
     if (result.success) {
       return result;
     } else {
@@ -100,7 +98,7 @@ export const updateEmployee = async (employeeId, data) => {
   try {
     const response = await api.put(`/employees/${employeeId}`, data);
     const result = response.data;
-    
+
     if (result.success) {
       return result;
     } else {
@@ -117,7 +115,7 @@ export const transferEmployee = async (data) => {
   try {
     const response = await api.post("/employees/transfer", data);
     const result = response.data;
-    
+
     if (result.success) {
       return result;
     } else {
@@ -134,7 +132,7 @@ export const getEmployeeWorkHistory = async (employeeId) => {
   try {
     const response = await api.get(`/employees/${employeeId}/department-history`);
     const result = response.data;
-    
+
     if (result.success && Array.isArray(result.data)) {
       return result.data;
     } else {
@@ -151,6 +149,62 @@ export const getEmployeeById = async (employeeId) => {
   try {
     const response = await api.get(`/employees/${employeeId}`);
     return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// ===================
+// PERMISSIONS API
+// ===================
+
+// Lấy quyền của user hiện tại
+export const fetchMyPermissions = async () => {
+  try {
+    const res = await api.get("/permissions/my-permissions");
+    return res.data?.data || [];
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy tất cả quyền (admin)
+export const fetchAllPermissions = async () => {
+  try {
+    const res = await api.get("/permissions/all");
+    return res.data?.data || [];
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// (Optional) Lấy quyền của một nhân viên theo id — nếu backend hỗ trợ
+export const fetchEmployeePermissions = async (nhanVienId) => {
+  try {
+    const res = await api.get(`/permissions/employee/${nhanVienId}`);
+    // Cho phép backend trả về mảng id hoặc mảng object { id }
+    const data = res.data?.data || [];
+    if (!Array.isArray(data)) return [];
+    if (data.length > 0 && typeof data[0] === "object") {
+      return data.map((p) => p.id).filter((v) => typeof v === "number");
+    }
+    return data;
+  } catch (error) {
+    // Nếu không có endpoint này, trả về mảng rỗng để UI vẫn hoạt động
+    return [];
+  }
+};
+
+// Gán quyền cho nhân viên (admin)
+export const assignPermissionsToEmployee = async (
+  nhanVienId,
+  permissionIds
+) => {
+  try {
+    const res = await api.put(`/permissions/employee/${nhanVienId}`, {
+      permissionIds,
+    });
+    return res.data;
   } catch (error) {
     return handleError(error);
   }
@@ -285,33 +339,32 @@ export const getDepartmentById = async (departmentId) => {
 };
 
 // ===================
-// ===================
 // PRODUCT API
 // ===================
 
 // Lấy danh sách sản phẩm với phân trang và filter
 export const getProducts = async (params = {}) => {
   try {
-    const { 
-      page = 1, 
-      pageSize = 8, 
-      search = "", 
-      category = "" 
+    const {
+      page = 1,
+      pageSize = 8,
+      search = "",
+      category = ""
     } = params;
-    
+
     // Build query parameters
     const queryParams = new URLSearchParams({
       page: page.toString(),
       pageSize: pageSize.toString(),
     });
-    
+
     if (search) queryParams.append('search', search);
     // Nếu chọn "all" thì không truyền MaLoaiSP cho API
     if (category && category !== "all") queryParams.append('MaLoaiSP', category);
 
     const response = await api.get(`/products/get-all-products?${queryParams.toString()}`);
     const result = response.data;
-    
+
     if (result.success && result.data && result.data.data && Array.isArray(result.data.data)) {
       return {
         success: true,
@@ -509,11 +562,46 @@ export const updatePurchaseOrder = async (id, data) => {
 
     console.log("Final orderData:", orderData);
     console.log("Sending to backend:", JSON.stringify(orderData, null, 2));
+    console.log("API endpoint:", `/purchase-orders/${id}`);
 
-    const response = await api.put(`/purchase-orders/${id}`, orderData);
+    let response;
+    try {
+      // Try the main endpoint first
+      response = await api.put(`/purchase-orders/${id}`, orderData);
+      console.log("API response:", response);
+    } catch (error) {
+      console.log("Main endpoint failed, trying alternative...");
+      // Try alternative endpoint if main one fails
+      try {
+        response = await api.put(`/purchase-orders/update/${id}`, orderData);
+        console.log("Alternative endpoint response:", response);
+      } catch (altError) {
+        console.log("Alternative endpoint also failed");
+        // Try another possible endpoint
+        try {
+          response = await api.put(`/phieu-dat-hang/${id}`, orderData);
+          console.log("Vietnamese endpoint response:", response);
+        } catch (vietError) {
+          console.log("Vietnamese endpoint also failed");
+          // Try POST method instead of PUT
+          try {
+            response = await api.post(
+              `/purchase-orders/${id}/update`,
+              orderData
+            );
+            console.log("POST update endpoint response:", response);
+          } catch (postError) {
+            console.log("POST update endpoint also failed");
+            throw error; // Throw the original error
+          }
+        }
+      }
+    }
+
     return response.data;
   } catch (error) {
     handleError(error);
+    throw error; // Re-throw the error so the calling function can handle it
   }
 };
 
@@ -526,6 +614,7 @@ export const updatePurchaseOrderStatus = async (id, statusId) => {
     return response.data;
   } catch (error) {
     handleError(error);
+    throw error; // Re-throw the error so the calling function can handle it
   }
 };
 
@@ -750,7 +839,7 @@ export const updateBatchOrderStatus = async (ordersData) => {
 export const getAvailableDeliveryStaff = async (address) => {
   try {
     const response = await api.post("/employees/delivery/available", { diaChi: address });
-    
+
     // Handle the new API response structure
     if (response.data && response.data.success && Array.isArray(response.data.data)) {
       return {
@@ -765,7 +854,7 @@ export const getAvailableDeliveryStaff = async (address) => {
         }))
       };
     }
-    
+
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -796,6 +885,37 @@ export const updateBatchOrderCompletion = async (orders) => {
 export const updateOrderCompletion = async (orderId, data) => {
   try {
     const response = await api.put(`/orders/${orderId}/status`, data);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// ===================
+// DELIVERY STAFF API
+// ===================
+
+// Lấy đơn hàng được phân công cho nhân viên giao hàng
+export const getAssignedOrders = async (params = {}) => {
+  try {
+    const { page = 1, limit = 10, status } = params;
+    let url = `/orders/delivery/assigned?page=${page}&limit=${limit}`;
+
+    if (status) {
+      url += `&status=${status}`;
+    }
+
+    const response = await api.get(url);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Xác nhận hoàn thành giao hàng
+export const confirmOrderDelivery = async (orderId) => {
+  try {
+    const response = await api.put(`/orders/delivery/${orderId}/confirm`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1111,6 +1231,16 @@ export const cancelOrder = async (maKH, maDDH) => {
   }
 };
 
+export const getCategoryById = async (id) => {
+  try {
+    const response = await api.get(`/category/${id}`);
+    return response.data.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy thông tin danh mục:", error);
+    throw error;
+  }
+};
+
 // ===================
 // REVIEW/COMMENT API
 // ===================
@@ -1137,7 +1267,7 @@ export const submitMultipleReviews = async (reviewList) => {
         maCTDonDatHang: review.maCTDonDatHang,
         moTa: review.moTa,
         soSao: review.soSao,
-      }))
+      })),
     });
     return response.data;
   } catch (error) {
@@ -1174,6 +1304,66 @@ export const createReturnSlip = async (returnData) => {
 export const getReturnRequests = async () => {
   try {
     const response = await api.get("/return/requests");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const getCustomerProfile = async () => {
+  try {
+    const response = await api.get("/auth/profile");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Cập nhật thông tin profile khách hàng
+export const updateCustomerProfile = async (maKH, profileData) => {
+  try {
+    const response = await api.put(`/customers/profile/${maKH}`, profileData);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Upload ảnh đại diện
+export const uploadAvatar = async (avatarData) => {
+  try {
+    const response = await api.put("/customers/upload-avatar", {
+      maKH: avatarData.maKH,
+      AnhDaiDien: avatarData.AnhDaiDien,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Upload avatar error:", error);
+    throw error;
+  }
+};
+
+// ===================
+// ACCOUNT SETTINGS API
+// ===================
+
+// Lấy thông tin tài khoản
+export const getAccountInfo = async () => {
+  try {
+    const response = await api.get("/auth/account");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Đổi mật khẩu
+export const changePassword = async (passwordData) => {
+  try {
+    const response = await api.post("/auth/change-password", {
+      matKhauCu: passwordData.matKhauCu,
+      matKhauMoi: passwordData.matKhauMoi,
+    });
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1336,7 +1526,7 @@ export const getAreas = async () => {
   try {
     const response = await api.get('/areas');
     const result = response.data;
-    
+
     if (result.success && Array.isArray(result.data)) {
       return result.data;
     } else {
@@ -1358,7 +1548,7 @@ export const getCategories = async () => {
   try {
     const response = await api.get("/category");
     const result = response.data;
-    
+
     if (result && result.success && Array.isArray(result.data)) {
       return result.data;
     } else if (Array.isArray(result)) {
@@ -1411,14 +1601,14 @@ export const deleteCategory = async (categoryId) => {
 };
 
 // Lấy thông tin chi tiết danh mục
-export const getCategoryById = async (categoryId) => {
-  try {
-    const response = await api.get(`/category/${categoryId}`);
-    return response.data;
-  } catch (error) {
-    return handleError(error);
-  }
-};
+// export const getCategoryById = async (categoryId) => {
+//   try {
+//     const response = await api.get(`/category/${categoryId}`);
+//     return response.data;
+//   } catch (error) {
+//     return handleError(error);
+//   }
+// };
 
 // ===================
 // PRODUCT MANAGEMENT API

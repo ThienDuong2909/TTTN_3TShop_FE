@@ -1,12 +1,9 @@
 import {
-  BarChart3,
   Package,
   ShoppingCart,
-  Users,
   Truck,
   FileText,
   Tags,
-  MessageSquare,
   Building2,
   UserCheck,
   Shield,
@@ -31,129 +28,124 @@ interface NavigationItem {
   alternativePermissions?: string[];
 }
 
-export default function AdminSidebar({
-  activeTab,
-  setActiveTab,
-}: AdminSidebarProps) {
+export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
   const { state } = useApp();
   const navigate = useNavigate();
 
   const userPermissions = state.user?.permissions || [];
-  const isAdmin = state.user?.role === "Admin";
+  // const isAdmin = state.user?.role === "Admin";
 
   const navigation: NavigationItem[] = [
-    {
-      name: "Tổng quan",
-      id: "overview",
-      icon: BarChart3,
-      permission: "admin.*",
-      route: "/admin",
-      alternativePermissions: ["order.view_assigned", "order.view"],
-    },
+    // {
+    //   name: "Tổng quan",
+    //   id: "overview",
+    //   icon: BarChart3,
+    //   permission: "toanquyen",
+    //   route: "/admin",
+    //   alternativePermissions: ["donhang.xem_duoc_giao", "donhang.xem"],
+    // },
     {
       name: "Sản phẩm",
       id: "products",
       icon: Package,
-      permission: "product.*",
+      permission: "sanpham.xem",
       route: "/admin/products",
     },
     {
       name: "Loại sản phẩm",
       id: "categories",
       icon: Package,
-      permission: "category.*",
+      permission: "danhmuc.tao",
       route: "/admin/categories",
+      alternativePermissions: ["danhmuc.sua", "danhmuc.xoa"],
     },
     {
       name: "Đơn hàng",
       id: "orders",
       icon: ShoppingCart,
-      permission: "order.view",
+      permission: "donhang.xem",
       route: "/admin/orders",
-      alternativePermissions: ["order.view_assigned"],
+      alternativePermissions: ["donhang.xem_duoc_giao"],
     },
     {
       name: "Quản lý phiếu trả",
       id: "return-management",
       icon: RotateCcw,
-      permission: "admin.*",
+      permission: "toanquyen",
       route: "/admin/return-management",
+      alternativePermissions: ["thongtin.xem"],
     },
     // {
     //   name: "Khách hàng",
     //   id: "customers",
     //   icon: Users,
-    //   permission: "admin.*",
+    //   permission: "toanquyen",
     //   route: "/admin/customers",
     // },
     {
       name: "Phiếu đặt hàng",
       id: "purchase-orders",
       icon: FileText,
-      permission: "purchase.*",
+      permission: "dathang.xem",
       route: "/admin/purchase-orders",
+      alternativePermissions: ["dathang.tao", "dathang.sua"],
     },
     {
       name: "Phiếu nhập hàng",
       id: "goods-receipt",
       icon: FileText,
-      permission: "import.*",
+      permission: "nhaphang.xem",
       route: "/admin/goods-receipt",
+      alternativePermissions: ["nhaphang.tao", "nhaphang.sua"],
     },
     {
       name: "Nhà cung cấp",
       id: "suppliers",
       icon: Truck,
-      permission: "supplier.*",
+      permission: "nhacungcap.xem",
       route: "/admin/suppliers",
+      alternativePermissions: [
+        "nhacungcap.tao",
+        "nhacungcap.sua",
+        "nhacungcap.xoa",
+      ],
     },
-    // {
-    //   name: "Hóa đơn",
-    //   id: "invoices",
-    //   icon: FileText,
-    //   permission: "invoice.*",
-    //   route: "/admin/invoices",
-    // },
     {
       name: "Giảm giá",
       id: "discounts",
       icon: Tags,
-      permission: "admin.*",
+      permission: "toanquyen",
       route: "/admin/discount-management",
     },
-    // {
-    //   name: "Bình luận",
-    //   id: "reviews",
-    //   icon: MessageSquare,
-    //   permission: "admin.*",
-    //   route: "/admin/reviews",
-    // },
     {
       name: "Nhân viên",
       id: "staff",
       icon: UserCheck,
-      permission: "employee.*",
+      permission: "nhanvien.xem",
       route: "/admin/employees",
+      alternativePermissions: ["nhanvien.phancong"],
     },
     {
       name: "Bộ phận",
       id: "departments",
       icon: Building2,
-      permission: "department.*",
+      permission: "bophan.xem",
       route: "/admin/departments",
+      alternativePermissions: ["toanquyen"],
     },
     {
       name: "Màu sắc",
       id: "colors",
       icon: Building2,
-      permission: "color.*",
+      permission: "mausac.tao",
       route: "/admin/colors",
+      alternativePermissions: ["mausac.sua", "mausac.xoa"],
     },
     {
       name: "Phân quyền",
       id: "permissions",
       icon: Shield,
-      permission: "admin.*",
+      permission: "toanquyen",
       route: "/admin/permissions",
     },
   ];
@@ -171,7 +163,7 @@ export default function AdminSidebar({
   };
 
   return (
-    <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-50 lg:flex-col">
+    <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-52 lg:flex-col">
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-4 pb-4 shadow-sm">
         <div className="flex h-16 shrink-0 items-center">
           <div className="flex items-center space-x-2">
@@ -180,7 +172,7 @@ export default function AdminSidebar({
             </div>
             <div>
               <span className="text-base font-bold text-gray-900 dark:text-white">
-                Admin Panel
+                Bảng điều khiển
               </span>
               <div className="text-xs text-muted-foreground">
                 {state.user?.role === "Admin" ? "Quản trị viên" : "Nhân viên"}
@@ -229,16 +221,8 @@ export default function AdminSidebar({
               {state.user?.name.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <span className="sr-only">Thông tin người dùng</span>
-          <div className="flex-1 min-w-0">
-            <div className="font-medium truncate">Admin</div>
-            <div className="text-xs text-muted-foreground truncate">
-              admin@gmail.com
-            </div>
-            {/* <div className="font-medium truncate">{state.user?.name}</div>
-            <div className="text-xs text-muted-foreground truncate">
-              {state.user?.email}
-            </div> */}
+          <div className="text-xs text-muted-foreground">
+            {state.user?.name}
           </div>
         </div>
       </div>

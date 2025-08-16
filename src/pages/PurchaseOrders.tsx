@@ -12,6 +12,8 @@ import {
 } from "../components/ui/select";
 import { useApp } from "../contexts/AppContext";
 import { useEffect } from "react";
+import { usePermission } from "../components/PermissionGuard";
+import { toast } from "sonner";
 
 // Import components and hooks
 import {
@@ -27,12 +29,19 @@ export default function PurchaseOrders() {
   const { state } = useApp();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { hasPermission } = usePermission();
+  const canCreate = hasPermission("dathang.tao") || hasPermission("toanquyen");
+  const canEdit = hasPermission("dathang.sua") || hasPermission("toanquyen");
+  const canSend = hasPermission("dathang.gui") || hasPermission("toanquyen");
+  const canConfirm = hasPermission("dathang.xacnhan") || hasPermission("toanquyen");
+  const canCreateReceipt = hasPermission("nhaphang.tao") || hasPermission("toanquyen");
 
   // Check permissions
   if (
     !state.user ||
-    (state.user.role !== "admin" &&
-      !state.user.permissions?.includes("purchase.*"))
+    (state.user.role !== "Admin" &&
+      !state.user.permissions?.includes("dathang.xem") &&
+    !state.user.permissions?.includes("toanquyen"))
   ) {
     navigate("/admin");
     return null;
@@ -75,12 +84,11 @@ export default function PurchaseOrders() {
     updateFilter,
     getFilteredPOs,
     openCreateDialog,
-    closeCreateDialog,
     openEditDialog,
-    closeEditDialog,
     openDetailDialog,
-    closeDetailDialog,
   } = usePurchaseOrderForm(state.user.id);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  void openCreateDialog; // avoid unused warning if hook shape changes
 
   // Handle actions
   const handleCreatePO = async () => {
@@ -93,7 +101,7 @@ export default function PurchaseOrders() {
     }
     
     if (success) {
-      closeCreateDialog();
+      setIsCreatePOOpen(false);
     }
   };
 
@@ -103,6 +111,12 @@ export default function PurchaseOrders() {
   };
 
   const handleEdit = async (po: any) => {
+    if (!canEdit) {
+      // Chặn trước khi gọi API
+      // eslint-disable-next-line no-console
+      console.warn("No permission to edit purchase order");
+      return toast.error("Bạn không có quyền sửa phiếu đặt hàng");
+    }
     console.log("Edit PO:", po);
     // Add to editing loading state
     setActionLoading((prev: any) => ({ ...prev, editing: [...prev.editing, po.id] }));
@@ -118,19 +132,31 @@ export default function PurchaseOrders() {
   };
 
   const handleSend = async (poId: string) => {
+    if (!canSend) {
+      return toast.error("Bạn không có quyền gửi phiếu đặt hàng");
+    }
     await sendPurchaseOrder(poId);
   };
 
   const handleConfirm = async (poId: string) => {
+    if (!canConfirm) {
+      return toast.error("Bạn không có quyền xác nhận phiếu đặt hàng");
+    }
     await confirmPurchaseOrder(poId);
   };
 
   const handleCreateReceipt = (poId: string) => {
+    if (!canCreateReceipt) {
+      return toast.error("Bạn không có quyền tạo phiếu nhập hàng");
+    }
     navigateToGoodsReceipt(poId);
   };
 
   // Thay vì chỉ setIsCreatePOOpen(true), hãy reset form trước khi mở
   const handleOpenCreateDialog = () => {
+    if (!canCreate) {
+      return toast.error("Bạn không có quyền tạo phiếu đặt hàng");
+    }
     resetForm();
     setIsCreatePOOpen(true);
   };
@@ -210,7 +236,7 @@ export default function PurchaseOrders() {
                   <Button 
                     className="bg-brand-600 hover:bg-brand-700" 
                     onClick={handleOpenCreateDialog}
-                    disabled={loading.creating || loading.updating}
+                    disabled={loading.creating || loading.updating || !(hasPermission("dathang.tao") || hasPermission("toanquyen"))}
                   >
                     {loading.creating || loading.updating ? (
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />

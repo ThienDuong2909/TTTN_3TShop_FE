@@ -15,6 +15,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     if (path.includes("/admin/products")) return "products";
     if (path.includes("/admin/categories")) return "categories";
     if (path.includes("/admin/orders")) return "orders";
+    if (path.includes("/admin/delivery-orders")) return "delivery-orders";
     if (path.includes("/admin/purchase-orders")) return "purchase-orders";
     if (path.includes("/admin/goods-receipt")) return "goods-receipt";
     if (path.includes("/admin/suppliers")) return "suppliers";
@@ -38,6 +39,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       setActiveTab("categories");
     } else if (path.includes("/admin/orders")) {
       setActiveTab("orders");
+    } else if (path.includes("/admin/delivery-orders")) {
+      setActiveTab("delivery-orders");
     } else if (path.includes("/admin/purchase-orders")) {
       setActiveTab("purchase-orders");
     } else if (path.includes("/admin/goods-receipt")) {
@@ -63,10 +66,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <AdminSidebar activeTab={activeTab} />
 
       {/* Main content */}
-      <main className="lg:pl-52">
+      <main className="lg:pl-56">
         <div className="py-3 sm:px-2 lg:px-2">{children}</div>
       </main>
       {/* <main className="lg:pl-48">

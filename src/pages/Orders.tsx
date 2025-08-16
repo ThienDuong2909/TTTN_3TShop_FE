@@ -1,8 +1,35 @@
-import { useState, useEffect, useCallback, memo } from "react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Eye,
+  FileText,
+  Package,
+  Search,
+  Undo2,
+  Users,
+  XCircle,
+} from "lucide-react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import AdminHeader from "../components/AdminHeader";
+import { InvoiceView } from "../components/Invoice";
+import {
+  BatchApprovalModal,
+  BatchCompleteOrdersModal,
+  CancelOrderModal,
+  DeliveryAssignmentModal,
+  InvoiceCreationModal,
+  SingleOrderApprovalModal,
+  SingleOrderCompleteModal,
+} from "../components/orders";
+import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
 import {
   Card,
   CardContent,
@@ -10,6 +37,8 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
+import { Checkbox } from "../components/ui/checkbox";
+import { Input } from "../components/ui/input";
 import {
   Table,
   TableBody,
@@ -18,54 +47,26 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { Badge } from "../components/ui/badge";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "../components/ui/tabs";
+import { useApp } from "../contexts/AppContext";
 import {
-  Search,
-  Check,
-  X,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Package,
-  ChevronLeft,
-  ChevronRight,
-  Users,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  Undo2,
-  FileText,
-  Eye,
-} from "lucide-react";
-import { toast } from "sonner";
-import {
+  confirmOrderDelivery,
+  createInvoice,
+  getAssignedOrders,
+  getAvailableDeliveryStaff,
   getOrdersByStatus,
   getOrderStatistics,
-  updateOrderStatus,
-  updateBatchOrderStatus,
-  getAvailableDeliveryStaff,
-  updateOrderDeliveryStaff,
   updateBatchOrderCompletion,
+  updateBatchOrderStatus,
   updateOrderCompletion,
-  createInvoice,
+  updateOrderDeliveryStaff,
+  updateOrderStatus,
 } from "../services/api";
-import { Checkbox } from "../components/ui/checkbox";
-import { InvoiceView } from "../components/Invoice";
-import {
-  BatchApprovalModal,
-  CancelOrderModal,
-  SingleOrderApprovalModal,
-  DeliveryAssignmentModal,
-  BatchCompleteOrdersModal,
-  SingleOrderCompleteModal,
-  InvoiceCreationModal,
-} from "../components/orders";
 
 // Delivery Staff interface
 interface DeliveryStaff {
@@ -221,6 +222,12 @@ const normalizeVietnameseText = (text: string): string => {
 
 export default function Orders() {
   const navigate = useNavigate();
+  const { state } = useApp();
+  const currentUser = state.user;
+
+  // Check if user is delivery staff
+  const isDeliveryStaff = currentUser?.role === "NhanVienGiaoHang";
+
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("1");
   const [sortBy, setSortBy] = useState<string | null>(null); // null means no sorting
@@ -400,37 +407,52 @@ export default function Orders() {
   );
 
   // Fetch orders by status (simplified - no server-side processing)
-  const fetchOrdersByStatus = useCallback(async (status: string) => {
-    try {
-      setLoading(true);
+  const fetchOrdersByStatus = useCallback(
+    async (status: string) => {
+      try {
+        setLoading(true);
 
-      const result = await getOrdersByStatus(status);
+        let result;
 
-      if (result && result.success && result.data) {
-        const fetchedOrders = result.data.orders || result.data || [];
-        setAllOrders(fetchedOrders);
-        // Clear current orders while loading new data
-        setOrders([]);
-        // Let useEffect handle the processing
-      } else {
+        // If user is delivery staff, use assigned orders API
+        if (isDeliveryStaff) {
+          result = await getAssignedOrders({
+            page: pagination.currentPage,
+            limit: pagination.itemsPerPage,
+            status: status,
+          });
+        } else {
+          // For admin and store staff, use regular orders API
+          result = await getOrdersByStatus(status);
+        }
+
+        if (result && result.success && result.data) {
+          const fetchedOrders = result.data.orders || result.data || [];
+          setAllOrders(fetchedOrders);
+          // Clear current orders while loading new data
+          setOrders([]);
+          // Let useEffect handle the processing
+        } else {
+          setAllOrders([]);
+          setOrders([]);
+          setPagination((prev) => ({
+            ...prev,
+            totalItems: 0,
+            totalPages: 1,
+            currentPage: 1,
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+        toast.error("Có lỗi xảy ra khi tải dữ liệu");
         setAllOrders([]);
         setOrders([]);
-        setPagination((prev) => ({
-          ...prev,
-          totalItems: 0,
-          totalPages: 1,
-          currentPage: 1,
-        }));
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      toast.error("Có lỗi xảy ra khi tải dữ liệu");
-      setAllOrders([]);
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []); // Remove processOrders dependency
+    },
+    [isDeliveryStaff, pagination.currentPage, pagination.itemsPerPage]
+  ); // Add dependencies
 
   // Fetch statistics for all order statuses
   const fetchOrderStatistics = useCallback(async () => {
@@ -698,13 +720,6 @@ export default function Orders() {
     }
   };
 
-  // Handle cancel order
-  const handleCancelOrder = (orderId: number, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent row click
-    setOrderToCancel(orderId);
-    setShowCancelModal(true);
-  };
-
   const confirmCancelOrder = async () => {
     if (!orderToCancel) return;
 
@@ -872,33 +887,80 @@ export default function Orders() {
     try {
       setCompletingOrders(true);
 
-      // Get user info from localStorage or context (assuming user ID is 1 for now)
-      const userId = 1; // You should get this from your auth context
+      let result;
 
-      const ordersToComplete = Array.from(selectedOrders).map((orderId) => ({
-        id: orderId,
-        maTTDH: 4, // Status "Hoàn tất"
-        maNVDuyet: userId,
-      }));
+      if (isDeliveryStaff) {
+        // For delivery staff, confirm each order individually
+        const orderIds = Array.from(selectedOrders);
+        let successCount = 0;
+        let failedCount = 0;
 
-      console.log("Completing orders:", ordersToComplete);
-
-      const result = await updateBatchOrderCompletion(ordersToComplete);
-
-      if (result && result.success) {
-        toast.success(`Đã hoàn tất thành công ${result.data.success} đơn hàng`);
-
-        if (result.data.failed > 0) {
-          toast.warning(`${result.data.failed} đơn hàng hoàn tất thất bại`);
+        for (const orderId of orderIds) {
+          try {
+            const confirmResult = await confirmOrderDelivery(orderId);
+            if (confirmResult && confirmResult.success) {
+              successCount++;
+            } else {
+              failedCount++;
+            }
+          } catch (error) {
+            console.error(
+              `Error confirming delivery for order ${orderId}:`,
+              error
+            );
+            failedCount++;
+          }
         }
 
+        if (successCount > 0) {
+          toast.success(
+            `Đã xác nhận giao hàng thành công ${successCount} đơn hàng`
+          );
+        }
+
+        if (failedCount > 0) {
+          toast.warning(`${failedCount} đơn hàng xác nhận thất bại`);
+        }
+
+        // Refresh data
         await fetchOrderStatistics();
         await fetchOrdersByStatus(activeTab);
 
         // Clear selection
         setSelectedOrders(new Set());
       } else {
-        toast.error(result?.message || "Có lỗi xảy ra khi hoàn tất đơn hàng");
+        // For admin and store staff, use batch completion API
+        // Get user info from localStorage or context (assuming user ID is 1 for now)
+        const userId = 1; // You should get this from your auth context
+
+        const ordersToComplete = Array.from(selectedOrders).map((orderId) => ({
+          id: orderId,
+          maTTDH: 4, // Status "Hoàn tất"
+          maNVDuyet: userId,
+        }));
+
+        console.log("Completing orders:", ordersToComplete);
+
+        result = await updateBatchOrderCompletion(ordersToComplete);
+
+        if (result && result.success) {
+          toast.success(
+            `Đã hoàn tất thành công ${result.data.success} đơn hàng`
+          );
+
+          if (result.data.failed > 0) {
+            toast.warning(`${result.data.failed} đơn hàng hoàn tất thất bại`);
+          }
+
+          // Refresh data
+          await fetchOrderStatistics();
+          await fetchOrdersByStatus(activeTab);
+
+          // Clear selection
+          setSelectedOrders(new Set());
+        } else {
+          toast.error(result?.message || "Có lỗi xảy ra khi hoàn tất đơn hàng");
+        }
       }
     } catch (error) {
       console.error("Error completing orders:", error);
@@ -922,15 +984,28 @@ export default function Orders() {
 
     try {
       setCompletingSingleOrder(true);
-      const userId = 1;
 
-      const result = await updateOrderCompletion(orderToComplete, {
-        maTTDH: 4,
-        maNVDuyet: userId,
-      });
+      let result;
+
+      // If user is delivery staff, use confirm delivery API
+      if (isDeliveryStaff) {
+        result = await confirmOrderDelivery(orderToComplete);
+      } else {
+        // For admin and store staff, use regular completion API
+        // Get user info from localStorage or context (assuming user ID is 1 for now)
+        const userId = 1; // You should get this from your auth context
+
+        result = await updateOrderCompletion(orderToComplete, {
+          maTTDH: 4, // Status "Hoàn tất"
+          maNVDuyet: userId,
+        });
+      }
 
       if (result && result.success) {
-        toast.success("Đã hoàn tất đơn hàng thành công");
+        const message = isDeliveryStaff
+          ? "Đã xác nhận giao hàng thành công"
+          : "Đã hoàn tất đơn hàng thành công";
+        toast.success(message);
 
         // Refresh data
         await fetchOrderStatistics();
@@ -1116,7 +1191,9 @@ export default function Orders() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminHeader title="Quản lý đơn hàng" />
+      <AdminHeader
+        title={isDeliveryStaff ? "Đơn hàng được phân công" : "Quản lý đơn hàng"}
+      />
 
       <main className="py-6">
         <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -1142,9 +1219,15 @@ export default function Orders() {
           {/* Orders Management */}
           <Card className="shadow-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Danh sách đơn hàng</CardTitle>
+              <CardTitle className="text-lg">
+                {isDeliveryStaff
+                  ? "Đơn hàng được phân công"
+                  : "Danh sách đơn hàng"}
+              </CardTitle>
               <CardDescription>
-                Quản lý tất cả đơn hàng trong hệ thống theo trạng thái
+                {isDeliveryStaff
+                  ? "Xem và xác nhận các đơn hàng được phân công cho bạn"
+                  : "Quản lý tất cả đơn hàng trong hệ thống theo trạng thái"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1202,8 +1285,8 @@ export default function Orders() {
                       </div>
                     ) : (
                       <>
-                        {/* Approval Actions - Only show for "Đã đặt" tab */}
-                        {activeTab === "1" && (
+                        {/* Approval Actions - Only show for "Đã đặt" tab and not for delivery staff */}
+                        {activeTab === "1" && !isDeliveryStaff && (
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                               <Checkbox
@@ -1278,7 +1361,10 @@ export default function Orders() {
                               className="bg-green-600 hover:bg-green-700 text-white"
                             >
                               <CheckCircle className="w-4 h-4 mr-2" />
-                              Hoàn tất đơn hàng ({selectedOrders.size})
+                              {isDeliveryStaff
+                                ? "Xác nhận giao hàng"
+                                : "Hoàn tất đơn hàng"}{" "}
+                              ({selectedOrders.size})
                             </Button>
                           </div>
                         )}
@@ -1376,65 +1462,52 @@ export default function Orders() {
                                             order.MaTTDH !== 1) ||
                                           (activeTab === "3" &&
                                             order.MaTTDH !== 3)
-                                        } // Only allow selection for correct status
+                                        }
                                       />
                                     </TableCell>
                                   )}
-                                  <TableCell className="font-medium text-sm">
-                                    #{order.MaDDH.toString()}
+                                  <TableCell className="text-xs">
+                                    #{order.MaDDH}
                                   </TableCell>
-                                  <TableCell className="text-sm">
+                                  <TableCell className="text-xs">
                                     <div>
                                       <div className="font-medium">
                                         {order.NguoiNhan}
                                       </div>
-                                      <div className="text-xs text-muted-foreground">
+                                      <div className="text-muted-foreground">
                                         {order.SDT}
                                       </div>
                                     </div>
                                   </TableCell>
-                                  <TableCell className="text-sm">
-                                    {getTotalItems(order)}
+                                  <TableCell className="text-xs">
+                                    {getTotalItems(order)} sản phẩm
                                   </TableCell>
-                                  <TableCell className="font-medium text-sm">
+                                  <TableCell className="text-xs font-medium">
                                     {formatPrice(order.TongTien)}
                                   </TableCell>
-                                  <TableCell>
-                                    {getStatusBadge(order.TrangThaiDH.MaTTDH)}
+                                  <TableCell className="text-xs">
+                                    {getStatusBadge(order.MaTTDH)}
                                   </TableCell>
-                                  <TableCell className="text-sm">
+                                  <TableCell className="text-xs">
                                     {formatDate(order.NgayTao)}
                                   </TableCell>
-                                  <TableCell
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <div className="flex items-center justify-center gap-2">
-                                      {order.MaTTDH === 1 && ( // Chỉ hiển thị cho đơn hàng "Đã đặt"
-                                        <>
+                                  <TableCell className="text-xs text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                      {order.MaTTDH === 1 &&
+                                        !isDeliveryStaff && ( // Chỉ hiển thị cho đơn hàng "Đã đặt" và không phải delivery staff
                                           <Button
                                             variant="outline"
                                             size="sm"
-                                            className="h-8 px-2 text-xs text-green-600 border-green-600 hover:bg-green-50"
+                                            className="h-8 px-3 text-xs text-[#825B32] border-[#825B32] hover:bg-[#825B32]/10"
                                             title="Duyệt đơn hàng"
                                             onClick={(e) =>
                                               handleApproveOrder(order.MaDDH, e)
                                             }
                                           >
-                                            <Check className="h-3 w-3" />
+                                            <CheckCircle className="h-3 w-3 mr-1" />
+                                            Duyệt
                                           </Button>
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-8 px-2 text-xs text-red-600 border-red-600 hover:bg-red-50"
-                                            title="Hủy đơn hàng"
-                                            onClick={(e) =>
-                                              handleCancelOrder(order.MaDDH, e)
-                                            }
-                                          >
-                                            <X className="h-3 w-3" />
-                                          </Button>
-                                        </>
-                                      )}
+                                        )}
                                       {order.MaTTDH === 2 && ( // Đơn hàng "Đã duyệt"
                                         <>
                                           {!order.HoaDon ? (
@@ -1495,18 +1568,24 @@ export default function Orders() {
                                           variant="outline"
                                           size="sm"
                                           className="h-8 px-3 text-xs text-green-600 border-green-600 hover:bg-green-50"
-                                          title="Hoàn tất đơn hàng"
+                                          title={
+                                            isDeliveryStaff
+                                              ? "Xác nhận giao hàng"
+                                              : "Hoàn tất đơn hàng"
+                                          }
                                           onClick={(e) =>
                                             handleCompleteOrder(order.MaDDH, e)
                                           }
                                         >
                                           <CheckCircle className="h-3 w-3 mr-1" />
-                                          Hoàn tất
+                                          {isDeliveryStaff
+                                            ? "Xác nhận"
+                                            : "Hoàn tất"}
                                         </Button>
                                       )}
                                       {![1, 2, 3].includes(order.MaTTDH) && ( // Cho các trạng thái khác
                                         <span className="text-muted-foreground text-xs">
-                                          -
+                                          Không có thao tác
                                         </span>
                                       )}
                                     </div>
@@ -1518,22 +1597,22 @@ export default function Orders() {
                         </div>
 
                         {/* Pagination */}
-                        {pagination.totalPages > 1 && (
-                          <div className="flex items-center justify-between mt-6">
+                        {orders.length > 0 && (
+                          <div className="flex items-center justify-between mt-4">
                             <div className="text-sm text-muted-foreground">
                               Hiển thị{" "}
                               {(pagination.currentPage - 1) *
                                 pagination.itemsPerPage +
                                 1}{" "}
-                              -{" "}
+                              đến{" "}
                               {Math.min(
                                 pagination.currentPage *
                                   pagination.itemsPerPage,
                                 pagination.totalItems
                               )}{" "}
-                              của {pagination.totalItems} đơn hàng
+                              trong tổng số {pagination.totalItems} đơn hàng
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center space-x-2">
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -1545,39 +1624,9 @@ export default function Orders() {
                                 <ChevronLeft className="h-4 w-4" />
                                 Trước
                               </Button>
-                              <div className="flex items-center gap-1">
-                                {Array.from(
-                                  {
-                                    length: Math.min(5, pagination.totalPages),
-                                  },
-                                  (_, i) => {
-                                    const pageNumber =
-                                      pagination.currentPage <= 3
-                                        ? i + 1
-                                        : pagination.currentPage + i - 2;
-
-                                    if (pageNumber > pagination.totalPages)
-                                      return null;
-
-                                    return (
-                                      <Button
-                                        key={pageNumber}
-                                        variant={
-                                          pageNumber === pagination.currentPage
-                                            ? "default"
-                                            : "outline"
-                                        }
-                                        size="sm"
-                                        onClick={() =>
-                                          handlePageChange(pageNumber)
-                                        }
-                                        className="w-8 h-8 p-0"
-                                      >
-                                        {pageNumber}
-                                      </Button>
-                                    );
-                                  }
-                                )}
+                              <div className="text-sm">
+                                Trang {pagination.currentPage} /{" "}
+                                {pagination.totalPages}
                               </div>
                               <Button
                                 variant="outline"

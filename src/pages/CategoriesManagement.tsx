@@ -43,6 +43,7 @@ import { Label } from "../components/ui/label";
 import { Progress } from "../components/ui/progress";
 import { toast } from "sonner";
 import { CLOUDINARY_CONFIG } from "../config/cloudinary";
+import { usePermission } from "../components/PermissionGuard";
 
 // Helper function to format date
 const formatDate = (dateString: string) => {
@@ -56,6 +57,10 @@ const formatDate = (dateString: string) => {
 };
 
 export default function CategoriesManagement() {
+  const { hasPermission } = usePermission();
+  const canCreate = hasPermission("danhmuc.tao") || hasPermission("toanquyen");
+  const canEdit = hasPermission("danhmuc.sua") || hasPermission("toanquyen");
+  const canDelete = hasPermission("danhmuc.xoa") || hasPermission("toanquyen");
   const [categories, setCategories] = useState<Category[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -177,6 +182,10 @@ export default function CategoriesManagement() {
   };
 
   const handleAdd = () => {
+    if (!canCreate) {
+      toast.error("Bạn không có quyền thêm danh mục");
+      return;
+    }
     setEditingCategory(null);
     setFormData({ TenLoai: "", HinhMinhHoa: "" });
     setImagePreview("");
@@ -184,6 +193,10 @@ export default function CategoriesManagement() {
   };
 
   const handleEdit = (category: Category) => {
+    if (!canEdit) {
+      toast.error("Bạn không có quyền sửa danh mục");
+      return;
+    }
     setEditingCategory(category);
     setFormData({
       TenLoai: category.TenLoai,
@@ -194,12 +207,22 @@ export default function CategoriesManagement() {
   };
 
   const handleDelete = (category: Category) => {
+    if (!canDelete) {
+      toast.error("Bạn không có quyền xóa danh mục");
+      return;
+    }
     setCategoryToDelete(category);
     setDeleteConfirmOpen(true);
   };
 
   const confirmDelete = async () => {
     if (categoryToDelete) {
+      if (!canDelete) {
+        toast.error("Bạn không có quyền xóa danh mục");
+        setCategoryToDelete(null);
+        setDeleteConfirmOpen(false);
+        return;
+      }
       try {
         const result = await deleteCategory(categoryToDelete.MaLoaiSP);
         if (result && !result.error) {
@@ -223,6 +246,10 @@ export default function CategoriesManagement() {
     e.preventDefault();
 
     if (editingCategory) {
+      if (!canEdit) {
+        toast.error("Bạn không có quyền sửa danh mục");
+        return;
+      }
       // Update category
       try {
         const result = await updateCategory(editingCategory.MaLoaiSP, {
@@ -252,6 +279,10 @@ export default function CategoriesManagement() {
       }
     } else {
       // Add new category
+      if (!canCreate) {
+        toast.error("Bạn không có quyền thêm danh mục");
+        return;
+      }
       try {
         const result = await createCategory({
           TenLoai: formData.TenLoai,
@@ -260,9 +291,6 @@ export default function CategoriesManagement() {
 
         if (result && !result.error && result.data) {
           setCategories((prev) => [...prev, result.data]);
-          toast.success("Thêm thành công!");
-        } else {
-          toast.error(result?.message || "Thêm thất bại!");
         }
       } catch (error) {
         console.error("Error creating category:", error);
@@ -284,7 +312,9 @@ export default function CategoriesManagement() {
       <Toaster position="top-center" richColors />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Quản lý danh mục sản phẩm</h1>
-        <Button onClick={handleAdd}>Thêm danh mục</Button>
+        <Button onClick={handleAdd} disabled={!canCreate}>
+          Thêm danh mục
+        </Button>
       </div>
       <div className="flex items-center gap-2 mb-4">
         <div className="relative w-full max-w-xs">
@@ -351,6 +381,7 @@ export default function CategoriesManagement() {
                       onClick={() => handleEdit(cat)}
                       className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200 hover:shadow-md"
                       title="Sửa danh mục"
+                      disabled={!canEdit}
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
@@ -358,6 +389,7 @@ export default function CategoriesManagement() {
                       onClick={() => handleDelete(cat)}
                       className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-200 hover:shadow-md"
                       title="Xóa danh mục"
+                      disabled={!canDelete}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

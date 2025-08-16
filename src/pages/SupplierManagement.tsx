@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { Toaster } from "sonner";
 import AdminHeader from "../components/AdminHeader";
+import { usePermission } from "../components/PermissionGuard";
 import {
   getSuppliers,
   createSupplier,
@@ -47,6 +48,10 @@ interface Supplier {
 // Mock suppliers data
 
 export const SupplierManagement = () => {
+  const { hasPermission } = usePermission();
+  const canCreate = hasPermission("nhacungcap.tao") || hasPermission("toanquyen");
+  const canEdit = hasPermission("nhacungcap.sua") || hasPermission("toanquyen");
+  const canDelete = hasPermission("nhacungcap.xoa") || hasPermission("toanquyen");
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
@@ -90,6 +95,10 @@ export const SupplierManagement = () => {
   }, []);
 
   const handleAdd = () => {
+    if (!canCreate) {
+      toast.error("Bạn không có quyền thêm nhà cung cấp");
+      return;
+    }
     setEditingSupplier(null);
     setViewMode("form");
     setFormData({
@@ -102,6 +111,10 @@ export const SupplierManagement = () => {
   };
 
   const handleEdit = (supplier: Supplier) => {
+    if (!canEdit) {
+      toast.error("Bạn không có quyền sửa nhà cung cấp");
+      return;
+    }
     setEditingSupplier(supplier);
     setViewMode("form");
     setFormData({
@@ -114,12 +127,23 @@ export const SupplierManagement = () => {
   };
 
   const handleDelete = (supplier: Supplier) => {
+    if (!canDelete) {
+      toast.error("Bạn không có quyền xóa nhà cung cấp");
+      return;
+    }
     setSupplierToDelete(supplier);
     setDeleteConfirmOpen(true);
   };
 
   const confirmDelete = async () => {
     if (!supplierToDelete) return;
+
+    if (!canDelete) {
+      toast.error("Bạn không có quyền xóa nhà cung cấp");
+      setSupplierToDelete(null);
+      setDeleteConfirmOpen(false);
+      return;
+    }
 
     try {
       const response = await deleteSupplier(supplierToDelete.MaNCC);
@@ -174,6 +198,11 @@ export const SupplierManagement = () => {
       }
     } else {
       // Add new supplier via API
+      if (!canCreate) {
+        toast.error("Bạn không có quyền thêm nhà cung cấp");
+        return;
+      }
+      // Nếu qua được guard, mới gọi API
       try {
         const response = await createSupplier(supplierData);
         if (response.success && response.data) {
@@ -225,6 +254,7 @@ export const SupplierManagement = () => {
               <Button
                 className="bg-[#825B32] hover:bg-[#6B4423] text-white text-sm py-2 px-4"
                 onClick={handleAdd}
+                disabled={!canCreate}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Thêm nhà cung cấp
@@ -419,6 +449,7 @@ export const SupplierManagement = () => {
                                   onClick={() => handleEdit(supplier)}
                                   className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200 hover:shadow-md"
                                   title="Sửa nhà cung cấp"
+                                  disabled={!canEdit}
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
@@ -426,6 +457,7 @@ export const SupplierManagement = () => {
                                   onClick={() => handleDelete(supplier)}
                                   className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-200 hover:shadow-md"
                                   title="Xóa nhà cung cấp"
+                                  disabled={!canDelete}
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>

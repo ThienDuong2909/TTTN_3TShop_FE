@@ -89,7 +89,7 @@ export default function Login() {
         apiUser?.MaTK ||
         apiUser?.TaiKhoan?.MaTK,
       email: apiUser?.TaiKhoan?.Email || apiUser?.Email || apiUser?.TenKH,
-      name: apiUser?.TenKH || apiUser?.TaiKhoan?.Email || apiUser?.Email,
+      name: apiUser?.TenKH || apiUser?.TenNV || apiUser?.TaiKhoan?.Email || apiUser?.Email,
       role,
       permissions,
       avatar: apiUser?.avatar || undefined,
@@ -297,29 +297,6 @@ export default function Login() {
                 Đăng ký ngay
               </Link>
             </p>
-          </CardContent>
-        </Card>
-
-        {/* Demo Account Info */}
-        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
-          <CardContent className="pt-6">
-            <div className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
-              <p className="font-semibold text-center">Tài khoản demo:</p>
-              <div className="grid grid-cols-1 gap-2 text-xs">
-                <div>
-                  <strong>Admin:</strong> admin@fashionhub.vn
-                </div>
-                <div>
-                  <strong>Nhân viên:</strong> nhanvien@fashionhub.vn
-                </div>
-                <div>
-                  <strong>Khách hàng:</strong> Email bất kỳ khác
-                </div>
-                <div className="text-center mt-2">
-                  <em>Mật khẩu: Nhập bất kỳ</em>
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

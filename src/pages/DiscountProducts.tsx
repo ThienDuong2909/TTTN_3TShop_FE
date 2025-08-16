@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getNewProducts } from "../services/api";
+import { getDiscountProducts } from "../services/api";
 import { ProductCard, Product } from "../components/ProductCard";
 import { useApp } from "../contexts/AppContext";
 import { 
@@ -19,26 +19,23 @@ import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
 import { mapSanPhamFromApi } from "../utils/productMapper.ts";
 
-export default function NewProducts() {
+export default function DiscountProducts() {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [sort, setSort] = useState("price-asc");
+  const [sort, setSort] = useState("discount-desc");
   const { toggleWishlist, isInWishlist, addToCart } = useApp();
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const data = await getNewProducts();
-        const mapped = data.map((p) => ({
-          ...mapSanPhamFromApi(p),
-          isNew: true,
-        }));
+        const data = await getDiscountProducts();
+        const mapped = data.map(mapSanPhamFromApi);
         setProducts(mapped);
       } catch (error) {
-        console.error("Failed to fetch new products:", error);
+        console.error("Failed to fetch discount products:", error);
       } finally {
         setLoading(false);
       }
@@ -49,6 +46,16 @@ export default function NewProducts() {
 
   const sortedProducts = [...products].sort((a, b) => {
     switch (sort) {
+      case "discount-desc":
+        // Sắp xếp theo % giảm giá từ cao đến thấp
+        const discountA = a.originalPrice ? ((a.originalPrice - a.price) / a.originalPrice) * 100 : 0;
+        const discountB = b.originalPrice ? ((b.originalPrice - b.price) / b.originalPrice) * 100 : 0;
+        return discountB - discountA;
+      case "discount-asc":
+        // Sắp xếp theo % giảm giá từ thấp đến cao
+        const discountA2 = a.originalPrice ? ((a.originalPrice - a.price) / a.originalPrice) * 100 : 0;
+        const discountB2 = b.originalPrice ? ((b.originalPrice - b.price) / b.originalPrice) * 100 : 0;
+        return discountA2 - discountB2;
       case "price-asc":
         return a.price - b.price;
       case "price-desc":
@@ -77,12 +84,12 @@ export default function NewProducts() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Sản phẩm mới
+              Sản phẩm giảm giá
             </h1>
           </div>
         </div>
         <p className="text-gray-600 dark:text-gray-300 ml-14">
-          Khám phá những sản phẩm mới nhất vừa ra mắt
+          Khám phá những sản phẩm đang có ưu đãi hấp dẫn
         </p>
       </div>
 
@@ -108,6 +115,8 @@ export default function NewProducts() {
               <SelectValue placeholder="Sắp xếp theo" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="discount-desc">Giảm giá nhiều nhất</SelectItem>
+              <SelectItem value="discount-asc">Giảm giá ít nhất</SelectItem>
               <SelectItem value="price-asc">Giá tăng dần</SelectItem>
               <SelectItem value="price-desc">Giá giảm dần</SelectItem>
               <SelectItem value="name-asc">Tên A-Z</SelectItem>

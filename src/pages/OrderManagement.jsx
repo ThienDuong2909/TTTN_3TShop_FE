@@ -7,20 +7,23 @@ import { OrderDialogsContainer } from "../components/OrderDialogsContainer";
 import dayjs from "dayjs";
 import { getCustomerOrders, submitMultipleReviews, cancelOrder } from "../services/api";
 import { useNavigate } from "react-router-dom";
+import { Search, Package, Clock, Truck, CheckCircle, XCircle, RotateCcw } from "lucide-react";
 
 const TABS = [
-  { label: "Tất cả", value: "ALL" },
-  { label: "Chờ Duyệt", value: "CHOXACNHAN" },
-  { label: "Đang vận chuyển", value: "DANGGIAO" },
-  { label: "Hoàn thành", value: "HOANTAT" },
-  { label: "Đã huỷ", value: "DAHUY" },
+  { label: "Tất cả", value: "ALL", icon: Package, color: "text-gray-600" },
+  { label: "Chờ Duyệt", value: "CHOXACNHAN", icon: Clock, color: "text-yellow-600" },
+  { label: "Đang vận chuyển", value: "DANGGIAO", icon: Truck, color: "text-blue-600" },
+  { label: "Hoàn thành", value: "HOANTAT", icon: CheckCircle, color: "text-green-600" },
+  { label: "Đã huỷ", value: "DAHUY", icon: XCircle, color: "text-red-600" },
+  { label: "Trả hàng/Hoàn tiền", value: "TRAHANG", icon: RotateCcw, color: "text-purple-600" },
 ];
 
 const STATUS_MAP = {
-  CHOXACNHAN: "Chờ duyệt",
-  DANGGIAO: "Đang vận chuyển",
-  HOANTAT: "Hoàn thành",
-  DAHUY: "Đã huỷ",
+  CHOXACNHAN: { label: "Chờ duyệt", color: "bg-yellow-100 text-yellow-800", icon: Clock },
+  DANGGIAO: { label: "Đang vận chuyển", color: "bg-blue-100 text-blue-800", icon: Truck },
+  HOANTAT: { label: "Hoàn thành", color: "bg-green-100 text-green-800", icon: CheckCircle },
+  DAHUY: { label: "Đã huỷ", color: "bg-red-100 text-red-800", icon: XCircle },
+  TRAHANG: { label: "Trả hàng/Hoàn tiền", color: "bg-purple-100 text-purple-800", icon: Package },
 };
 
 function formatPrice(price) {
@@ -223,43 +226,133 @@ export default function OrderManagement() {
     loadOrders();
   };
 
+  // Get active tab info
+  const activeTab = TABS.find(t => t.value === tab);
+  const ActiveIcon = activeTab?.icon || Package;
+
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
-      <div className="container mx-auto px-4 max-w-[1200px]">
-        <h1 className="text-2xl font-bold mb-6">Quản lý đơn hàng</h1>
-        
+    <div>
+      {/* Header */}
+      
+      
+      {/* Main Card */}
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {/* Tabs */}
-        <div className="flex space-x-2 bg-white rounded-t-lg border-b">
-          {TABS.map(t => (
-            <Button
-              key={t.value}
-              variant={tab === t.value ? "default" : "ghost"}
-              className={`rounded-none border-b-2 ${tab === t.value ? "border-brand-600 text-brand-600" : "border-transparent"}`}
-              onClick={() => setTab(t.value)}
-            >
-              {t.label}
-            </Button>
-          ))}
+        <div className="border-b border-gray-200">
+          <div className="flex flex-wrap">
+            {TABS.map(t => {
+              const TabIcon = t.icon;
+              const isActive = tab === t.value;
+              return (
+                <Button
+                  key={t.value}
+                  variant="ghost"
+                  className={`px-6 py-4 rounded-none border-b-2 transition-all duration-200 ${
+                    isActive 
+                      ? 'border-b-2 text-white shadow-md' 
+                      : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  }`}
+                  style={isActive ? { 
+                    backgroundColor: '#684827',
+                    borderBottomColor: '#684827'
+                  } : {}}
+                  onClick={() => setTab(t.value)}
+                >
+                  <TabIcon className={`w-4 h-4 mr-2 ${isActive ? 'text-white' : t.color}`} />
+                  {t.label}
+                </Button>
+              );
+            })}
+          </div>
         </div>
         
         {/* Search */}
-        <div className="bg-white px-4 py-3 border-b flex items-center">
-          <Input
-            placeholder="Bạn có thể tìm kiếm theo tên sản phẩm hoặc mã đơn hàng"
-            className="w-full"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+        <div className="p-6 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Input
+              placeholder="Bạn có thể tìm kiếm theo tên sản phẩm hoặc mã đơn hàng..."
+              className="pl-10 pr-4 py-3 text-sm border-gray-200 focus:border-2 focus:ring-0"
+              style={{ 
+                borderColor: '#e5e7eb',
+                '--tw-ring-color': '#684827'
+              }}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
         </div>
-        
-        {/* Orders */}
-        <div className="space-y-6 mt-4">
-          {loading ? (
-            <div className="text-center py-12 text-lg">Đang tải đơn hàng...</div>
-          ) : filteredOrders.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">Không có đơn hàng nào.</div>
-          ) : (
-            filteredOrders.map(order => (
+
+        {/* Active Tab Info */}
+        <div className="px-6 py-4 border-b border-gray-100" style={{ backgroundColor: '#f8f9fa' }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <ActiveIcon className={`w-5 h-5 mr-3 ${activeTab?.color || 'text-gray-600'}`} />
+              <div>
+                <h3 className="font-semibold text-gray-800">
+                  {activeTab?.label || 'Tất cả đơn hàng'}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {loading ? 'Đang tải...' : `${filteredOrders.length} đơn hàng`}
+                </p>
+              </div>
+            </div>
+            {filteredOrders.length > 0 && (
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Tổng giá trị</p>
+                <p className="font-bold text-lg" style={{ color: '#684827' }}>
+                  {formatPrice(
+                    filteredOrders.reduce((total, order) => 
+                      total + order.CT_DonDatHangs.reduce((sum, ct) => sum + Number(ct.DonGia) * ct.SoLuong, 0), 
+                      0
+                    )
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Orders */}
+      <div className="mt-6">
+        {loading ? (
+          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#684827' }}></div>
+            <p className="text-gray-500">Đang tải danh sách đơn hàng...</p>
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+            <div className="p-4 bg-gray-100 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+              {activeTab ? (
+                <ActiveIcon className={`w-8 h-8 ${activeTab.color}`} />
+              ) : (
+                <Package className="w-8 h-8 text-gray-400" />
+              )}
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              {search.trim() ? 'Không tìm thấy đơn hàng' : `Chưa có đơn hàng ${activeTab?.label.toLowerCase()}`}
+            </h3>
+            <p className="text-gray-500 mb-6">
+              {search.trim() 
+                ? 'Hãy thử tìm kiếm với từ khóa khác hoặc kiểm tra lại thông tin.' 
+                : 'Khi bạn đặt hàng, chúng sẽ xuất hiện ở đây.'
+              }
+            </p>
+            {search.trim() && (
+              <Button 
+                variant="outline" 
+                onClick={() => setSearch('')}
+                className="hover:bg-gray-50"
+                style={{ borderColor: '#684827', color: '#684827' }}
+              >
+                Xóa bộ lọc
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredOrders.map(order => (
               <OrderCard
                 key={order.MaDDH}
                 order={order}
@@ -271,9 +364,9 @@ export default function OrderManagement() {
                 handleReviewClick={handleReviewClick}
                 handleReturnRequest={handleReturnRequest}
               />
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* All Order Dialogs */}

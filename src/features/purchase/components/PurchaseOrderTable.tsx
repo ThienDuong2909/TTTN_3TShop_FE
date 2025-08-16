@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from "../../../components/ui/tooltip";
 import { formatPrice, formatDate } from "../../../services/api";
+import { usePermission } from "../../../components/PermissionGuard";
 import { PurchaseOrder } from "../types";
 
 interface PurchaseOrderTableProps {
@@ -48,6 +49,11 @@ export default function PurchaseOrderTable({
   onCreateReceipt,
   loadingStates = {},
 }: PurchaseOrderTableProps) {
+  const { hasPermission } = usePermission();
+  const canEdit = hasPermission("dathang.sua") || hasPermission("toanquyen");
+  const canSend = hasPermission("dathang.gui") || hasPermission("toanquyen");
+  const canConfirm = hasPermission("dathang.xacnhan") || hasPermission("toanquyen");
+  const canCreateReceipt = hasPermission("nhaphang.tao") || hasPermission("toanquyen");
   // Sắp xếp theo ngày tạo mới nhất lên đầu
   const sortedPurchaseOrders = [...purchaseOrders].sort((a, b) => {
     const dateA = new Date(a.orderDate).getTime();
@@ -151,7 +157,7 @@ export default function PurchaseOrderTable({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => onEdit(po)}
-                                disabled={loadingStates.editing?.includes(po.id)}
+                                disabled={loadingStates.editing?.includes(po.id) || !canEdit}
                               >
                                 {loadingStates.editing?.includes(po.id) ? (
                                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -166,7 +172,7 @@ export default function PurchaseOrderTable({
                                       variant="outline"
                                       size="sm"
                                       onClick={() => onSend(po.id)}
-                                      disabled={loadingStates.sending?.includes(po.id)}
+                                      disabled={loadingStates.sending?.includes(po.id) || !canSend}
                                     >
                                       {loadingStates.sending?.includes(po.id) ? (
                                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -187,7 +193,7 @@ export default function PurchaseOrderTable({
                               variant="outline"
                               size="sm"
                               onClick={() => onConfirm(po.id)}
-                              disabled={loadingStates.confirming?.includes(po.id)}
+                              disabled={loadingStates.confirming?.includes(po.id) || !canConfirm}
                             >
                               {loadingStates.confirming?.includes(po.id) ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -202,6 +208,7 @@ export default function PurchaseOrderTable({
                               variant="outline"
                               size="sm"
                               onClick={() => onCreateReceipt(po.id)}
+                              disabled={!canCreateReceipt}
                             >
                               <Package className="h-3 w-3" />
                             </Button>
