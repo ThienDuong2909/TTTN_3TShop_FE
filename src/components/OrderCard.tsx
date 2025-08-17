@@ -3,17 +3,19 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronUp, Clock, Truck, CheckCircle, Package } from "lucide-react";
+import { ChevronDown, Package } from "lucide-react";
 
 interface OrderCardProps {
   order: any;
   formatPrice: (price: number) => string;
-  STATUS_MAP: Record<string, any>; // Thay đổi từ Record<string, string> thành Record<string, any>
+  STATUS_MAP: Record<string, any>;
   hasReviews: (order: any) => boolean;
+  hasReturnSlip?: (order: any) => boolean;
   handleCancelOrder: (order: any, event: React.MouseEvent) => void;
   handleViewReviews: (order: any) => void;
   handleReviewClick: (order: any) => void;
   handleReturnRequest: (order: any) => void;
+  handleViewReturnDetails?: (order: any) => void;
 }
 
 export const OrderCard: React.FC<OrderCardProps> = ({
@@ -21,10 +23,12 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   formatPrice,
   STATUS_MAP,
   hasReviews,
+  hasReturnSlip,
   handleCancelOrder,
   handleViewReviews,
   handleReviewClick,
   handleReturnRequest,
+  handleViewReturnDetails,
 }) => {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -39,10 +43,10 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
   // Lấy thông tin trạng thái
   const status = order.TrangThaiDH?.TrangThai;
-  const statusInfo = STATUS_MAP[status] || { 
-    label: order.TrangThaiDH?.Note, 
+  const statusInfo = STATUS_MAP[status] || {
+    label: order.TrangThaiDH?.Note,
     color: "bg-gray-100 text-gray-800",
-    icon: Package 
+    icon: Package,
   };
   const StatusIcon = statusInfo.icon;
 
@@ -61,7 +65,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
     // Check if this product has been reviewed based on BinhLuans
     const hasProductReview = ct.BinhLuans && ct.BinhLuans.length > 0;
-    
+
     // Tính tổng giá cho sản phẩm này
     const donGia = Number(ct.DonGia);
     const soLuong = ct.SoLuong;
@@ -93,7 +97,8 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           </div>
           <div className="flex items-center gap-2 mt-2">
             <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">
-              Size: <strong>{ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc}</strong>
+              Size:{" "}
+              <strong>{ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc}</strong>
             </span>
             <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
               Màu: <strong>{ct.ChiTietSanPham?.Mau?.TenMau}</strong>
@@ -143,19 +148,15 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
       {/* Sản phẩm ẩn với animation */}
       {hasMoreProducts && (
-        <div 
+        <div
           className={`overflow-hidden transition-all duration-500 ease-in-out ${
-            isExpanded 
-              ? 'max-h-[1000px] opacity-100' 
-              : 'max-h-0 opacity-0'
+            isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
           }`}
           style={{
-            transform: isExpanded ? 'translateY(0)' : 'translateY(-10px)',
+            transform: isExpanded ? "translateY(0)" : "translateY(-10px)",
           }}
         >
-          <div className="space-y-0">
-            {hiddenProducts.map(renderProduct)}
-          </div>
+          <div className="space-y-0">{hiddenProducts.map(renderProduct)}</div>
         </div>
       )}
 
@@ -166,11 +167,15 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             onClick={toggleExpanded}
             className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium transition-all duration-200 hover:scale-105"
           >
-            <div className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : 'rotate-0'}`}>
+            <div
+              className={`transition-transform duration-300 ${
+                isExpanded ? "rotate-180" : "rotate-0"
+              }`}
+            >
               <ChevronDown className="w-4 h-4" />
             </div>
             <span className="transition-all duration-200">
-              {isExpanded ? 'Thu gọn' : `Xem thêm ${remainingCount} sản phẩm`}
+              {isExpanded ? "Thu gọn" : `Xem thêm ${remainingCount} sản phẩm`}
             </span>
           </button>
         </div>
@@ -188,7 +193,8 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               Hủy đơn hàng
             </Button>
           )}
-          {order.TrangThaiDH?.TrangThai === "HOANTAT" && (
+          {(order.TrangThaiDH?.TrangThai === "HOANTAT" ||
+            order.TrangThaiDH?.TrangThai === "TRAHANG") && (
             <>
               {hasReviews(order) ? (
                 <Button
@@ -213,16 +219,30 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                   Đánh Giá
                 </Button>
               )}
-              <Button
-                variant="outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleReturnRequest(order);
-                }}
-                className="transition-colors duration-200"
-              >
-                Yêu Cầu Trả Hàng/Hoàn Tiền
-              </Button>
+              {/* Return/Return Request buttons logic */}
+              {hasReturnSlip && hasReturnSlip(order) ? (
+                <Button
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewReturnDetails && handleViewReturnDetails(order);
+                  }}
+                  className="text-green-600 border-green-600 hover:bg-green-50 transition-colors duration-200"
+                >
+                  Xem thông tin trả hàng
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleReturnRequest(order);
+                  }}
+                  className="text-orange-600 border-orange-600 hover:bg-orange-50 transition-colors duration-200"
+                >
+                  Yêu cầu trả hàng, hoàn tiền
+                </Button>
+              )}
             </>
           )}
         </div>

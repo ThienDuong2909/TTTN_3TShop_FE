@@ -51,6 +51,7 @@ import {
   createReturnPayment,
   getReturnRequestsByStatus,
 } from "../services/api";
+import { toast } from "sonner";
 
 export default function ReturnManagement() {
   const { state } = useApp();
@@ -267,8 +268,8 @@ export default function ReturnManagement() {
       });
 
       if (response.success) {
-        // Refresh the data
-        const fetchResponse = await getReturnSlipsByStatus(activeTab);
+        // Refresh the current tab data
+        const fetchResponse = await getReturnRequestsByStatus(activeTab);
         if (fetchResponse && fetchResponse.data && fetchResponse.data.data) {
           setReturnRequests(fetchResponse.data.data);
           setPagination(fetchResponse.data.pagination);
@@ -329,12 +330,13 @@ export default function ReturnManagement() {
       });
 
       if (response && response.success) {
-        alert("Tạo phiếu chi thành công!");
-        // Refresh data
+        toast.success("Tạo phiếu chi thành công!");
+
+        // Refresh current tab data
         const fetchReturnRequestsAfterPayment = async () => {
           setLoading(true);
           try {
-            const response = await getReturnSlipsByStatus(activeTab);
+            const response = await getReturnRequestsByStatus(activeTab);
             if (response && response.data && response.data.data) {
               setReturnRequests(response.data.data);
               setPagination(response.data.pagination);
@@ -346,14 +348,35 @@ export default function ReturnManagement() {
           }
         };
 
-        await fetchReturnRequestsAfterPayment();
+        // Refresh statistics data
+        const refreshStats = async () => {
+          try {
+            const [pendingRes, approvedRes, rejectedRes] = await Promise.all([
+              getReturnSlipsByStatus(1),
+              getReturnSlipsByStatus(2),
+              getReturnSlipsByStatus(3),
+            ]);
+
+            const allData = [
+              ...(pendingRes?.data?.data || []),
+              ...(approvedRes?.data?.data || []),
+              ...(rejectedRes?.data?.data || []),
+            ];
+
+            setAllReturnRequests(allData);
+          } catch (err) {
+            console.error("Error fetching stats:", err);
+          }
+        };
+
+        // Execute both refresh operations
+        await Promise.all([fetchReturnRequestsAfterPayment(), refreshStats()]);
         setShowPaymentCreationModal(false);
       } else {
         alert(`Có lỗi xảy ra khi tạo phiếu chi: ${response.message}`);
       }
     } catch (err: any) {
-      console.error("Error creating payment:", err);
-      alert(
+      toast.error(
         `Có lỗi xảy ra khi tạo phiếu chi: ${
           err.response?.data?.message || err.message
         }`

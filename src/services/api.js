@@ -1,4 +1,4 @@
-import { toast } from "sonner";
+import { data } from "react-router-dom";
 import api from "./fetch";
 
 // ===================
@@ -7,44 +7,11 @@ import api from "./fetch";
 
 // Xử lý lỗi đơn giản
 const handleError = (error) => {
-  // Kiểm tra lỗi 401 Unauthorized
-  if (error.response?.status === 401) {
-    const unauthorizedMessage = "Bạn không có quyền truy cập";
-    console.error("API Error 401:", unauthorizedMessage);
-    showError(unauthorizedMessage);
-    return { error: true, message: unauthorizedMessage, status: 401 };
-  }
-
   const message =
     error.response?.data?.message || error.message || "Có lỗi xảy ra";
   console.error("API Error:", message);
   // Return error object instead of throwing to prevent page reload
   return { error: true, message };
-};
-
-// Xử lý API response chung - kiểm tra lỗi 401 cho tất cả API calls
-const handleApiCall = async (apiCallFn) => {
-  try {
-    const response = await apiCallFn();
-    return response;
-  } catch (error) {
-    // Kiểm tra lỗi 401 Unauthorized
-    if (error.response?.status === 401) {
-      const unauthorizedMessage = "Bạn không có quyền truy cập";
-      console.error("API Error 401:", unauthorizedMessage);
-      showError(unauthorizedMessage);
-      throw { error: true, message: unauthorizedMessage, status: 401 };
-    }
-    throw error;
-  }
-};
-
-// Wrapper chung cho tất cả API calls để tự động kiểm tra 401
-const apiWrapper = {
-  get: async (url, config) => handleApiCall(() => api.get(url, config)),
-  post: async (url, data, config) => handleApiCall(() => api.post(url, data, config)),
-  put: async (url, data, config) => handleApiCall(() => api.put(url, data, config)),
-  delete: async (url, config) => handleApiCall(() => api.delete(url, config)),
 };
 
 // Format date cho API
@@ -60,7 +27,7 @@ const formatDateForApi = (date) => {
 // Lấy danh sách nhân viên
 export const getEmployees = async () => {
   try {
-    const response = await apiWrapper.get("/employees");
+    const response = await api.get("/employees");
     const result = response.data;
 
     if (result.success && Array.isArray(result.data)) {
@@ -80,7 +47,7 @@ export const getEmployees = async () => {
           maTK: item.MaTK,
           department: latestDepartment.BoPhan?.MaBoPhan?.toString() || '',
           departmentName: latestDepartment.BoPhan?.TenBoPhan || '',
-          username: latestDepartment.BoPhan?.TaiKhoan?.Email || 'MISSING EMAIL',
+          username: item.TaiKhoan?.Email || 'MISSING EMAIL',
           isActive: latestDepartment.TrangThai || '',
           createdAt: latestDepartment.NgayBatDau || '',
           updatedAt: latestDepartment.NgayKetThuc || '',
@@ -95,9 +62,6 @@ export const getEmployees = async () => {
     }
   } catch (error) {
     console.error('Error fetching employees:', error);
-    if (error.status === 401) {
-      throw error;
-    }
     throw new Error('Không thể tải danh sách nhân viên');
   }
 };
@@ -105,12 +69,9 @@ export const getEmployees = async () => {
 // Lấy thông tin nhân viên hiện tại
 export const getCurrentEmployee = async () => {
   try {
-    const response = await apiWrapper.get("/auth/profile");
+    const response = await api.get("/auth/profile");
     return response.data;
   } catch (error) {
-    if (error.status === 401) {
-      return error;
-    }
     return handleError(error);
   }
 };
@@ -118,7 +79,7 @@ export const getCurrentEmployee = async () => {
 // Tạo nhân viên mới
 export const createEmployee = async (data) => {
   try {
-    const response = await apiWrapper.post("/employees", data);
+    const response = await api.post("/employees", data);
     const result = response.data;
 
     if (result.success) {
@@ -128,9 +89,6 @@ export const createEmployee = async (data) => {
     }
   } catch (error) {
     console.error('Error creating employee:', error);
-    if (error.status === 401) {
-      throw error;
-    }
     throw new Error(error.response?.data?.message || "Lỗi khi tạo nhân viên");
   }
 };
@@ -138,7 +96,7 @@ export const createEmployee = async (data) => {
 // Cập nhật thông tin nhân viên
 export const updateEmployee = async (employeeId, data) => {
   try {
-    const response = await apiWrapper.put(`/employees/${employeeId}`, data);
+    const response = await api.put(`/employees/${employeeId}`, data);
     const result = response.data;
 
     if (result.success) {
@@ -148,9 +106,6 @@ export const updateEmployee = async (employeeId, data) => {
     }
   } catch (error) {
     console.error('Error updating employee:', error);
-    if (error.status === 401) {
-      throw error;
-    }
     throw new Error(error.response?.data?.message || "Lỗi khi cập nhật nhân viên");
   }
 };
@@ -158,7 +113,7 @@ export const updateEmployee = async (employeeId, data) => {
 // Điều chuyển nhân viên
 export const transferEmployee = async (data) => {
   try {
-    const response = await apiWrapper.post("/employees/transfer", data);
+    const response = await api.post("/employees/transfer", data);
     const result = response.data;
 
     if (result.success) {
@@ -175,7 +130,7 @@ export const transferEmployee = async (data) => {
 // Lấy lịch sử làm việc của nhân viên
 export const getEmployeeWorkHistory = async (employeeId) => {
   try {
-    const response = await apiWrapper.get(`/employees/${employeeId}/department-history`);
+    const response = await api.get(`/employees/${employeeId}/department-history`);
     const result = response.data;
 
     if (result.success && Array.isArray(result.data)) {
@@ -192,7 +147,7 @@ export const getEmployeeWorkHistory = async (employeeId) => {
 // Lấy thông tin chi tiết nhân viên
 export const getEmployeeById = async (employeeId) => {
   try {
-    const response = await apiWrapper.get(`/employees/${employeeId}`);
+    const response = await api.get(`/employees/${employeeId}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -206,7 +161,7 @@ export const getEmployeeById = async (employeeId) => {
 // Lấy quyền của user hiện tại
 export const fetchMyPermissions = async () => {
   try {
-    const res = await apiWrapper.get("/permissions/my-permissions");
+    const res = await api.get("/permissions/my-permissions");
     return res.data?.data || [];
   } catch (error) {
     return handleError(error);
@@ -216,7 +171,7 @@ export const fetchMyPermissions = async () => {
 // Lấy tất cả quyền (admin)
 export const fetchAllPermissions = async () => {
   try {
-    const res = await apiWrapper.get("/permissions/all");
+    const res = await api.get("/permissions/all");
     return res.data?.data || [];
   } catch (error) {
     return handleError(error);
@@ -226,7 +181,7 @@ export const fetchAllPermissions = async () => {
 // (Optional) Lấy quyền của một nhân viên theo id — nếu backend hỗ trợ
 export const fetchEmployeePermissions = async (nhanVienId) => {
   try {
-    const res = await apiWrapper.get(`/permissions/employee/${nhanVienId}`);
+    const res = await api.get(`/permissions/employee/${nhanVienId}`);
     // Cho phép backend trả về mảng id hoặc mảng object { id }
     const data = res.data?.data || [];
     if (!Array.isArray(data)) return [];
@@ -246,7 +201,7 @@ export const assignPermissionsToEmployee = async (
   permissionIds
 ) => {
   try {
-    const res = await apiWrapper.put(`/permissions/employee/${nhanVienId}`, {
+    const res = await api.put(`/permissions/employee/${nhanVienId}`, {
       permissionIds,
     });
     return res.data;
@@ -262,7 +217,7 @@ export const assignPermissionsToEmployee = async (
 // Lấy danh sách nhà cung cấp với phân trang
 export const getSuppliers = async (page = 1) => {
   try {
-    const response = await apiWrapper.get(`/suppliers?page=${page}`);
+    const response = await api.get(`/suppliers?page=${page}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -272,7 +227,7 @@ export const getSuppliers = async (page = 1) => {
 // Lấy tất cả nhà cung cấp (không phân trang) - dùng cho ProductAdd
 export const getAllSuppliers = async () => {
   try {
-    const response = await apiWrapper.get("/suppliers/get-all");
+    const response = await api.get("/suppliers/get-all");
     return response.data.data;
   } catch (error) {
     console.error("Error fetching all suppliers:", error);
@@ -283,7 +238,7 @@ export const getAllSuppliers = async () => {
 // Tạo nhà cung cấp mới
 export const createSupplier = async (data) => {
   try {
-    const response = await apiWrapper.post("/suppliers", data);
+    const response = await api.post("/suppliers", data);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -293,7 +248,7 @@ export const createSupplier = async (data) => {
 // Cập nhật thông tin nhà cung cấp
 export const updateSupplier = async (supplierId, data) => {
   try {
-    const response = await apiWrapper.put(`/suppliers/${supplierId}`, data);
+    const response = await api.put(`/suppliers/${supplierId}`, data);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -303,7 +258,7 @@ export const updateSupplier = async (supplierId, data) => {
 // Xóa nhà cung cấp
 export const deleteSupplier = async (supplierId) => {
   try {
-    const response = await apiWrapper.delete(`/suppliers/${supplierId}`);
+    const response = await api.delete(`/suppliers/${supplierId}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -313,7 +268,7 @@ export const deleteSupplier = async (supplierId) => {
 // Lấy thông tin chi tiết nhà cung cấp
 export const getSupplierById = async (supplierId) => {
   try {
-    const response = await apiWrapper.get(`/suppliers/${supplierId}`);
+    const response = await api.get(`/suppliers/${supplierId}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -327,7 +282,7 @@ export const getSupplierById = async (supplierId) => {
 // Lấy danh sách bộ phận
 export const getDepartments = async () => {
   try {
-    const response = await apiWrapper.get("/department");
+    const response = await api.get("/department");
     const result = response.data;
 
     if (result && result.success && Array.isArray(result.data)) {
@@ -346,7 +301,7 @@ export const getDepartments = async () => {
 // Tạo bộ phận mới
 export const createDepartment = async (data) => {
   try {
-    const response = await apiWrapper.post("/department", data);
+    const response = await api.post("/department", data);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -356,7 +311,7 @@ export const createDepartment = async (data) => {
 // Cập nhật thông tin bộ phận
 export const updateDepartment = async (departmentId, data) => {
   try {
-    const response = await apiWrapper.put(`/department/${departmentId}`, data);
+    const response = await api.put(`/department/${departmentId}`, data);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -366,7 +321,7 @@ export const updateDepartment = async (departmentId, data) => {
 // Cập nhật trạng thái bộ phận (ẩn/hiển thị)
 export const updateDepartmentStatus = async (departmentId, status) => {
   try {
-    const response = await apiWrapper.put(`/department/${departmentId}`, { TrangThai: status });
+    const response = await api.put(`/department/${departmentId}`, { TrangThai: status });
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -376,7 +331,7 @@ export const updateDepartmentStatus = async (departmentId, status) => {
 // Lấy thông tin chi tiết bộ phận
 export const getDepartmentById = async (departmentId) => {
   try {
-    const response = await apiWrapper.get(`/department/${departmentId}`);
+    const response = await api.get(`/department/${departmentId}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -407,7 +362,7 @@ export const getProducts = async (params = {}) => {
     // Nếu chọn "all" thì không truyền MaLoaiSP cho API
     if (category && category !== "all") queryParams.append('MaLoaiSP', category);
 
-    const response = await apiWrapper.get(`/products/get-all-products?${queryParams.toString()}`);
+    const response = await api.get(`/products/get-all-products?${queryParams.toString()}`);
     const result = response.data;
 
     if (result.success && result.data && result.data.data && Array.isArray(result.data.data)) {
@@ -452,7 +407,7 @@ export const getProducts = async (params = {}) => {
 // Lấy sản phẩm theo nhà cung cấp
 export const getProductsBySupplier = async (supplierId) => {
   try {
-    const response = await apiWrapper.get(`/products/supplier/${supplierId}`);
+    const response = await api.get(`/products/supplier/${supplierId}`);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -462,7 +417,7 @@ export const getProductsBySupplier = async (supplierId) => {
 // Lấy chi tiết sản phẩm
 export const getProductDetails = async () => {
   try {
-    const response = await apiWrapper.get("/product-details");
+    const response = await api.get("/product-details");
     console.log("getProductDetails response:", response.data);
     return response.data;
   } catch (error) {
@@ -473,7 +428,7 @@ export const getProductDetails = async () => {
 // Lấy chi tiết sản phẩm theo ID (cho AdminProductDetail)
 export const getProductDetailById = async (id) => {
   try {
-    const response = await apiWrapper.get(`/products/${id}`);
+    const response = await api.get(`/products/${id}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -483,7 +438,7 @@ export const getProductDetailById = async (id) => {
 // Thêm chi tiết sản phẩm (variant)
 export const addProductDetail = async (data) => {
   try {
-    const response = await apiWrapper.post("/products/add-detail", data);
+    const response = await api.post("/products/add-detail", data);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -493,7 +448,7 @@ export const addProductDetail = async (data) => {
 // Cập nhật tồn kho sản phẩm
 export const updateProductStock = async (stockUpdates) => {
   try {
-    const response = await apiWrapper.post("/products/update-stock", stockUpdates);
+    const response = await api.post("/products/update-stock", stockUpdates);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -503,7 +458,7 @@ export const updateProductStock = async (stockUpdates) => {
 // Lấy màu và kích thước theo sản phẩm
 export const getProductColorsSizes = async (productId) => {
   try {
-    const response = await apiWrapper.get(`/products/${productId}/colors-sizes`);
+    const response = await api.get(`/products/${productId}/colors-sizes`);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -517,7 +472,7 @@ export const getProductColorsSizes = async (productId) => {
 // Lấy danh sách đơn đặt hàng
 export const getPurchaseOrders = async () => {
   try {
-    const response = await apiWrapper.get("/purchase-orders");
+    const response = await api.get("/purchase-orders");
     console.log("getPurchaseOrders response:", response.data);
     return response.data;
   } catch (error) {
@@ -556,7 +511,7 @@ export const createPurchaseOrder = async (data) => {
     console.log("Final orderData:", orderData);
     console.log("Sending to backend:", JSON.stringify(orderData, null, 2));
 
-    const response = await apiWrapper.post("/purchase-orders", orderData);
+    const response = await api.post("/purchase-orders", orderData);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -566,7 +521,7 @@ export const createPurchaseOrder = async (data) => {
 // Lấy đơn đặt hàng theo ID
 export const getPurchaseOrderById = async (id) => {
   try {
-    const response = await apiWrapper.get(`/purchase-orders/${id}`);
+    const response = await api.get(`/purchase-orders/${id}`);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -612,25 +567,25 @@ export const updatePurchaseOrder = async (id, data) => {
     let response;
     try {
       // Try the main endpoint first
-      response = await apiWrapper.put(`/purchase-orders/${id}`, orderData);
+      response = await api.put(`/purchase-orders/${id}`, orderData);
       console.log("API response:", response);
     } catch (error) {
       console.log("Main endpoint failed, trying alternative...");
       // Try alternative endpoint if main one fails
       try {
-        response = await apiWrapper.put(`/purchase-orders/update/${id}`, orderData);
+        response = await api.put(`/purchase-orders/update/${id}`, orderData);
         console.log("Alternative endpoint response:", response);
       } catch (altError) {
         console.log("Alternative endpoint also failed");
         // Try another possible endpoint
         try {
-          response = await apiWrapper.put(`/phieu-dat-hang/${id}`, orderData);
+          response = await api.put(`/phieu-dat-hang/${id}`, orderData);
           console.log("Vietnamese endpoint response:", response);
         } catch (vietError) {
           console.log("Vietnamese endpoint also failed");
           // Try POST method instead of PUT
           try {
-            response = await apiWrapper.post(
+            response = await api.post(
               `/purchase-orders/${id}/update`,
               orderData
             );
@@ -653,7 +608,7 @@ export const updatePurchaseOrder = async (id, data) => {
 // Cập nhật trạng thái đơn đặt hàng
 export const updatePurchaseOrderStatus = async (id, statusId) => {
   try {
-    const response = await apiWrapper.put(`/purchase-orders/${id}/status`, {
+    const response = await api.put(`/purchase-orders/${id}/status`, {
       MaTrangThai: statusId,
     });
     return response.data;
@@ -666,7 +621,7 @@ export const updatePurchaseOrderStatus = async (id, statusId) => {
 // Lấy đơn đặt hàng có thể tạo phiếu nhập
 export const getAvailablePurchaseOrders = async () => {
   try {
-    const response = await apiWrapper.get("/purchase-orders/available-for-receipt");
+    const response = await api.get("/purchase-orders/available-for-receipt");
     return response.data;
   } catch (error) {
     handleError(error);
@@ -676,7 +631,7 @@ export const getAvailablePurchaseOrders = async () => {
 // Lấy chi tiết đơn đặt hàng để tạo phiếu nhập
 export const getPurchaseOrderForReceipt = async (id) => {
   try {
-    const response = await apiWrapper.get(`/purchase-orders/${id}/for-receipt`);
+    const response = await api.get(`/purchase-orders/${id}/for-receipt`);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -686,7 +641,7 @@ export const getPurchaseOrderForReceipt = async (id) => {
 // Lấy trạng thái nhập hàng của từng sản phẩm trong phiếu đặt hàng NCC
 export const getPurchaseOrderReceivedStatus = async (purchaseOrderId) => {
   try {
-    const response = await apiWrapper.get(
+    const response = await api.get(
       `/purchase-orders/${purchaseOrderId}/received-status`
     );
     return response.data;
@@ -702,7 +657,7 @@ export const getPurchaseOrderReceivedStatus = async (purchaseOrderId) => {
 // Lấy danh sách phiếu nhập hàng
 export const getGoodsReceipts = async () => {
   try {
-    const response = await apiWrapper.get("/goods-receipts");
+    const response = await api.get("/goods-receipts");
     return response.data;
   } catch (error) {
     handleError(error);
@@ -726,7 +681,7 @@ export const createGoodsReceipt = async (data) => {
       })),
     };
 
-    const response = await apiWrapper.post("/goods-receipts", receiptData);
+    const response = await api.post("/goods-receipts", receiptData);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -736,7 +691,7 @@ export const createGoodsReceipt = async (data) => {
 // Lấy phiếu nhập hàng theo ID
 export const getGoodsReceiptById = async (id) => {
   try {
-    const response = await apiWrapper.get(`/goods-receipts/${id}`);
+    const response = await api.get(`/goods-receipts/${id}`);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -746,7 +701,7 @@ export const getGoodsReceiptById = async (id) => {
 // Cập nhật tồn kho sau khi nhập hàng
 export const updateInventoryAfterReceipt = async (receiptId) => {
   try {
-    const response = await apiWrapper.put(
+    const response = await api.put(
       `/goods-receipts/${receiptId}/update-inventory`
     );
     return response.data;
@@ -762,7 +717,7 @@ export const updateInventoryAfterReceipt = async (receiptId) => {
 // Lấy danh sách màu sắc
 export const getColors = async () => {
   try {
-    const response = await apiWrapper.get("/colors");
+    const response = await api.get("/colors");
     return response.data;
   } catch (error) {
     handleError(error);
@@ -772,7 +727,7 @@ export const getColors = async () => {
 // Tạo màu mới
 export const createColor = async (colorData) => {
   try {
-    const response = await apiWrapper.post("/colors", colorData);
+    const response = await api.post("/colors", colorData);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -783,7 +738,7 @@ export const createColor = async (colorData) => {
 // Cập nhật màu
 export const updateColor = async (colorId, colorData) => {
   try {
-    const response = await apiWrapper.put(`/colors/${colorId}`, colorData);
+    const response = await api.put(`/colors/${colorId}`, colorData);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -794,7 +749,7 @@ export const updateColor = async (colorId, colorData) => {
 // Xóa màu
 export const deleteColor = async (colorId) => {
   try {
-    const response = await apiWrapper.delete(`/colors/${colorId}`);
+    const response = await api.delete(`/colors/${colorId}`);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -805,7 +760,7 @@ export const deleteColor = async (colorId) => {
 // Lấy danh sách size
 export const getSizes = async () => {
   try {
-    const response = await apiWrapper.get("/sizes");
+    const response = await api.get("/sizes");
     return response.data;
   } catch (error) {
     handleError(error);
@@ -815,7 +770,7 @@ export const getSizes = async () => {
 // Lấy danh sách trạng thái đơn đặt hàng
 export const getPurchaseOrderStatuses = async () => {
   try {
-    const response = await apiWrapper.get("/purchase-order-statuses");
+    const response = await api.get("/purchase-order-statuses");
     return response.data;
   } catch (error) {
     handleError(error);
@@ -833,7 +788,7 @@ export const getPurchaseOrderStatuses = async () => {
 // Lấy danh sách đơn hàng theo trạng thái
 export const getOrdersByStatus = async (status) => {
   try {
-    const response = await apiWrapper.get(`/orders/by-status?status=${status}`);
+    const response = await api.get(`/orders/by-status?status=${status}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -843,7 +798,7 @@ export const getOrdersByStatus = async (status) => {
 // Lấy thống kê đơn hàng
 export const getOrderStatistics = async () => {
   try {
-    const response = await apiWrapper.get("/orders/statistics");
+    const response = await api.get("/orders/statistics");
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -853,7 +808,7 @@ export const getOrderStatistics = async () => {
 // Lấy chi tiết đơn hàng theo ID
 export const getOrderById = async (orderId) => {
   try {
-    const response = await apiWrapper.get(`/orders/${orderId}`);
+    const response = await api.get(`/orders/${orderId}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -863,7 +818,7 @@ export const getOrderById = async (orderId) => {
 // Cập nhật trạng thái đơn hàng đơn lẻ
 export const updateOrderStatus = async (orderId, statusData) => {
   try {
-    const response = await apiWrapper.put(`/orders/${orderId}/status`, statusData);
+    const response = await api.put(`/orders/${orderId}/status`, statusData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -873,7 +828,7 @@ export const updateOrderStatus = async (orderId, statusData) => {
 // Cập nhật trạng thái đơn hàng hàng loạt
 export const updateBatchOrderStatus = async (ordersData) => {
   try {
-    const response = await apiWrapper.put("/orders/batch/status", ordersData);
+    const response = await api.put("/orders/batch/status", ordersData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -883,7 +838,7 @@ export const updateBatchOrderStatus = async (ordersData) => {
 // Lấy danh sách nhân viên giao hàng có sẵn
 export const getAvailableDeliveryStaff = async (address) => {
   try {
-    const response = await apiWrapper.post("/employees/delivery/available", { diaChi: address });
+    const response = await api.post("/employees/delivery/available", { diaChi: address });
 
     // Handle the new API response structure
     if (response.data && response.data.success && Array.isArray(response.data.data)) {
@@ -909,7 +864,7 @@ export const getAvailableDeliveryStaff = async (address) => {
 // Cập nhật nhân viên giao hàng cho đơn hàng
 export const updateOrderDeliveryStaff = async (orderId, staffData) => {
   try {
-    const response = await apiWrapper.put(`/orders/${orderId}/delivery-staff`, staffData);
+    const response = await api.put(`/orders/${orderId}/delivery-staff`, staffData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -919,7 +874,7 @@ export const updateOrderDeliveryStaff = async (orderId, staffData) => {
 // Hoàn tất đơn hàng hàng loạt
 export const updateBatchOrderCompletion = async (orders) => {
   try {
-    const response = await apiWrapper.put("/orders/batch/status", { orders });
+    const response = await api.put("/orders/batch/status", { orders });
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -929,7 +884,7 @@ export const updateBatchOrderCompletion = async (orders) => {
 // Hoàn tất đơn hàng đơn lẻ
 export const updateOrderCompletion = async (orderId, data) => {
   try {
-    const response = await apiWrapper.put(`/orders/${orderId}/status`, data);
+    const response = await api.put(`/orders/${orderId}/status`, data);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -950,7 +905,7 @@ export const getAssignedOrders = async (params = {}) => {
       url += `&status=${status}`;
     }
 
-    const response = await apiWrapper.get(url);
+    const response = await api.get(url);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -960,7 +915,7 @@ export const getAssignedOrders = async (params = {}) => {
 // Xác nhận hoàn thành giao hàng
 export const confirmOrderDelivery = async (orderId) => {
   try {
-    const response = await apiWrapper.put(`/orders/delivery/${orderId}/confirm`);
+    const response = await api.put(`/orders/delivery/${orderId}/confirm`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -970,7 +925,7 @@ export const confirmOrderDelivery = async (orderId) => {
 // Lấy chi tiết đơn hàng cho admin
 export const getOrderDetailById = async (orderId) => {
   try {
-    const response = await apiWrapper.get(`/orders/${orderId}/detail`);
+    const response = await api.get(`/orders/${orderId}/detail`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -984,7 +939,7 @@ export const getOrderDetailById = async (orderId) => {
 // Lấy chi tiết hóa đơn theo số hóa đơn
 export const getInvoiceDetail = async (invoiceNumber) => {
   try {
-    const response = await apiWrapper.get(`/invoices/detail/${invoiceNumber}`);
+    const response = await api.get(`/invoices/detail/${invoiceNumber}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -994,7 +949,7 @@ export const getInvoiceDetail = async (invoiceNumber) => {
 // Lấy hóa đơn theo mã đơn hàng
 export const getInvoiceByOrderId = async (orderId) => {
   try {
-    const response = await apiWrapper.get(`/invoices/order/${orderId}`);
+    const response = await api.get(`/invoices/order/${orderId}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1004,7 +959,7 @@ export const getInvoiceByOrderId = async (orderId) => {
 // Tạo hóa đơn mới
 export const createInvoice = async (invoiceData) => {
   try {
-    const response = await apiWrapper.post("/invoices", invoiceData);
+    const response = await api.post("/invoices", invoiceData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1018,7 +973,7 @@ export const createInvoice = async (invoiceData) => {
 // Tạo yêu cầu trả hàng
 export const createReturnRequest = async (returnData) => {
   try {
-    const response = await apiWrapper.post("/return/request", returnData);
+    const response = await api.post("/return/request", returnData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1032,7 +987,7 @@ export const createReturnRequest = async (returnData) => {
 // Đăng nhập
 export const login = async (credentials) => {
   try {
-    const response = await apiWrapper.post("/auth/login", credentials);
+    const response = await api.post("/auth/login", credentials);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1042,7 +997,7 @@ export const login = async (credentials) => {
 // Đăng ký
 export const register = async (userData) => {
   try {
-    const response = await apiWrapper.post("/auth/register", userData);
+    const response = await api.post("/auth/register", userData);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -1052,7 +1007,7 @@ export const register = async (userData) => {
 // Đăng xuất
 export const logout = async () => {
   try {
-    const response = await apiWrapper.post("/auth/logout");
+    const response = await api.post("/auth/logout");
     return response.data;
   } catch (error) {
     handleError(error);
@@ -1065,17 +1020,20 @@ export const logout = async () => {
 
 // Show loading toast
 export const showLoading = (message = "Đang tải...") => {
-  toast.loading(message);
+  // Implement your loading toast here
+  console.log(message);
 };
 
 // Show success toast
 export const showSuccess = (message = "Thành công!") => {
-  toast.success(message);
+  // Implement your success toast here
+  console.log(message);
 };
 
 // Show error toast
 export const showError = (message = "Có lỗi xảy ra!") => {
-  toast.error(message);
+  // Implement your error toast here
+  console.error(message);
 };
 
 // Format giá tiền
@@ -1096,7 +1054,7 @@ export { formatDateForApi };
 //Product-api
 export const getAllProducts = async () => {
   try {
-    const response = await apiWrapper.get("/san-pham");
+    const response = await api.get("/san-pham");
     return response.data.data;
   } catch (error) {
     console.error("Lỗi khi gọi API sản phẩm:", error);
@@ -1105,7 +1063,7 @@ export const getAllProducts = async () => {
 };
 export const getProductDetail = async (id) => {
   try {
-    const response = await apiWrapper.get(`/san-pham/${id}`);
+    const response = await api.get(`/san-pham/${id}`);
     return response.data.data;
   } catch (error) {
     console.error("Lỗi lấy chi tiết sản phẩm:", error);
@@ -1115,14 +1073,14 @@ export const getProductDetail = async (id) => {
 
 export const addToCartApi = async (data) => {
   try {
-    const response = await apiWrapper.post("/gio-hang/them", data);
+    const response = await api.post("/gio-hang/them", data);
     return response.data;
   } catch (error) {
     handleError(error);
   }
 };
 export const getCartItemsApi = async (maKH) => {
-  const response = await apiWrapper.get(`/gio-hang/${maKH}`);
+  const response = await api.get(`/gio-hang/${maKH}`);
   return response.data.data; // dữ liệu giỏ hàng
 };
 
@@ -1134,7 +1092,7 @@ export const removeFromCartApi = async (
   donGia
 ) => {
   try {
-    const response = await apiWrapper.delete("/gio-hang/xoa", {
+    const response = await api.delete("/gio-hang/xoa", {
       data: { maKH, maSP, maHex, tenKichThuoc, donGia },
     });
     return response.data.data; // trả lại cart cập nhật nếu cần
@@ -1145,25 +1103,25 @@ export const removeFromCartApi = async (
 };
 
 export const createOrder = async (payload) => {
-  const response = await apiWrapper.post("/gio-hang/dat-hang", payload);
+  const response = await api.post("/gio-hang/dat-hang", payload);
   return response.data;
 };
 
 // services/api.js
 
 export async function checkStockAvailability(maCTSP) {
-  const response = await apiWrapper.post("/san-pham/kiem-tra-ton-kho", { maCTSP });
+  const response = await api.post("/san-pham/kiem-tra-ton-kho", { maCTSP });
   return response.data.data;
 }
 export const clearCartApi = async (maKH) => {
-  const response = await apiWrapper.post("/gio-hang/xoa-tat-ca", { maKH });
+  const response = await api.post("/gio-hang/xoa-tat-ca", { maKH });
   return response.data.data;
 };
 // Lấy tất cả danh mục sản phẩm
 // Giả sử API trả về danh mục theo đường dẫn "/loai-sp" hoặc "/category"
 export const getAllCategories = async () => {
   try {
-    const response = await apiWrapper.get("/category/");
+    const response = await api.get("/category/");
     return response.data.data;
   } catch (error) {
     console.error("Lỗi khi lấy danh mục:", error);
@@ -1171,7 +1129,7 @@ export const getAllCategories = async () => {
   }
 };
 export const getProductsByCategory = async (id) => {
-  const res = await apiWrapper.post(`/category/products`, { maLoaiSP: id });
+  const res = await api.post(`/category/products`, { maLoaiSP: id });
   return res.data.data;
 };
 
@@ -1179,7 +1137,7 @@ export const getProductsByCategory = async (id) => {
 
 export const getCurrentExchangeRate = async () => {
   try {
-    const res = await apiWrapper.get("/tigia/co-hieu-luc");
+    const res = await api.get("/tigia/co-hieu-luc");
     return res.data.data?.GiaTri; // trả về số, ví dụ: 24000
   } catch (error) {
     console.error("Lỗi lấy tỉ giá:", error);
@@ -1189,7 +1147,7 @@ export const getCurrentExchangeRate = async () => {
 
 export const getBestSellerProducts = async () => {
   try {
-    const res = await apiWrapper.get("/san-pham/best-sellers");
+    const res = await api.get("/san-pham/best-sellers");
     return res.data?.data || [];
   } catch (error) {
     console.error("Lỗi khi lấy sản phẩm bán chạy:", error);
@@ -1199,7 +1157,7 @@ export const getBestSellerProducts = async () => {
 
 export const getNewProducts = async () => {
   try {
-    const res = await apiWrapper.get("/san-pham/new-product");
+    const res = await api.get("/san-pham/new-product");
     return res.data?.data || [];
   } catch (error) {
     console.error("Lỗi khi lấy sản phẩm mới:", error);
@@ -1209,7 +1167,7 @@ export const getNewProducts = async () => {
 
 export const getDiscountProducts = async () => {
   try {
-    const res = await apiWrapper.get("/san-pham/discount");
+    const res = await api.get("/san-pham/discount");
     return res.data?.data || [];
   } catch (error) {
     console.error("Lỗi khi lấy sản phẩm giảm giá:", error);
@@ -1219,7 +1177,7 @@ export const getDiscountProducts = async () => {
 
 export const getSearchProducts = async (q) => {
   try {
-    const res = await apiWrapper.get(
+    const res = await api.get(
       `/san-pham/search?keyword=${encodeURIComponent(q)}`
     );
     return res.data?.data || [];
@@ -1231,7 +1189,7 @@ export const getSearchProducts = async (q) => {
 
 export const getCustomerOrders = async (maKH) => {
   try {
-    const res = await apiWrapper.post("/gio-hang/don-hang", { maKH });
+    const res = await api.post("/gio-hang/don-hang", { maKH });
     return res.data?.data || [];
   } catch (error) {
     console.error("Lỗi khi lấy đơn hàng khách hàng:", error);
@@ -1241,7 +1199,7 @@ export const getCustomerOrders = async (maKH) => {
 
 export const getOrderDetail = async ({ maKH, maDDH }) => {
   try {
-    const res = await apiWrapper.post("/gio-hang/don-hang/chi-tiet", { maKH, maDDH });
+    const res = await api.post("/gio-hang/don-hang/chi-tiet", { maKH, maDDH });
     return res.data?.data;
   } catch (error) {
     console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
@@ -1251,7 +1209,7 @@ export const getOrderDetail = async ({ maKH, maDDH }) => {
 
 export const getRevenueReport = async (startDate, endDate) => {
   try {
-    const response = await apiWrapper.post(`/orders/revenue-report`, {
+    const response = await api.post(`/orders/revenue-report`, {
       ngayBatDau: startDate,
       ngayKetThuc: endDate,
     });
@@ -1265,7 +1223,7 @@ export const getRevenueReport = async (startDate, endDate) => {
 
 export const cancelOrder = async (maKH, maDDH) => {
   try {
-    const response = await apiWrapper.post("/orders/cancel", { maKH, maDDH });
+    const response = await api.post("/orders/cancel", { maKH, maDDH });
     return response.data;
   } catch (error) {
     handleError(error);
@@ -1275,7 +1233,7 @@ export const cancelOrder = async (maKH, maDDH) => {
 
 export const getCategoryById = async (id) => {
   try {
-    const response = await apiWrapper.get(`/category/${id}`);
+    const response = await api.get(`/category/${id}`);
     return response.data.data;
   } catch (error) {
     console.error("Lỗi khi lấy thông tin danh mục:", error);
@@ -1290,7 +1248,7 @@ export const getCategoryById = async (id) => {
 // Submit product review
 export const submitReview = async (reviewData) => {
   try {
-    const response = await apiWrapper.post("/binh-luan", {
+    const response = await api.post("/binh-luan", {
       maCTDonDatHang: reviewData.MaCTDonDatHang,
       moTa: reviewData.MoTa,
       soSao: reviewData.SoSao,
@@ -1304,7 +1262,7 @@ export const submitReview = async (reviewData) => {
 // Submit multiple product reviews
 export const submitMultipleReviews = async (reviewList) => {
   try {
-    const response = await apiWrapper.post("/binh-luan", {
+    const response = await api.post("/binh-luan", {
       binhLuanList: reviewList.map(review => ({
         maCTDonDatHang: review.maCTDonDatHang,
         moTa: review.moTa,
@@ -1320,7 +1278,7 @@ export const submitMultipleReviews = async (reviewList) => {
 // Get product comments/reviews
 export const getProductComments = async (productId) => {
   try {
-    const response = await apiWrapper.get(`/comments/product/${productId}`);
+    const response = await api.get(`/comments/product/${productId}`);
     return response.data?.data || { comments: [], summary: null };
   } catch (error) {
     console.error("Error fetching product comments:", error);
@@ -1335,7 +1293,7 @@ export const getProductComments = async (productId) => {
 // Tạo phiếu trả hàng
 export const createReturnSlip = async (returnData) => {
   try {
-    const response = await apiWrapper.post("/return/slip", returnData);
+    const response = await api.post("/return/slip", returnData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1345,7 +1303,7 @@ export const createReturnSlip = async (returnData) => {
 // Lấy danh sách yêu cầu trả hàng
 export const getReturnRequests = async () => {
   try {
-    const response = await apiWrapper.get("/return/requests");
+    const response = await api.get("/return/requests");
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1354,7 +1312,7 @@ export const getReturnRequests = async () => {
 
 export const getCustomerProfile = async () => {
   try {
-    const response = await apiWrapper.get("/auth/profile");
+    const response = await api.get("/auth/profile");
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1364,7 +1322,7 @@ export const getCustomerProfile = async () => {
 // Cập nhật thông tin profile khách hàng
 export const updateCustomerProfile = async (maKH, profileData) => {
   try {
-    const response = await apiWrapper.put(`/customers/profile/${maKH}`, profileData);
+    const response = await api.put(`/customers/profile/${maKH}`, profileData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1374,7 +1332,7 @@ export const updateCustomerProfile = async (maKH, profileData) => {
 // Upload ảnh đại diện
 export const uploadAvatar = async (avatarData) => {
   try {
-    const response = await apiWrapper.put("/customers/upload-avatar", {
+    const response = await api.put("/customers/upload-avatar", {
       maKH: avatarData.maKH,
       AnhDaiDien: avatarData.AnhDaiDien,
     });
@@ -1392,7 +1350,7 @@ export const uploadAvatar = async (avatarData) => {
 // Lấy thông tin tài khoản
 export const getAccountInfo = async () => {
   try {
-    const response = await apiWrapper.get("/auth/account");
+    const response = await api.get("/auth/account");
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1402,7 +1360,7 @@ export const getAccountInfo = async () => {
 // Đổi mật khẩu
 export const changePassword = async (passwordData) => {
   try {
-    const response = await apiWrapper.post("/auth/change-password", {
+    const response = await api.post("/auth/change-password", {
       matKhauCu: passwordData.matKhauCu,
       matKhauMoi: passwordData.matKhauMoi,
     });
@@ -1415,7 +1373,7 @@ export const changePassword = async (passwordData) => {
 // Lấy danh sách phiếu trả hàng theo trạng thái
 export const getReturnRequestsByStatus = async (status) => {
   try {
-    const response = await apiWrapper.get(`/return/requests?status=${status}`);
+    const response = await api.get(`/return/requests?status=${status}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1425,7 +1383,7 @@ export const getReturnRequestsByStatus = async (status) => {
 // Lấy danh sách phiếu trả hàng (slips) theo trạng thái
 export const getReturnSlipsByStatus = async (status) => {
   try {
-    const response = await apiWrapper.get(`/return/slips?trangThai=${status}`);
+    const response = await api.get(`/return/slips?trangThai=${status}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1435,7 +1393,7 @@ export const getReturnSlipsByStatus = async (status) => {
 // Cập nhật trạng thái phiếu trả hàng
 export const updateReturnSlipStatus = async (returnSlipId, statusData) => {
   try {
-    const response = await apiWrapper.put(`/return/slip/${returnSlipId}/approve`, statusData);
+    const response = await api.put(`/return/slip/${returnSlipId}/approve`, statusData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1445,7 +1403,7 @@ export const updateReturnSlipStatus = async (returnSlipId, statusData) => {
 // Tạo phiếu chi cho phiếu trả hàng
 export const createReturnPayment = async (paymentData) => {
   try {
-    const response = await apiWrapper.post("/return/payment", paymentData);
+    const response = await api.post("/return/payment", paymentData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1459,7 +1417,7 @@ export const createReturnPayment = async (paymentData) => {
 // Lấy danh sách đợt giảm giá
 export const getPromotions = async () => {
   try {
-    const response = await apiWrapper.get("/promotions");
+    const response = await api.get("/promotions");
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1469,7 +1427,7 @@ export const getPromotions = async () => {
 // Tạo đợt giảm giá mới
 export const createPromotion = async (promotionData) => {
   try {
-    const response = await apiWrapper.post("/promotions", promotionData);
+    const response = await api.post("/promotions", promotionData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1479,7 +1437,7 @@ export const createPromotion = async (promotionData) => {
 // Cập nhật đợt giảm giá
 export const updatePromotion = async (promotionId, promotionData) => {
   try {
-    const response = await apiWrapper.put(`/promotions/${promotionId}`, promotionData);
+    const response = await api.put(`/promotions/${promotionId}`, promotionData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1489,7 +1447,7 @@ export const updatePromotion = async (promotionId, promotionData) => {
 // Xóa đợt giảm giá
 export const deletePromotion = async (promotionId) => {
   try {
-    const response = await apiWrapper.delete(`/promotions/${promotionId}`);
+    const response = await api.delete(`/promotions/${promotionId}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1499,7 +1457,7 @@ export const deletePromotion = async (promotionId) => {
 // Lấy thông tin chi tiết đợt giảm giá
 export const getPromotionById = async (promotionId) => {
   try {
-    const response = await apiWrapper.get(`/api/promotions/${promotionId}`);
+    const response = await api.get(`/api/promotions/${promotionId}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1509,7 +1467,7 @@ export const getPromotionById = async (promotionId) => {
 // Lấy danh sách sản phẩm cho đợt giảm giá
 export const getProductsForPromotion = async () => {
   try {
-    const response = await apiWrapper.get("/products");
+    const response = await api.get("/products");
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1519,7 +1477,7 @@ export const getProductsForPromotion = async () => {
 // Lấy danh sách sản phẩm available cho đợt giảm giá
 export const getAvailableProductsForPromotion = async () => {
   try {
-    const response = await apiWrapper.get("/products");
+    const response = await api.get("/products");
     return {
       success: response.data.success,
       message: response.data.message,
@@ -1533,7 +1491,7 @@ export const getAvailableProductsForPromotion = async () => {
 // Xóa sản phẩm khỏi đợt giảm giá
 export const removeProductFromPromotion = async (maDot, maSP) => {
   try {
-    const response = await apiWrapper.delete(`promotions/${maDot}/products/${maSP}`);
+    const response = await api.delete(`promotions/${maDot}/products/${maSP}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1543,7 +1501,7 @@ export const removeProductFromPromotion = async (maDot, maSP) => {
 // Thêm sản phẩm vào đợt giảm giá
 export const addProductToPromotion = async (maDot, productData) => {
   try {
-    const response = await apiWrapper.post(`/promotions/${maDot}/products`, productData);
+    const response = await api.post(`/promotions/${maDot}/products`, productData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1553,7 +1511,7 @@ export const addProductToPromotion = async (maDot, productData) => {
 // Validate promotion period for conflicts
 export const validatePromotionPeriod = async (ngayBatDau, ngayKetThuc) => {
   try {
-    const response = await apiWrapper.post("/promotions/validate-period", {
+    const response = await api.post("/promotions/validate-period", {
       ngayBatDau,
       ngayKetThuc
     });
@@ -1566,7 +1524,7 @@ export const validatePromotionPeriod = async (ngayBatDau, ngayKetThuc) => {
 // Get areas
 export const getAreas = async () => {
   try {
-    const response = await apiWrapper.get('/areas');
+    const response = await api.get('/areas');
     const result = response.data;
 
     if (result.success && Array.isArray(result.data)) {
@@ -1588,7 +1546,7 @@ export const getAreas = async () => {
 // Lấy danh sách danh mục sản phẩm
 export const getCategories = async () => {
   try {
-    const response = await apiWrapper.get("/category");
+    const response = await api.get("/category");
     const result = response.data;
 
     if (result && result.success && Array.isArray(result.data)) {
@@ -1608,7 +1566,7 @@ export const getCategories = async () => {
 // Tạo danh mục mới
 export const createCategory = async (data) => {
   try {
-    const response = await apiWrapper.post("/category", {
+    const response = await api.post("/category", {
       TenLoai: data.TenLoai,
       HinhMinhHoa: data.HinhMinhHoa,
       NgayTao: new Date(),
@@ -1622,7 +1580,7 @@ export const createCategory = async (data) => {
 // Cập nhật thông tin danh mục
 export const updateCategory = async (categoryId, data) => {
   try {
-    const response = await apiWrapper.put(`/category/${categoryId}`, {
+    const response = await api.put(`/category/${categoryId}`, {
       TenLoai: data.TenLoai,
       HinhMinhHoa: data.HinhMinhHoa,
     });
@@ -1635,7 +1593,7 @@ export const updateCategory = async (categoryId, data) => {
 // Xóa danh mục
 export const deleteCategory = async (categoryId) => {
   try {
-    const response = await apiWrapper.delete(`/category/${categoryId}`);
+    const response = await api.delete(`/category/${categoryId}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1645,7 +1603,7 @@ export const deleteCategory = async (categoryId) => {
 // Lấy thông tin chi tiết danh mục
 // export const getCategoryById = async (categoryId) => {
 //   try {
-//     const response = await apiWrapper.get(`/category/${categoryId}`);
+//     const response = await api.get(`/category/${categoryId}`);
 //     return response.data;
 //   } catch (error) {
 //     return handleError(error);
@@ -1659,7 +1617,7 @@ export const deleteCategory = async (categoryId) => {
 // Cập nhật sản phẩm
 export const updateProduct = async (productId, updateData) => {
   try {
-    const response = await apiWrapper.put(`/products/${productId}/update`, updateData);
+    const response = await api.put(`/products/${productId}/update`, updateData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1669,7 +1627,7 @@ export const updateProduct = async (productId, updateData) => {
 // Cập nhật trạng thái sản phẩm (ẩn/hiện)
 export const updateProductStatus = async (productId, status) => {
   try {
-    const response = await apiWrapper.put(`/products/${productId}`, {
+    const response = await api.put(`/products/${productId}`, {
       TrangThai: status,
     });
     return response.data;
@@ -1681,7 +1639,7 @@ export const updateProductStatus = async (productId, status) => {
 // Lấy chi tiết sản phẩm cho quản lý
 export const getProductByIdForManagement = async (productId) => {
   try {
-    const response = await apiWrapper.get(`/products/${productId}`);
+    const response = await api.get(`/products/${productId}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1691,7 +1649,7 @@ export const getProductByIdForManagement = async (productId) => {
 // Tạo sản phẩm mới
 export const createProduct = async (productData) => {
   try {
-    const response = await apiWrapper.post('/products', productData);
+    const response = await api.post('/products', productData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1701,7 +1659,7 @@ export const createProduct = async (productData) => {
 // Xóa sản phẩm
 export const deleteProduct = async (productId) => {
   try {
-    const response = await apiWrapper.delete(`/products/${productId}`);
+    const response = await api.delete(`/products/${productId}`);
     return response.data;
   } catch (error) {
     return handleError(error);
