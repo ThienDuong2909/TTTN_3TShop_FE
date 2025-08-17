@@ -40,11 +40,82 @@ import {
   StockHistoryDialog,
 } from "../components/admin-product-detail";
 import { Separator } from "../components/ui/separator";
-import { getProductDetailById } from "../services/api.js";
-import {
-  ApiProductDetail,
-  ApiProductVariant,
-} from "@/types/admin-prouduct-detail.type.js";
+import { getProductDetailById } from "../services/api.js"; // API interfaces
+interface ApiProductVariant {
+  MaCTSP: number;
+  MaSP: number;
+  MaKichThuoc: number;
+  MaMau: number;
+  SoLuongTon: number;
+  KichThuoc: {
+    MaKichThuoc: number;
+    TenKichThuoc: string;
+  };
+  Mau: {
+    MaMau: number;
+    TenMau: string;
+    MaHex: string;
+    NgayTao: string;
+    TrangThai: boolean;
+  };
+}
+
+interface ApiProductImage {
+  MaAnh: number;
+  MaSP: number;
+  TenFile: string;
+  DuongDan: string;
+  AnhChinh: boolean;
+  ThuTu: number;
+  MoTa: string;
+}
+
+interface ApiBinhLuan {
+  MaBL: number;
+  MoTa: string;
+  SoSao: number;
+  NgayBinhLuan: string;
+  MaKH: number;
+  TenKH: string;
+  MaKichThuoc: number;
+  MaMau: number;
+  TenKichThuoc: string;
+  TenMau: string;
+  MaHex: string;
+}
+
+interface ApiProductDetail {
+  MaSP: number;
+  TenSP: string;
+  MaLoaiSP: number;
+  MaNCC: number;
+  MoTa: string;
+  TrangThai: boolean;
+  SoLuongBinhLuan?: number;
+  SoSaoTrungBinh?: string;
+  NhaCungCap: {
+    MaNCC: number;
+    TenNCC: string;
+    DiaChi: string;
+    SDT: string;
+    Email: string;
+  };
+  LoaiSP: {
+    MaLoaiSP: number;
+    TenLoai: string;
+    NgayTao: string;
+    HinhMinhHoa?: string;
+  };
+  AnhSanPhams: ApiProductImage[];
+  ThayDoiGia: Array<{
+    MaSP: number;
+    NgayThayDoi: string;
+    Gia: string;
+    NgayApDung: string;
+  }>;
+  ChiTietSanPhams: ApiProductVariant[];
+  BinhLuans?: ApiBinhLuan[];
+}
 
 export const AdminProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -53,6 +124,7 @@ export const AdminProductDetail: React.FC = () => {
   const [product, setProduct] = useState<ApiProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [showStockHistory, setShowStockHistory] = useState(false);
   const [showPriceHistory, setShowPriceHistory] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
@@ -85,6 +157,8 @@ export const AdminProductDetail: React.FC = () => {
     if (!product.ThayDoiGia || product.ThayDoiGia.length === 0) {
       return null;
     }
+
+    // Sort by NgayApDung descending to get the latest applicable price
     const sortedPrices = [...product.ThayDoiGia].sort(
       (a, b) =>
         new Date(b.NgayApDung).getTime() - new Date(a.NgayApDung).getTime()
@@ -140,6 +214,7 @@ export const AdminProductDetail: React.FC = () => {
     }
   };
 
+  // Loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -151,6 +226,7 @@ export const AdminProductDetail: React.FC = () => {
     );
   }
 
+  // Product not found
   if (!product) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -272,14 +348,14 @@ export const AdminProductDetail: React.FC = () => {
                   <p className="text-sm font-medium text-gray-500">Đánh giá</p>
                   <div className="flex items-center space-x-2">
                     <p className="text-xl font-bold text-[#825B32]">
-                      {product.BinhLuan?.avgRate
-                        ? product.BinhLuan.avgRate.toFixed(1)
+                      {product.SoSaoTrungBinh
+                        ? parseFloat(product.SoSaoTrungBinh).toFixed(1)
                         : "0.0"}
                     </p>
                     <Star className="w-4 h-4 text-yellow-500 fill-current" />
                   </div>
                   <p className="text-xs text-gray-500">
-                    {product.BinhLuan?.luotBinhLuan || 0} bình luận
+                    {product.SoLuongBinhLuan || 0} bình luận
                   </p>
                 </div>
               </div>
@@ -288,10 +364,7 @@ export const AdminProductDetail: React.FC = () => {
                 size="sm"
                 onClick={() => setShowComments(true)}
                 className="text-[#825B32] border-[#825B32] hover:bg-[#825B32] hover:text-white"
-                disabled={
-                  !product.BinhLuan?.DanhSachBinhLuan ||
-                  product.BinhLuan.DanhSachBinhLuan.length === 0
-                }
+                disabled={!product.BinhLuans || product.BinhLuans.length === 0}
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Xem
@@ -621,7 +694,49 @@ export const AdminProductDetail: React.FC = () => {
                   productId={product.MaSP}
                   onAdded={refreshProductData}
                 />
+                {/* <Button
+                  onClick={() => setIsEditing(true)}
+                  size="sm"
+                  className="bg-[#825B32] text-white border-none shadow-sm hover:bg-[#6d4827] transition-all px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold"
+                >
+                  <Edit3 className="w-4 h-4 mr-1" />
+                  Chỉnh sửa tồn kho
+                </Button> */}
+                {/* {!isEditing ? (
+                  <Button
+                    onClick={() => setIsEditing(true)}
+                    size="sm"
+                    className="bg-[#825B32] text-white border-none shadow-sm hover:bg-[#6d4827] transition-all px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold"
+                  >
+                    <Edit3 className="w-4 h-4 mr-1" />
+                    Chỉnh sửa tồn kho
+                  </Button>
+                ) : (
+                  <div className="flex gap-2 items-center">
+                    <Button 
+                      variant="outline" 
+                      onClick={cancelEditing} 
+                      size="sm"
+                      className="border-gray-300 text-gray-700 bg-white hover:bg-gray-100 px-4 py-2 rounded-lg text-xs font-semibold"
+                    >
+                      Hủy
+                    </Button>
+                    <Button
+                      onClick={() => setShowConfirmModal(true)}
+                      disabled={!hasChanges}
+                      size="sm"
+                      className="bg-[#825B32] text-white border-none shadow-sm hover:bg-[#6d4827] transition-all px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold disabled:opacity-60"
+                    >
+                      <Save className="w-4 h-4 mr-1" />
+                      Lưu thay đổi ({stockChangeCount})
+                    </Button>
+                  </div>
+                )} */}
               </div>
+              <StockHistoryDialog
+                isOpen={showStockHistory}
+                onClose={() => setShowStockHistory(false)}
+              />
             </div>
           </CardTitle>
         </CardHeader>
@@ -668,7 +783,49 @@ export const AdminProductDetail: React.FC = () => {
                       </code>
                     </TableCell>
                     <TableCell>
+                      {/* {isEditing ? (
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleQuantityChange(
+                                variant.MaCTSP.toString(),
+                                currentQuantity - 1,
+                              )
+                            }
+                            disabled={currentQuantity <= 0}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <Input
+                            type="number"
+                            value={currentQuantity}
+                            onChange={(e) =>
+                              handleQuantityChange(
+                                variant.MaCTSP.toString(),
+                                parseInt(e.target.value) || 0,
+                              )
+                            }
+                            className="w-20 text-center"
+                            min="0"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleQuantityChange(
+                                variant.MaCTSP.toString(),
+                                currentQuantity + 1,
+                              )
+                            }
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ) : ( */}
                       <span className="font-medium">{variant.SoLuongTon}</span>
+                      {/* )} */}
                     </TableCell>
                     <TableCell>
                       <Badge className={stockStatus.color}>
@@ -697,9 +854,9 @@ export const AdminProductDetail: React.FC = () => {
         isOpen={showComments}
         onClose={() => setShowComments(false)}
         productName={product.TenSP}
-        averageRating={product.BinhLuan?.avgRate?.toString()}
-        totalComments={product.BinhLuan?.luotBinhLuan}
-        comments={product.BinhLuan?.DanhSachBinhLuan}
+        averageRating={product.SoSaoTrungBinh}
+        totalComments={product.SoLuongBinhLuan}
+        comments={product.BinhLuans}
       />
     </div>
   );
