@@ -1,13 +1,13 @@
+import { CheckCircle, Clock, Package, RotateCcw, Search, Truck, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useApp } from "../contexts/AppContext";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
+import { useNavigate } from "react-router-dom";
 import { OrderCard } from "../components/OrderCard";
 import { OrderDialogsContainer } from "../components/OrderDialogsContainer";
-import dayjs from "dayjs";
-import { getCustomerOrders, submitMultipleReviews, cancelOrder } from "../services/api";
-import { useNavigate } from "react-router-dom";
-import { Search, Package, Clock, Truck, CheckCircle, XCircle, RotateCcw } from "lucide-react";
+import ReturnDetailsModal from "../components/ReturnDetailsModal";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { useApp } from "../contexts/AppContext";
+import { cancelOrder, getCustomerOrders } from "../services/api";
 
 const TABS = [
   { label: "Tất cả", value: "ALL", icon: Package, color: "text-gray-600" },
@@ -48,6 +48,10 @@ export default function OrderManagement() {
   const [returnRequestDialog, setReturnRequestDialog] = useState({
     isOpen: false,
     order: null
+  });
+  const [returnDetailsModal, setReturnDetailsModal] = useState({
+    isOpen: false,
+    returnData: null
   });
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -131,6 +135,21 @@ export default function OrderManagement() {
     return order.CT_DonDatHangs.some(ct => ct.BinhLuans && ct.BinhLuans.length > 0);
   };
 
+  // Check if order has return slip
+  const hasReturnSlip = (order) => {
+    return order.HoaDon?.PhieuTraHang !== null && order.HoaDon?.PhieuTraHang !== undefined;
+  };
+
+  // Check if order can be returned (completed orders without return slip)
+  const canReturnOrder = (order) => {
+    return order.TrangThaiDH?.TrangThai === "HOANTAT" && !hasReturnSlip(order);
+  };
+
+  // Check if order is in return status
+  const isReturnStatus = (order) => {
+    return order.TrangThaiDH?.TrangThai === "TRAHANG";
+  };
+
   // Handle review click
   const handleReviewClick = (order) => {
     const productsToReview = order.CT_DonDatHangs
@@ -188,7 +207,7 @@ export default function OrderManagement() {
       NgayTao: order.NgayTao,
       TrangThai: { 
         Ma: order.TrangThaiDH?.MaTTDH || 0, 
-        Ten: STATUS_MAP[order.TrangThaiDH?.TrangThai] || order.TrangThaiDH?.Note 
+        Ten: STATUS_MAP[order.TrangThaiDH?.TrangThai]?.label || order.TrangThaiDH?.Note 
       },
       TongTien: order.CT_DonDatHangs.reduce((sum, ct) => sum + Number(ct.DonGia) * ct.SoLuong, 0),
       DiaChiGiao: order.DiaChiGiao,
@@ -226,9 +245,71 @@ export default function OrderManagement() {
     loadOrders();
   };
 
+  // Handle view return details
+  const handleViewReturnDetails = (order) => {
+    // Transform order data to match ReturnDetailsModal expected format
+    const returnData = {
+      MaPhieuTra: order.HoaDon?.PhieuTraHang?.MaPhieuTra,
+      NgayTra: order.HoaDon?.PhieuTraHang?.NgayTra,
+      LyDo: order.HoaDon?.PhieuTraHang?.LyDo,
+      TrangThai: order.HoaDon?.PhieuTraHang?.TrangThai,
+      HoaDon: {
+        SoHD: order.HoaDon?.SoHD,
+        NgayLap: order.HoaDon?.NgayLap,
+        DonDatHang: {
+          KhachHang: {
+            TenKH: state.user?.name || "Khách hàng", // Get from context
+            SDT: state.user?.phone || order.SDT,
+          },
+          TenNguoiNhan: order.NguoiNhan,
+          SDTNguoiNhan: order.SDT,
+          DiaChiGiao: order.DiaChiGiao,
+          CT_DonDatHangs: order.CT_DonDatHangs.filter(ct => ct.SoLuongTra > 0).map(ct => ({
+            DonGia: ct.DonGia,
+            SoLuongTra: ct.SoLuongTra || 0,
+            ChiTietSanPham: ct.ChiTietSanPham
+          }))
+        }
+      }
+    };
+
+    setReturnDetailsModal({
+      isOpen: true,
+      returnData
+    });
+  };
+
   // Get active tab info
   const activeTab = TABS.find(t => t.value === tab);
   const ActiveIcon = activeTab?.icon || Package;
+
+  // Helper functions for ReturnDetailsModal
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit", 
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+
+  const getReturnStatusBadge = (status) => {
+    const statusMap = {
+      1: { label: "Chờ xử lý", color: "bg-yellow-100 text-yellow-800" },
+      2: { label: "Đã duyệt", color: "bg-green-100 text-green-800" },
+      3: { label: "Đã từ chối", color: "bg-red-100 text-red-800" }
+    };
+    
+    const statusInfo = statusMap[status] || { label: "Không xác định", color: "bg-gray-100 text-gray-800" };
+    
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
+        {statusInfo.label}
+      </span>
+    );
+  };
 
   return (
     <div>
@@ -359,10 +440,12 @@ export default function OrderManagement() {
                 formatPrice={formatPrice}
                 STATUS_MAP={STATUS_MAP}
                 hasReviews={hasReviews}
+                hasReturnSlip={hasReturnSlip}
                 handleCancelOrder={handleCancelOrder}
                 handleViewReviews={handleViewReviews}
                 handleReviewClick={handleReviewClick}
                 handleReturnRequest={handleReturnRequest}
+                handleViewReturnDetails={handleViewReturnDetails}
               />
             ))}
           </div>
@@ -384,6 +467,23 @@ export default function OrderManagement() {
         selectedOrder={selectedOrder}
         confirmCancelOrder={confirmCancelOrder}
         cancelLoading={cancelLoading}
+      />
+
+      {/* Return Details Modal */}
+      <ReturnDetailsModal
+        open={returnDetailsModal.isOpen}
+        onOpenChange={(open) => setReturnDetailsModal({ isOpen: open, returnData: null })}
+        selectedReturn={returnDetailsModal.returnData}
+        activeTab={1}
+        isAdmin={false}
+        isUpdatingStatus={false}
+        formatPrice={formatPrice}
+        formatDate={formatDate}
+        getStatusBadge={getReturnStatusBadge}
+        onApproveReturn={() => {}} // Customer can't approve
+        onRejectReturn={() => {}} // Customer can't reject  
+        onCreatePaymentSlip={() => {}} // Customer can't create payment slip
+        onViewPaymentSlip={() => {}} // Customer can't view payment slip
       />
     </div>
   );
