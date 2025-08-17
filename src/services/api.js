@@ -14,6 +14,35 @@ const handleError = (error) => {
   return { error: true, message };
 };
 
+
+// Xử lý API response chung - kiểm tra lỗi 401 cho tất cả API calls
+const handleApiCall = async (apiCallFn) => {
+  try {
+    const response = await apiCallFn();
+    return response;
+  } catch (error) {
+    // Kiểm tra lỗi 401 Unauthorized
+    if (error.response?.status === 401) {
+      const unauthorizedMessage = "Bạn không có quyền truy cập";
+      console.error("API Error 401:", unauthorizedMessage);
+      showError(unauthorizedMessage);
+      throw { error: true, message: unauthorizedMessage, status: 401 };
+    }
+    throw error;
+  }
+};
+
+// Wrapper chung cho tất cả API calls để tự động kiểm tra 401
+const apiWrapper = {
+  get: async (url, config) => handleApiCall(() => api.get(url, config)),
+  post: async (url, data, config) =>
+    handleApiCall(() => api.post(url, data, config)),
+  put: async (url, data, config) =>
+    handleApiCall(() => api.put(url, data, config)),
+  delete: async (url, config) => handleApiCall(() => api.delete(url, config)),
+};
+
+
 // Format date cho API
 const formatDateForApi = (date) => {
   if (!date) return null;
@@ -33,18 +62,22 @@ export const getEmployees = async () => {
     if (result.success && Array.isArray(result.data)) {
       const mapped = result.data.map((item) => {
         // Find latest department (most recent NgayBatDau) for all employee info
-        const latestDepartment = item.NhanVien_BoPhans?.reduce((latest, current) => {
-          if (!latest) return current;
-          return new Date(current.NgayBatDau) > new Date(latest.NgayBatDau) ? current : latest;
-        }, null) || {};
+        const latestDepartment =
+          item.NhanVien_BoPhans?.reduce((latest, current) => {
+            if (!latest) return current;
+            return new Date(current.NgayBatDau) > new Date(latest.NgayBatDau)
+              ? current
+              : latest;
+          }, null) || {};
 
         const mappedEmployee = {
           maNV: item.MaNV,
-          tenNV: item.TenNV || 'MISSING NAME',
+          tenNV: item.TenNV || "MISSING NAME",
           ngaySinh: item.NgaySinh,
           diaChi: item.DiaChi,
           luong: item.Luong ? parseInt(item.Luong) : undefined,
           maTK: item.MaTK,
+
           department: latestDepartment.BoPhan?.MaBoPhan?.toString() || '',
           departmentName: latestDepartment.BoPhan?.TenBoPhan || '',
           username: item.TaiKhoan?.Email || 'MISSING EMAIL',
@@ -61,6 +94,7 @@ export const getEmployees = async () => {
       return [];
     }
   } catch (error) {
+
     console.error('Error fetching employees:', error);
     throw new Error('Không thể tải danh sách nhân viên');
   }
@@ -122,14 +156,17 @@ export const transferEmployee = async (data) => {
       throw new Error(result.message || "Không thể điều chuyển nhân viên");
     }
   } catch (error) {
-    console.error('Error transferring employee:', error);
-    throw new Error(error.response?.data?.message || "Lỗi khi điều chuyển nhân viên");
+    console.error("Error transferring employee:", error);
+    throw new Error(
+      error.response?.data?.message || "Lỗi khi điều chuyển nhân viên"
+    );
   }
 };
 
 // Lấy lịch sử làm việc của nhân viên
 export const getEmployeeWorkHistory = async (employeeId) => {
   try {
+
     const response = await api.get(`/employees/${employeeId}/department-history`);
     const result = response.data;
 
@@ -139,7 +176,7 @@ export const getEmployeeWorkHistory = async (employeeId) => {
       return [];
     }
   } catch (error) {
-    console.error('Error fetching employee work history:', error);
+    console.error("Error fetching employee work history:", error);
     return []; // Return empty array on error to prevent forEach issues
   }
 };
@@ -293,7 +330,7 @@ export const getDepartments = async () => {
       return { success: false, data: [] };
     }
   } catch (error) {
-    console.error('Error fetching departments:', error);
+    console.error("Error fetching departments:", error);
     return { success: false, data: [] };
   }
 };
@@ -321,6 +358,7 @@ export const updateDepartment = async (departmentId, data) => {
 // Cập nhật trạng thái bộ phận (ẩn/hiển thị)
 export const updateDepartmentStatus = async (departmentId, status) => {
   try {
+
     const response = await api.put(`/department/${departmentId}`, { TrangThai: status });
     return response.data;
   } catch (error) {
@@ -345,12 +383,7 @@ export const getDepartmentById = async (departmentId) => {
 // Lấy danh sách sản phẩm với phân trang và filter
 export const getProducts = async (params = {}) => {
   try {
-    const {
-      page = 1,
-      pageSize = 8,
-      search = "",
-      category = ""
-    } = params;
+    const { page = 1, pageSize = 8, search = "", category = "" } = params;
 
     // Build query parameters
     const queryParams = new URLSearchParams({
@@ -358,14 +391,20 @@ export const getProducts = async (params = {}) => {
       pageSize: pageSize.toString(),
     });
 
-    if (search) queryParams.append('search', search);
+    if (search) queryParams.append("search", search);
     // Nếu chọn "all" thì không truyền MaLoaiSP cho API
-    if (category && category !== "all") queryParams.append('MaLoaiSP', category);
+    if (category && category !== "all")
+      queryParams.append("MaLoaiSP", category);
 
     const response = await api.get(`/products/get-all-products?${queryParams.toString()}`);
     const result = response.data;
 
-    if (result.success && result.data && result.data.data && Array.isArray(result.data.data)) {
+    if (
+      result.success &&
+      result.data &&
+      result.data.data &&
+      Array.isArray(result.data.data)
+    ) {
       return {
         success: true,
         data: result.data.data,
@@ -373,11 +412,13 @@ export const getProducts = async (params = {}) => {
           page: result.data.page || page,
           pageSize: result.data.pageSize || pageSize,
           total: result.data.total || 0,
-          totalPages: Math.ceil((result.data.total || 0) / (result.data.pageSize || pageSize))
-        }
+          totalPages: Math.ceil(
+            (result.data.total || 0) / (result.data.pageSize || pageSize)
+          ),
+        },
       };
     } else {
-      console.error('Invalid products data structure:', result);
+      console.error("Invalid products data structure:", result);
       return {
         success: false,
         data: [],
@@ -385,12 +426,12 @@ export const getProducts = async (params = {}) => {
           page: 1,
           pageSize: pageSize,
           total: 0,
-          totalPages: 0
-        }
+          totalPages: 0,
+        },
       };
     }
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error("Error fetching products:", error);
     return {
       success: false,
       data: [],
@@ -398,8 +439,8 @@ export const getProducts = async (params = {}) => {
         page: 1,
         pageSize: params.pageSize || 8,
         total: 0,
-        totalPages: 0
-      }
+        totalPages: 0,
+      },
     };
   }
 };
@@ -573,6 +614,7 @@ export const updatePurchaseOrder = async (id, data) => {
       console.log("Main endpoint failed, trying alternative...");
       // Try alternative endpoint if main one fails
       try {
+
         response = await api.put(`/purchase-orders/update/${id}`, orderData);
         console.log("Alternative endpoint response:", response);
       } catch (altError) {
@@ -841,17 +883,21 @@ export const getAvailableDeliveryStaff = async (address) => {
     const response = await api.post("/employees/delivery/available", { diaChi: address });
 
     // Handle the new API response structure
-    if (response.data && response.data.success && Array.isArray(response.data.data)) {
+    if (
+      response.data &&
+      response.data.success &&
+      Array.isArray(response.data.data)
+    ) {
       return {
         success: true,
         message: response.data.message,
-        data: response.data.data.map(staff => ({
+        data: response.data.data.map((staff) => ({
           MaNV: staff.MaNV,
           TenNV: staff.TenNV,
           DiaChi: staff.DiaChi,
           SoDonDangGiao: staff.SoDonDangGiao || 0,
-          KhuVucPhuTrach: staff.KhuVucPhuTrach || null
-        }))
+          KhuVucPhuTrach: staff.KhuVucPhuTrach || null,
+        })),
       };
     }
 
@@ -1513,7 +1559,7 @@ export const validatePromotionPeriod = async (ngayBatDau, ngayKetThuc) => {
   try {
     const response = await api.post("/promotions/validate-period", {
       ngayBatDau,
-      ngayKetThuc
+      ngayKetThuc,
     });
     return response.data;
   } catch (error) {
@@ -1530,7 +1576,7 @@ export const getAreas = async () => {
     if (result.success && Array.isArray(result.data)) {
       return result.data;
     } else {
-      console.warn('Unexpected areas API response structure:', result);
+      console.warn("Unexpected areas API response structure:", result);
       return [];
     }
   } catch (error) {
@@ -1554,11 +1600,11 @@ export const getCategories = async () => {
     } else if (Array.isArray(result)) {
       return result;
     } else {
-      console.error('Categories data is not in expected format:', result);
+      console.error("Categories data is not in expected format:", result);
       return [];
     }
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    console.error("Error fetching categories:", error);
     return [];
   }
 };
@@ -1660,6 +1706,35 @@ export const createProduct = async (productData) => {
 export const deleteProduct = async (productId) => {
   try {
     const response = await api.delete(`/products/${productId}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy danh sách đơn hàng tháng hiện tại
+export const getCurrentMonthOrders = async () => {
+  try {
+    const response = await api.get("/orders/current-month");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const getAllEmployees = async () => {
+  try {
+    const response = await apiWrapper.get("/employees");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy danh sách phiếu đặt hàng từ nhà cung cấp
+export const getPurchaseOrdersNCC = async () => {
+  try {
+    const response = await apiWrapper.get("/phieu-dat-hang-ncc");
     return response.data;
   } catch (error) {
     return handleError(error);

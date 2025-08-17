@@ -49,7 +49,7 @@ function Footer() {
                 <span className="text-white font-bold text-lg">F</span>
               </div>
               <span className="text-xl font-bold text-gray-900 dark:text-white">
-                FashionHub
+                3TShop
               </span>
             </div>
             <p className="text-gray-600 dark:text-gray-300">
@@ -67,7 +67,7 @@ function Footer() {
               </div>
               <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
                 <Mail className="h-4 w-4" />
-                <span>info@fashionhub.vn</span>
+                <span>info@3tshop.vn</span>
               </div>
             </div>
           </div>
@@ -159,6 +159,9 @@ function Footer() {
               </span>
               <div className="flex space-x-2">
                 <div className="bg-white border rounded px-2 py-1 text-xs font-medium">
+                  PAYPAL
+                </div>
+                {/* <div className="bg-white border rounded px-2 py-1 text-xs font-medium">
                   VISA
                 </div>
                 <div className="bg-white border rounded px-2 py-1 text-xs font-medium">
@@ -169,7 +172,7 @@ function Footer() {
                 </div>
                 <div className="bg-white border rounded px-2 py-1 text-xs font-medium">
                   MOMO
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
@@ -178,7 +181,7 @@ function Footer() {
         {/* Copyright */}
         <div className="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8 text-center">
           <p className="text-gray-600 dark:text-gray-300">
-            © 2024 FashionHub. Tất cả quyền được bảo lưu.
+            © 2024 3TShop. Tất cả quyền được bảo lưu.
           </p>
         </div>
         </div>

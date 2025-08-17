@@ -524,3 +524,226 @@ export function deleteProduct(productId: string | number): Promise<{
 export function getInvoiceDetail(invoiceNumber: string | number): Promise<any>;
 export function getInvoiceByOrderId(orderId: string | number): Promise<any>;
 export function createInvoice(invoiceData: any): Promise<any>;
+
+
+export interface KhachHang {
+  MaKH: number;
+  TenKH: string;
+  SDT: string;
+  DiaChi: string;
+  CCCD: string;
+}
+
+export interface TrangThaiDH {
+  MaTTDH: number;
+  TrangThai: string;
+}
+
+export interface SanPham {
+  MaSP: number;
+  TenSP: string;
+}
+
+export interface KichThuoc {
+  TenKichThuoc: string;
+}
+
+export interface Mau {
+  TenMau: string;
+  MaHex: string;
+}
+
+export interface ChiTietSanPham {
+  SanPham: SanPham;
+  KichThuoc: KichThuoc;
+  Mau: Mau;
+}
+
+export interface CT_DonDatHang {
+  MaCTDDH: number;
+  SoLuong: number;
+  DonGia: string;
+  ChiTietSanPham: ChiTietSanPham;
+}
+
+export interface DonDatHang {
+  MaDDH: number;
+  MaKH: number;
+  NgayTao: string;
+  DiaChiGiao: string;
+  NguoiNhan: string;
+  SDT: string;
+  TongTien: number;
+  KhachHang: KhachHang;
+  TrangThaiDH: TrangThaiDH;
+  CT_DonDatHangs: CT_DonDatHang[];
+}
+
+export interface ThongTinThang {
+  thang: number;
+  nam: number;
+  ngayBatDau: string;
+  ngayKetThuc: string;
+  tongSoDonHang: number;
+}
+
+export interface CurrentMonthOrdersData {
+  orders: DonDatHang[];
+  thongTinThang: ThongTinThang;
+}
+
+export interface GetCurrentMonthOrdersResponse {
+  success: boolean;
+  message: string;
+  data: CurrentMonthOrdersData;
+}
+
+// Function declaration
+export declare function getCurrentMonthOrders(): Promise<GetCurrentMonthOrdersResponse>;
+
+
+export interface TaiKhoan {
+  MaTK: number;
+  Email: string;
+  Password: string;
+  MaVaiTro: number;
+  VaiTro: {
+    MaVaiTro: number;
+    TenVaiTro: string;
+  };
+}
+
+export interface BoPhan {
+  MaBoPhan: number;
+  TenBoPhan: string;
+  NgayTao: string;
+  TrangThai: boolean;
+}
+
+export interface NhanVien_BoPhan {
+  MaNV: number;
+  MaBoPhan: number;
+  NgayBatDau: string;
+  NgayKetThuc: string | null;
+  ChucVu: string | null;
+  TrangThai: string;
+  GhiChu: string | null;
+  BoPhan: BoPhan;
+}
+
+export interface KhuVucPhuTrach {
+  MaKhuVuc: string;
+  TenKhuVuc: string;
+  NhanVien_KhuVuc: {
+    NgayTao: string;
+    TrangThai: number;
+  };
+}
+
+export interface Employee {
+  MaNV: number;
+  TenNV: string;
+  NgaySinh: string;
+  DiaChi: string;
+  Luong: string;
+  MaTK: number;
+  TaiKhoan: TaiKhoan;
+  NhanVien_BoPhans: NhanVien_BoPhan[];
+  KhuVucPhuTrach: KhuVucPhuTrach[];
+}
+
+export interface GetAllEmployeesResponse {
+  success: boolean;
+  message: string;
+  data: Employee[];
+}
+
+// Function declaration
+export declare function getAllEmployees(): Promise<GetAllEmployeesResponse>;
+
+
+export interface SanPham_PDH {
+  MaSP: number;
+  TenSP: string;
+  MaLoaiSP: number;
+  MaNCC: number;
+  MoTa: string;
+  TrangThai: boolean;
+  NgayTao: string;
+}
+
+export interface KichThuoc_PDH {
+  MaKichThuoc: number;
+  TenKichThuoc: string;
+}
+
+export interface Mau_PDH {
+  MaMau: number;
+  TenMau: string;
+  MaHex: string;
+  NgayTao: string;
+  TrangThai: boolean;
+}
+
+export interface ChiTietSanPham_PDH {
+  MaCTSP: number;
+  MaSP: number;
+  MaKichThuoc: number;
+  MaMau: number;
+  SoLuongTon: number;
+  SanPham: SanPham_PDH;
+  KichThuoc: KichThuoc_PDH;
+  Mau: Mau_PDH;
+}
+
+export interface CT_PhieuDatHangNCC {
+  MaPDH: string;
+  MaCTSP: number;
+  SoLuong: number;
+  DonGia: string;
+  ChiTietSanPham: ChiTietSanPham_PDH;
+}
+
+export interface NhanVien_PDH {
+  MaNV: number;
+  TenNV: string;
+  NgaySinh: string;
+  DiaChi: string;
+  Luong: string;
+  MaTK: number;
+}
+
+export interface NhaCungCap_PDH {
+  MaNCC: number;
+  TenNCC: string;
+  DiaChi: string;
+  SDT: string;
+  Email: string;
+}
+
+export interface TrangThaiDatHangNCC {
+  MaTrangThai: number;
+  TenTrangThai: string;
+}
+
+export interface PhieuDatHangNCC {
+  MaPDH: string;
+  NgayDat: string;
+  NgayKienNghiGiao: string | null;
+  MaNV: number;
+  MaNCC: number;
+  MaTrangThai: number;
+  CT_PhieuDatHangNCCs: CT_PhieuDatHangNCC[];
+  NhanVien: NhanVien_PDH;
+  NhaCungCap: NhaCungCap_PDH;
+  TrangThaiDatHangNCC: TrangThaiDatHangNCC;
+}
+
+export interface GetPurchaseOrdersNCCResponse {
+  success: boolean;
+  message: string;
+  data: PhieuDatHangNCC[];
+}
+
+// Function declaration
+export declare function getPurchaseOrdersNCC(): Promise<GetPurchaseOrdersNCCResponse>;
