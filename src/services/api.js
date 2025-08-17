@@ -42,8 +42,10 @@ const handleApiCall = async (apiCallFn) => {
 // Wrapper chung cho tất cả API calls để tự động kiểm tra 401
 const apiWrapper = {
   get: async (url, config) => handleApiCall(() => api.get(url, config)),
-  post: async (url, data, config) => handleApiCall(() => api.post(url, data, config)),
-  put: async (url, data, config) => handleApiCall(() => api.put(url, data, config)),
+  post: async (url, data, config) =>
+    handleApiCall(() => api.post(url, data, config)),
+  put: async (url, data, config) =>
+    handleApiCall(() => api.put(url, data, config)),
   delete: async (url, config) => handleApiCall(() => api.delete(url, config)),
 };
 
@@ -66,24 +68,27 @@ export const getEmployees = async () => {
     if (result.success && Array.isArray(result.data)) {
       const mapped = result.data.map((item) => {
         // Find latest department (most recent NgayBatDau) for all employee info
-        const latestDepartment = item.NhanVien_BoPhans?.reduce((latest, current) => {
-          if (!latest) return current;
-          return new Date(current.NgayBatDau) > new Date(latest.NgayBatDau) ? current : latest;
-        }, null) || {};
+        const latestDepartment =
+          item.NhanVien_BoPhans?.reduce((latest, current) => {
+            if (!latest) return current;
+            return new Date(current.NgayBatDau) > new Date(latest.NgayBatDau)
+              ? current
+              : latest;
+          }, null) || {};
 
         const mappedEmployee = {
           maNV: item.MaNV,
-          tenNV: item.TenNV || 'MISSING NAME',
+          tenNV: item.TenNV || "MISSING NAME",
           ngaySinh: item.NgaySinh,
           diaChi: item.DiaChi,
           luong: item.Luong ? parseInt(item.Luong) : undefined,
           maTK: item.MaTK,
-          department: latestDepartment.BoPhan?.MaBoPhan?.toString() || '',
-          departmentName: latestDepartment.BoPhan?.TenBoPhan || '',
-          username: latestDepartment.BoPhan?.TaiKhoan?.Email || 'MISSING EMAIL',
-          isActive: latestDepartment.TrangThai || '',
-          createdAt: latestDepartment.NgayBatDau || '',
-          updatedAt: latestDepartment.NgayKetThuc || '',
+          department: latestDepartment.BoPhan?.MaBoPhan?.toString() || "",
+          departmentName: latestDepartment.BoPhan?.TenBoPhan || "",
+          username: latestDepartment.BoPhan?.TaiKhoan?.Email || "MISSING EMAIL",
+          isActive: latestDepartment.TrangThai || "",
+          createdAt: latestDepartment.NgayBatDau || "",
+          updatedAt: latestDepartment.NgayKetThuc || "",
           khuVucPhuTrach: item.KhuVucPhuTrach || [],
         };
         return mappedEmployee;
@@ -94,11 +99,11 @@ export const getEmployees = async () => {
       return [];
     }
   } catch (error) {
-    console.error('Error fetching employees:', error);
+    console.error("Error fetching employees:", error);
     if (error.status === 401) {
       throw error;
     }
-    throw new Error('Không thể tải danh sách nhân viên');
+    throw new Error("Không thể tải danh sách nhân viên");
   }
 };
 
@@ -127,7 +132,7 @@ export const createEmployee = async (data) => {
       throw new Error(result.message || "Không thể tạo nhân viên");
     }
   } catch (error) {
-    console.error('Error creating employee:', error);
+    console.error("Error creating employee:", error);
     if (error.status === 401) {
       throw error;
     }
@@ -147,11 +152,13 @@ export const updateEmployee = async (employeeId, data) => {
       throw new Error(result.message || "Không thể cập nhật nhân viên");
     }
   } catch (error) {
-    console.error('Error updating employee:', error);
+    console.error("Error updating employee:", error);
     if (error.status === 401) {
       throw error;
     }
-    throw new Error(error.response?.data?.message || "Lỗi khi cập nhật nhân viên");
+    throw new Error(
+      error.response?.data?.message || "Lỗi khi cập nhật nhân viên"
+    );
   }
 };
 
@@ -167,15 +174,19 @@ export const transferEmployee = async (data) => {
       throw new Error(result.message || "Không thể điều chuyển nhân viên");
     }
   } catch (error) {
-    console.error('Error transferring employee:', error);
-    throw new Error(error.response?.data?.message || "Lỗi khi điều chuyển nhân viên");
+    console.error("Error transferring employee:", error);
+    throw new Error(
+      error.response?.data?.message || "Lỗi khi điều chuyển nhân viên"
+    );
   }
 };
 
 // Lấy lịch sử làm việc của nhân viên
 export const getEmployeeWorkHistory = async (employeeId) => {
   try {
-    const response = await apiWrapper.get(`/employees/${employeeId}/department-history`);
+    const response = await apiWrapper.get(
+      `/employees/${employeeId}/department-history`
+    );
     const result = response.data;
 
     if (result.success && Array.isArray(result.data)) {
@@ -184,7 +195,7 @@ export const getEmployeeWorkHistory = async (employeeId) => {
       return [];
     }
   } catch (error) {
-    console.error('Error fetching employee work history:', error);
+    console.error("Error fetching employee work history:", error);
     return []; // Return empty array on error to prevent forEach issues
   }
 };
@@ -338,7 +349,7 @@ export const getDepartments = async () => {
       return { success: false, data: [] };
     }
   } catch (error) {
-    console.error('Error fetching departments:', error);
+    console.error("Error fetching departments:", error);
     return { success: false, data: [] };
   }
 };
@@ -366,7 +377,9 @@ export const updateDepartment = async (departmentId, data) => {
 // Cập nhật trạng thái bộ phận (ẩn/hiển thị)
 export const updateDepartmentStatus = async (departmentId, status) => {
   try {
-    const response = await apiWrapper.put(`/department/${departmentId}`, { TrangThai: status });
+    const response = await apiWrapper.put(`/department/${departmentId}`, {
+      TrangThai: status,
+    });
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -390,12 +403,7 @@ export const getDepartmentById = async (departmentId) => {
 // Lấy danh sách sản phẩm với phân trang và filter
 export const getProducts = async (params = {}) => {
   try {
-    const {
-      page = 1,
-      pageSize = 8,
-      search = "",
-      category = ""
-    } = params;
+    const { page = 1, pageSize = 8, search = "", category = "" } = params;
 
     // Build query parameters
     const queryParams = new URLSearchParams({
@@ -403,14 +411,22 @@ export const getProducts = async (params = {}) => {
       pageSize: pageSize.toString(),
     });
 
-    if (search) queryParams.append('search', search);
+    if (search) queryParams.append("search", search);
     // Nếu chọn "all" thì không truyền MaLoaiSP cho API
-    if (category && category !== "all") queryParams.append('MaLoaiSP', category);
+    if (category && category !== "all")
+      queryParams.append("MaLoaiSP", category);
 
-    const response = await apiWrapper.get(`/products/get-all-products?${queryParams.toString()}`);
+    const response = await apiWrapper.get(
+      `/products/get-all-products?${queryParams.toString()}`
+    );
     const result = response.data;
 
-    if (result.success && result.data && result.data.data && Array.isArray(result.data.data)) {
+    if (
+      result.success &&
+      result.data &&
+      result.data.data &&
+      Array.isArray(result.data.data)
+    ) {
       return {
         success: true,
         data: result.data.data,
@@ -418,11 +434,13 @@ export const getProducts = async (params = {}) => {
           page: result.data.page || page,
           pageSize: result.data.pageSize || pageSize,
           total: result.data.total || 0,
-          totalPages: Math.ceil((result.data.total || 0) / (result.data.pageSize || pageSize))
-        }
+          totalPages: Math.ceil(
+            (result.data.total || 0) / (result.data.pageSize || pageSize)
+          ),
+        },
       };
     } else {
-      console.error('Invalid products data structure:', result);
+      console.error("Invalid products data structure:", result);
       return {
         success: false,
         data: [],
@@ -430,12 +448,12 @@ export const getProducts = async (params = {}) => {
           page: 1,
           pageSize: pageSize,
           total: 0,
-          totalPages: 0
-        }
+          totalPages: 0,
+        },
       };
     }
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error("Error fetching products:", error);
     return {
       success: false,
       data: [],
@@ -443,8 +461,8 @@ export const getProducts = async (params = {}) => {
         page: 1,
         pageSize: params.pageSize || 8,
         total: 0,
-        totalPages: 0
-      }
+        totalPages: 0,
+      },
     };
   }
 };
@@ -493,7 +511,10 @@ export const addProductDetail = async (data) => {
 // Cập nhật tồn kho sản phẩm
 export const updateProductStock = async (stockUpdates) => {
   try {
-    const response = await apiWrapper.post("/products/update-stock", stockUpdates);
+    const response = await apiWrapper.post(
+      "/products/update-stock",
+      stockUpdates
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -503,7 +524,9 @@ export const updateProductStock = async (stockUpdates) => {
 // Lấy màu và kích thước theo sản phẩm
 export const getProductColorsSizes = async (productId) => {
   try {
-    const response = await apiWrapper.get(`/products/${productId}/colors-sizes`);
+    const response = await apiWrapper.get(
+      `/products/${productId}/colors-sizes`
+    );
     return response.data;
   } catch (error) {
     handleError(error);
@@ -618,7 +641,10 @@ export const updatePurchaseOrder = async (id, data) => {
       console.log("Main endpoint failed, trying alternative...");
       // Try alternative endpoint if main one fails
       try {
-        response = await apiWrapper.put(`/purchase-orders/update/${id}`, orderData);
+        response = await apiWrapper.put(
+          `/purchase-orders/update/${id}`,
+          orderData
+        );
         console.log("Alternative endpoint response:", response);
       } catch (altError) {
         console.log("Alternative endpoint also failed");
@@ -666,7 +692,9 @@ export const updatePurchaseOrderStatus = async (id, statusId) => {
 // Lấy đơn đặt hàng có thể tạo phiếu nhập
 export const getAvailablePurchaseOrders = async () => {
   try {
-    const response = await apiWrapper.get("/purchase-orders/available-for-receipt");
+    const response = await apiWrapper.get(
+      "/purchase-orders/available-for-receipt"
+    );
     return response.data;
   } catch (error) {
     handleError(error);
@@ -863,7 +891,10 @@ export const getOrderById = async (orderId) => {
 // Cập nhật trạng thái đơn hàng đơn lẻ
 export const updateOrderStatus = async (orderId, statusData) => {
   try {
-    const response = await apiWrapper.put(`/orders/${orderId}/status`, statusData);
+    const response = await apiWrapper.put(
+      `/orders/${orderId}/status`,
+      statusData
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -883,20 +914,26 @@ export const updateBatchOrderStatus = async (ordersData) => {
 // Lấy danh sách nhân viên giao hàng có sẵn
 export const getAvailableDeliveryStaff = async (address) => {
   try {
-    const response = await apiWrapper.post("/employees/delivery/available", { diaChi: address });
+    const response = await apiWrapper.post("/employees/delivery/available", {
+      diaChi: address,
+    });
 
     // Handle the new API response structure
-    if (response.data && response.data.success && Array.isArray(response.data.data)) {
+    if (
+      response.data &&
+      response.data.success &&
+      Array.isArray(response.data.data)
+    ) {
       return {
         success: true,
         message: response.data.message,
-        data: response.data.data.map(staff => ({
+        data: response.data.data.map((staff) => ({
           MaNV: staff.MaNV,
           TenNV: staff.TenNV,
           DiaChi: staff.DiaChi,
           SoDonDangGiao: staff.SoDonDangGiao || 0,
-          KhuVucPhuTrach: staff.KhuVucPhuTrach || null
-        }))
+          KhuVucPhuTrach: staff.KhuVucPhuTrach || null,
+        })),
       };
     }
 
@@ -909,7 +946,10 @@ export const getAvailableDeliveryStaff = async (address) => {
 // Cập nhật nhân viên giao hàng cho đơn hàng
 export const updateOrderDeliveryStaff = async (orderId, staffData) => {
   try {
-    const response = await apiWrapper.put(`/orders/${orderId}/delivery-staff`, staffData);
+    const response = await apiWrapper.put(
+      `/orders/${orderId}/delivery-staff`,
+      staffData
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -960,7 +1000,9 @@ export const getAssignedOrders = async (params = {}) => {
 // Xác nhận hoàn thành giao hàng
 export const confirmOrderDelivery = async (orderId) => {
   try {
-    const response = await apiWrapper.put(`/orders/delivery/${orderId}/confirm`);
+    const response = await apiWrapper.put(
+      `/orders/delivery/${orderId}/confirm`
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1152,7 +1194,9 @@ export const createOrder = async (payload) => {
 // services/api.js
 
 export async function checkStockAvailability(maCTSP) {
-  const response = await apiWrapper.post("/san-pham/kiem-tra-ton-kho", { maCTSP });
+  const response = await apiWrapper.post("/san-pham/kiem-tra-ton-kho", {
+    maCTSP,
+  });
   return response.data.data;
 }
 export const clearCartApi = async (maKH) => {
@@ -1241,7 +1285,10 @@ export const getCustomerOrders = async (maKH) => {
 
 export const getOrderDetail = async ({ maKH, maDDH }) => {
   try {
-    const res = await apiWrapper.post("/gio-hang/don-hang/chi-tiet", { maKH, maDDH });
+    const res = await apiWrapper.post("/gio-hang/don-hang/chi-tiet", {
+      maKH,
+      maDDH,
+    });
     return res.data?.data;
   } catch (error) {
     console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
@@ -1305,7 +1352,7 @@ export const submitReview = async (reviewData) => {
 export const submitMultipleReviews = async (reviewList) => {
   try {
     const response = await apiWrapper.post("/binh-luan", {
-      binhLuanList: reviewList.map(review => ({
+      binhLuanList: reviewList.map((review) => ({
         maCTDonDatHang: review.maCTDonDatHang,
         moTa: review.moTa,
         soSao: review.soSao,
@@ -1364,7 +1411,10 @@ export const getCustomerProfile = async () => {
 // Cập nhật thông tin profile khách hàng
 export const updateCustomerProfile = async (maKH, profileData) => {
   try {
-    const response = await apiWrapper.put(`/customers/profile/${maKH}`, profileData);
+    const response = await apiWrapper.put(
+      `/customers/profile/${maKH}`,
+      profileData
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1435,7 +1485,10 @@ export const getReturnSlipsByStatus = async (status) => {
 // Cập nhật trạng thái phiếu trả hàng
 export const updateReturnSlipStatus = async (returnSlipId, statusData) => {
   try {
-    const response = await apiWrapper.put(`/return/slip/${returnSlipId}/approve`, statusData);
+    const response = await apiWrapper.put(
+      `/return/slip/${returnSlipId}/approve`,
+      statusData
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1479,7 +1532,10 @@ export const createPromotion = async (promotionData) => {
 // Cập nhật đợt giảm giá
 export const updatePromotion = async (promotionId, promotionData) => {
   try {
-    const response = await apiWrapper.put(`/promotions/${promotionId}`, promotionData);
+    const response = await apiWrapper.put(
+      `/promotions/${promotionId}`,
+      promotionData
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1533,7 +1589,9 @@ export const getAvailableProductsForPromotion = async () => {
 // Xóa sản phẩm khỏi đợt giảm giá
 export const removeProductFromPromotion = async (maDot, maSP) => {
   try {
-    const response = await apiWrapper.delete(`promotions/${maDot}/products/${maSP}`);
+    const response = await apiWrapper.delete(
+      `promotions/${maDot}/products/${maSP}`
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1543,7 +1601,10 @@ export const removeProductFromPromotion = async (maDot, maSP) => {
 // Thêm sản phẩm vào đợt giảm giá
 export const addProductToPromotion = async (maDot, productData) => {
   try {
-    const response = await apiWrapper.post(`/promotions/${maDot}/products`, productData);
+    const response = await apiWrapper.post(
+      `/promotions/${maDot}/products`,
+      productData
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1555,7 +1616,7 @@ export const validatePromotionPeriod = async (ngayBatDau, ngayKetThuc) => {
   try {
     const response = await apiWrapper.post("/promotions/validate-period", {
       ngayBatDau,
-      ngayKetThuc
+      ngayKetThuc,
     });
     return response.data;
   } catch (error) {
@@ -1566,13 +1627,13 @@ export const validatePromotionPeriod = async (ngayBatDau, ngayKetThuc) => {
 // Get areas
 export const getAreas = async () => {
   try {
-    const response = await apiWrapper.get('/areas');
+    const response = await apiWrapper.get("/areas");
     const result = response.data;
 
     if (result.success && Array.isArray(result.data)) {
       return result.data;
     } else {
-      console.warn('Unexpected areas API response structure:', result);
+      console.warn("Unexpected areas API response structure:", result);
       return [];
     }
   } catch (error) {
@@ -1596,11 +1657,11 @@ export const getCategories = async () => {
     } else if (Array.isArray(result)) {
       return result;
     } else {
-      console.error('Categories data is not in expected format:', result);
+      console.error("Categories data is not in expected format:", result);
       return [];
     }
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    console.error("Error fetching categories:", error);
     return [];
   }
 };
@@ -1659,7 +1720,10 @@ export const deleteCategory = async (categoryId) => {
 // Cập nhật sản phẩm
 export const updateProduct = async (productId, updateData) => {
   try {
-    const response = await apiWrapper.put(`/products/${productId}/update`, updateData);
+    const response = await apiWrapper.put(
+      `/products/${productId}/update`,
+      updateData
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1691,7 +1755,7 @@ export const getProductByIdForManagement = async (productId) => {
 // Tạo sản phẩm mới
 export const createProduct = async (productData) => {
   try {
-    const response = await apiWrapper.post('/products', productData);
+    const response = await apiWrapper.post("/products", productData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1702,6 +1766,35 @@ export const createProduct = async (productData) => {
 export const deleteProduct = async (productId) => {
   try {
     const response = await apiWrapper.delete(`/products/${productId}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy danh sách đơn hàng tháng hiện tại
+export const getCurrentMonthOrders = async () => {
+  try {
+    const response = await api.get("/orders/current-month");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const getAllEmployees = async () => {
+  try {
+    const response = await apiWrapper.get("/employees");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy danh sách phiếu đặt hàng từ nhà cung cấp
+export const getPurchaseOrdersNCC = async () => {
+  try {
+    const response = await apiWrapper.get("/phieu-dat-hang-ncc");
     return response.data;
   } catch (error) {
     return handleError(error);

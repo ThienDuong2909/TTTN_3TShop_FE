@@ -103,10 +103,10 @@ function Header() {
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
               <div className="h-8 w-8 bg-gradient-to-r from-brand-500 to-brand-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">F</span>
+                <span className="text-white font-bold text-lg">T</span>
               </div>
               <span className="text-xl font-bold text-gray-900 dark:text-white">
-                FashionHub
+                3TShop
               </span>
             </Link>
           </div>
@@ -214,10 +214,13 @@ function Header() {
                       <DropdownMenuSeparator />
                     </>
                   )}
+                  
 
-                  <DropdownMenuItem>
-                    <Link to="/profile">Thông tin cá nhân</Link>
-                  </DropdownMenuItem>
+                  {state.user?.role === "KhachHang" && (
+                    <DropdownMenuItem>
+                      <Link to="/profile">Thông tin cá nhân</Link>
+                    </DropdownMenuItem>
+                  )}
 
                   {state.user?.role === "KhachHang" && (
                     <>

@@ -845,7 +845,7 @@ const exportToWord = () => {
           </div>
           <div class="info-item">
             <span class="info-label">Chức vụ:</span>
-            <span class="info-value">${state.user?.role === 'admin' ? 'Quản trị viên' : 'Nhân viên'}</span>
+            <span class="info-value">${state.user?.role === 'Admin' ? 'Quản trị viên' : 'Nhân viên'}</span>
           </div>
           <div class="info-item">
             <span class="info-label">Thời gian lập báo cáo:</span>
