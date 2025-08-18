@@ -91,7 +91,6 @@ function App() {
         <ScrollToTop />
         <Routes>
           {/* Admin Routes - Sử dụng AdminLayout với sidebar */}
-          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin" element={
             <ProtectedRoute requiredPermissions={['toanquyen', 'donhang.xem_duoc_giao', 'donhang.xem']}>
               <AdminLayout>

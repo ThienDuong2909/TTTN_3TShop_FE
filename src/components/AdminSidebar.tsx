@@ -8,11 +8,11 @@ import {
   UserCheck,
   Shield,
   RotateCcw,
-  BarChart3, // Thêm icon cho Dashboard
+  BarChart3,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useApp } from "../contexts/AppContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { hasPermission } from "../utils/permissions";
 
 interface AdminSidebarProps {
@@ -27,24 +27,24 @@ interface NavigationItem {
   permission: string;
   route: string;
   alternativePermissions?: string[];
-  isDashboard?: boolean; 
+  isDashboard?: boolean;
 }
 
 export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
   const { state } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const userPermissions = state.user?.permissions || [];
 
   const navigation: NavigationItem[] = [
-    // Thêm Dashboard ở đầu
     {
       name: "Dashboard",
       id: "dashboard",
       icon: BarChart3,
       permission: "toanquyen",
       route: "/admin",
-      isDashboard: true, // Đánh dấu là dashboard
+      isDashboard: true,
     },
     {
       name: "Sản phẩm",
@@ -157,6 +157,18 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
     navigate(item.route);
   };
 
+  const isItemActive = (item: NavigationItem) => {
+    // Special case cho Dashboard
+    if (item.isDashboard) {
+      return location.pathname === "/admin" || 
+             location.pathname === "/admin/dashboard" ||
+             activeTab === "dashboard";
+    }
+    
+    // For other items, check if current path starts with item route
+    return location.pathname.startsWith(item.route) || activeTab === item.id;
+  };
+
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-52 lg:flex-col">
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-4 pb-4 shadow-sm">
@@ -175,57 +187,48 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
             </div>
           </div>
         </div>
+        
         <nav className="flex flex-1 flex-col">
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
             <li>
               <ul role="list" className="-mx-2 space-y-1">
                 {filteredNavigation.map((item) => {
-                  const isActive = activeTab === item.id;
+                  const isActive = isItemActive(item);
                   const isDashboard = item.isDashboard;
                   
                   return (
                     <li key={item.name}>
                       <button
                         onClick={() => handleItemClick(item)}
-                        className={`group flex gap-x-2 rounded-md p-2 text-sm leading-6 font-medium w-full text-left transition-all duration-300 ease-out relative overflow-hidden ${
+                        className={`group flex gap-x-2 rounded-md p-2 text-sm leading-6 font-medium w-full text-left transition-all duration-200 relative overflow-hidden ${
                           isDashboard
-                            ? // Dashboard styling - Active state luôn nổi bật
+                            ? // Dashboard styling - Active giống hover, nhẹ nhàng hơn
                               isActive
-                                ? "bg-gradient-to-r from-brand-500 via-brand-600 to-blue-600 text-white shadow-xl shadow-brand-500/30 transform scale-[1.02] ring-2 ring-brand-400/50 ring-offset-1 font-bold"
-                                : "bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 text-gray-500 border border-gray-300 opacity-60 hover:opacity-90 hover:from-brand-50 hover:via-brand-100 hover:to-blue-50 hover:border-brand-300 hover:text-brand-600 dark:from-gray-700 dark:via-gray-800 dark:to-gray-700 dark:text-gray-400 dark:border-gray-600"
+                                ? "bg-gradient-to-r from-brand-50 via-brand-100 to-blue-50 text-brand-700 border border-brand-200 font-semibold shadow-sm dark:from-brand-900/30 dark:via-brand-900/40 dark:to-blue-900/30 dark:text-brand-300 dark:border-brand-600"
+                                : "bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 text-gray-600 border border-gray-300 hover:from-brand-50 hover:via-brand-100 hover:to-blue-50 hover:border-brand-200 hover:text-brand-700 dark:from-gray-700 dark:via-gray-800 dark:to-gray-700 dark:text-gray-400 dark:border-gray-600 dark:hover:from-brand-900/30 dark:hover:to-blue-900/30 dark:hover:text-brand-300"
                             : // Regular menu items
                               isActive
                                 ? "bg-brand-50 text-brand-600 dark:bg-brand-900/50 dark:text-brand-400"
-                                : "text-gray-700 hover:text-brand-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-brand-400 dark:hover:bg-gray-700"
+                                : "text-gray-700 hover:text-brand-600 hover:bg-gray-50 dark:text-gray-600 dark:hover:text-brand-600 dark:hover:bg-gray-700"
                         }`}
                       >
-                        {/* Persistent background animation cho Dashboard active */}
-                        {isDashboard && isActive && (
-                          <>
-                            {/* Shimmer effect luôn chạy */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse opacity-50"></div>
-                            {/* Glow effect */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-brand-400/20 via-brand-500/30 to-blue-500/20 animate-pulse"></div>
-                          </>
-                        )}
-                        
                         <item.icon
-                          className={`h-5 w-5 shrink-0 transition-all duration-300 relative z-10 ${
+                          className={`h-5 w-5 shrink-0 transition-all duration-200 relative z-10 ${
                             isDashboard
                               ? isActive
-                                ? "text-white drop-shadow-lg animate-pulse" // Luôn có animation
-                                : "text-gray-400 group-hover:text-brand-500"
+                                ? "text-brand-600 dark:text-brand-400" // Màu icon nhẹ nhàng khi active
+                                : "text-gray-500 group-hover:text-brand-600 dark:text-gray-400 dark:group-hover:text-brand-400"
                               : isActive
                                 ? "text-brand-600 dark:text-brand-400"
                                 : "text-gray-400 group-hover:text-brand-600 dark:group-hover:text-brand-400"
                           }`}
                         />
                         
-                        <span className={`relative z-10 transition-all duration-300 ${
+                        <span className={`relative z-10 transition-all duration-200 ${
                           isDashboard 
                             ? isActive 
-                              ? "font-bold text-white drop-shadow-sm tracking-wide" // Luôn bold khi active
-                              : "font-normal text-gray-500 group-hover:font-medium group-hover:text-brand-600"
+                              ? "font-semibold text-brand-700 dark:text-brand-300" // Font weight vừa phải
+                              : "font-medium text-gray-600 group-hover:text-brand-700 dark:text-gray-400 dark:group-hover:text-brand-300"
                             : isActive 
                               ? "font-medium"
                               : ""
@@ -233,27 +236,26 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
                           {item.name}
                         </span>
                         
-                        {/* Dashboard indicators - Luôn hiển thị khi active */}
+                        {/* Dashboard indicators - Nhẹ nhàng hơn */}
                         {isDashboard && (
                           <div className="ml-auto flex items-center relative z-10">
                             {isActive ? (
-                              // Active indicator - luôn glowing
-                              <div className="flex items-center space-x-1">
-                                <div className="h-2 w-2 bg-white rounded-full animate-ping shadow-lg"></div>
-                                <div className="h-1.5 w-1.5 bg-white/90 rounded-full animate-pulse"></div>
+                              // Active indicator - subtle, không quá nổi bật
+                              <div className="flex items-center">
+                                <div className="h-2 w-2 bg-brand-500 rounded-full opacity-80 dark:bg-brand-400"></div>
                               </div>
                             ) : (
                               // Inactive indicator - static
                               <div className="flex items-center">
-                                <div className="h-2 w-0.5 bg-gray-400 rounded-full opacity-30 group-hover:bg-brand-400 group-hover:opacity-70 transition-all duration-300"></div>
+                                <div className="h-2 w-0.5 bg-gray-400 rounded-full opacity-30 group-hover:bg-brand-400 group-hover:opacity-70 transition-all duration-200"></div>
                               </div>
                             )}
                           </div>
                         )}
                         
-                        {/* Active border accent - Luôn hiển thị khi active */}
+                        {/* Active border accent - Subtle */}
                         {isDashboard && isActive && (
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-white/80 to-white/40 rounded-r-full shadow-sm"></div>
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 rounded-r-full opacity-60 dark:bg-brand-400"></div>
                         )}
                       </button>
                     </li>
