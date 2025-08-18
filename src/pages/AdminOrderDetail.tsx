@@ -241,6 +241,18 @@ export const OrderDetail = () => {
 
   // Handle invoice creation
   const handleCreateInvoice = () => {
+    // Check if order is cancelled - don't allow invoice creation
+    if (orderDetail?.ThongTinDonHang.TrangThai.Ma === 5) {
+      toast.error("Không thể tạo hóa đơn cho đơn hàng đã bị hủy");
+      return;
+    }
+
+    // Check if order is still pending approval - don't allow invoice creation
+    if (orderDetail?.ThongTinDonHang.TrangThai.Ma === 1) {
+      toast.error("Không thể tạo hóa đơn cho đơn hàng chưa được duyệt");
+      return;
+    }
+
     // If invoice already exists, show invoice view
     if (orderDetail?.ThongTinHoaDon) {
       // Try to get invoice number from orderDetail first, or fetch from API
@@ -284,6 +296,20 @@ export const OrderDetail = () => {
   // Confirm invoice creation
   const confirmCreateInvoice = async () => {
     if (!orderDetail || !id) return;
+
+    // Double check: Don't allow invoice creation for cancelled orders
+    if (orderDetail.ThongTinDonHang.TrangThai.Ma === 5) {
+      toast.error("Không thể tạo hóa đơn cho đơn hàng đã bị hủy");
+      setShowInvoiceModal(false);
+      return;
+    }
+
+    // Double check: Don't allow invoice creation for pending orders
+    if (orderDetail.ThongTinDonHang.TrangThai.Ma === 1) {
+      toast.error("Không thể tạo hóa đơn cho đơn hàng chưa được duyệt");
+      setShowInvoiceModal(false);
+      return;
+    }
 
     // If invoice already exists, we could navigate to invoice detail or show invoice info
     if (orderDetail.ThongTinHoaDon) {
@@ -453,13 +479,14 @@ export const OrderDetail = () => {
             </Button>
           )}
 
-          {/* Show create invoice button only for orders with status "Đã duyệt" (id = 2) */}
-          {orderDetail.ThongTinDonHang.TrangThai.Ma !== 1 && (
-            <Button variant="default" size="sm" onClick={handleCreateInvoice}>
-              <FileText className="w-4 h-4 mr-2" />
-              {orderDetail.ThongTinHoaDon ? "Xem hóa đơn" : "Tạo hóa đơn"}
-            </Button>
-          )}
+          {/* Show create invoice button only for orders not in "Đã đặt" (id = 1) and not in "Hủy" (id = 5) status */}
+          {orderDetail.ThongTinDonHang.TrangThai.Ma !== 1 &&
+            orderDetail.ThongTinDonHang.TrangThai.Ma !== 5 && (
+              <Button variant="default" size="sm" onClick={handleCreateInvoice}>
+                <FileText className="w-4 h-4 mr-2" />
+                {orderDetail.ThongTinHoaDon ? "Xem hóa đơn" : "Tạo hóa đơn"}
+              </Button>
+            )}
         </div>
       </div>
 

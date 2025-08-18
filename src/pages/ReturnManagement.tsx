@@ -195,9 +195,9 @@ export default function ReturnManagement() {
     const fetchAllStats = async () => {
       try {
         const [pendingRes, approvedRes, rejectedRes] = await Promise.all([
-          getReturnSlipsByStatus(1),
-          getReturnSlipsByStatus(2),
-          getReturnSlipsByStatus(3),
+          getReturnRequestsByStatus(1),
+          getReturnRequestsByStatus(2),
+          getReturnRequestsByStatus(3),
         ]);
 
         const allData = [
@@ -227,6 +227,7 @@ export default function ReturnManagement() {
       (r) => r.TrangThai === 2 && r.PhieuChi === null
     ).length,
     totalRefundAmount: allReturnRequests.reduce((sum, returnRequest) => {
+      console.log("Return: ", allReturnRequests);
       if (returnRequest.HoaDon?.DonDatHang?.CT_DonDatHangs) {
         const orderTotal =
           returnRequest.HoaDon.DonDatHang.CT_DonDatHangs.reduce(

@@ -405,7 +405,7 @@ export const EmployeeManagement = () => {
     const fetchDepartments = async () => {
       try {
         const departmentsData = await getDepartments();
-        const filtered = departmentsData
+        const filtered = departmentsData.data
           .filter((item: any) => item.TrangThai === true)
           .map((item: any) => ({
             id: item.MaBoPhan?.toString(),
@@ -537,7 +537,9 @@ export const EmployeeManagement = () => {
         password: "",
         isActive: selectedEmployee.isActive || "DANGLAMVIEC",
         selectedAreas:
-          selectedEmployee.khuVucPhuTrach?.map((kv) => kv.MaKhuVuc) || [],
+          selectedEmployee.khuVucPhuTrach
+            ?.filter((kv) => kv.NhanVien_KhuVuc?.TrangThai === 1)
+            ?.map((kv) => kv.MaKhuVuc) || [],
       });
       setIsDetailModalOpen(false);
       setOpenFromDetail(true);
@@ -691,6 +693,18 @@ export const EmployeeManagement = () => {
       return;
     }
 
+    // For editing employees in delivery department, areas are required
+    if (
+      editingEmployee &&
+      editingEmployee.department === "11" &&
+      formData.selectedAreas.length === 0
+    ) {
+      toast.warning(
+        "Nhân viên bộ phận giao hàng phải được phân công ít nhất một khu vực!"
+      );
+      return;
+    }
+
     // For new employees, password is required
     if (!editingEmployee && !formData.password) {
       toast.warning("Vui lòng nhập mật khẩu cho nhân viên mới!");
@@ -726,6 +740,11 @@ export const EmployeeManagement = () => {
           DiaChi: formData.diaChi,
           Luong: formData.luong,
         };
+
+        // Add area assignments if employee is in delivery department
+        if (editingEmployee.department === "11") {
+          editPayload.KhuVucPhuTrach = formData.selectedAreas;
+        }
 
         // Only add password when it's provided (not empty)
         if (formData.password && formData.password.trim() !== "") {
@@ -1236,10 +1255,12 @@ export const EmployeeManagement = () => {
               </div>
 
               {/* Khu vực phụ trách cho bộ phận giao hàng */}
-              {!editingEmployee && formData.department === "11" && (
+              {((!editingEmployee && formData.department === "11") ||
+                (editingEmployee && editingEmployee.department === "11")) && (
                 <div className="mt-4">
                   <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Khu vực phụ trách * (có thể chọn nhiều)
+                    Khu vực phụ trách {!editingEmployee ? "*" : ""} (có thể chọn
+                    nhiều)
                   </Label>
                   <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-3 bg-white">
                     {areas.length === 0 ? (
@@ -1294,6 +1315,15 @@ export const EmployeeManagement = () => {
                             +{formData.selectedAreas.length - 5} khác
                           </span>
                         )}
+                      </div>
+                    </div>
+                  )}
+                  {editingEmployee && (
+                    <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
+                      <div className="text-xs text-amber-700">
+                        💡 <strong>Lưu ý:</strong> Bạn có thể thay đổi khu vực
+                        phụ trách bằng cách bỏ tick các khu vực hiện tại và chọn
+                        khu vực mới.
                       </div>
                     </div>
                   )}
