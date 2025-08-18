@@ -70,12 +70,14 @@ import {
   goodsReceipts,
   } from "../libs/data";
 
+import { useNavigate } from "react-router-dom";
 import { getCurrentMonthOrders,getAllEmployees,getPurchaseOrdersNCC } from "../services/api";
 import type { CurrentMonthOrdersData,GetAllEmployeesResponse,GetPurchaseOrdersNCCResponse } from "../services/api";
 export default function AdminDashboard() {
   const { state } = useApp();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState("overview");
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const [currentMonthData, setCurrentMonthData] = useState<CurrentMonthOrdersData | null>(null);
     const [employeesData, setEmployeesData] = useState<GetAllEmployeesResponse | null>(null);
@@ -271,13 +273,15 @@ export default function AdminDashboard() {
   const OverviewContent = () => (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tổng đơn hàng tháng {currentMonthData?.thongTinThang?.thang}/{currentMonthData?.thongTinThang?.nam}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Tổng đơn hàng tháng {currentMonthData?.thongTinThang?.thang || new Date().getMonth() + 1}/{currentMonthData?.thongTinThang?.nam || new Date().getFullYear()}
+            </CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
             {loadingStats ? (
               <div className="space-y-2">
                 <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
@@ -286,9 +290,21 @@ export default function AdminDashboard() {
             ) : (
               <>
                 <div className="text-2xl font-bold">{stats.totalOrders}</div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mb-2">
                   + {stats.pendingOrders} đơn chờ duyệt
                 </p>
+                {/* Navigation button */}
+                <div className="pt-1">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full flex items-center gap-1 text-xs h-8"
+                    onClick={() => navigate("/admin/orders")}
+                  >
+                    <ShoppingCart className="h-3 w-3" />
+                    Quản lý Đơn hàng
+                  </Button>
+                </div>
               </>
             )}
           </CardContent>
@@ -296,10 +312,89 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Doanh thu tháng {currentMonthData?.thongTinThang?.thang}/{currentMonthData?.thongTinThang?.nam}</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Phiếu đặt hàng NCC</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            {loadingStats ? (
+              <div className="space-y-2">
+                <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold ">{stats.totalPurchaseOrdersNCC}</div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  {purchaseOrdersNCCData ? (
+                    `Tháng ${new Date().getMonth() + 1}/${new Date().getFullYear()}`
+                  ) : (
+                    `Tổng phiếu đặt hàng`
+                  )}
+                </p>
+                {/* Navigation button */}
+                <div className="pt-1">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full flex items-center gap-1 text-xs h-8"
+                    onClick={() => navigate("/admin/purchase-orders")}
+                  >
+                    <FileText className="h-3 w-3" />
+                    Quản lý Phiếu đặt hàng NCC
+                  </Button>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Nhân viên</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {loadingStats ? (
+              <div className="space-y-2">
+                <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{stats.totalEmployees}</div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  {employeesData ? (
+                    `${getActiveEmployeesCount()} đang làm việc`
+                  ) : (
+                    `Tổng số nhân viên`
+                  )}
+                </p>
+                {/* Navigation button */}
+                <div className="pt-1">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full flex items-center gap-1 text-xs h-8"
+                    onClick={() => navigate("/admin/employees")}
+                  >
+                    <Users className="h-3 w-3" />
+                    Quản lý Nhân viên
+                  </Button>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Card Doanh thu với nút Báo cáo */}
+        <Card className="relative">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium pr-2">
+              Doanh thu tháng {currentMonthData?.thongTinThang?.thang || new Date().getMonth() + 1}/{currentMonthData?.thongTinThang?.nam || new Date().getFullYear()}
+            </CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          </CardHeader>
+          <CardContent className="space-y-3">
             {loadingStats ? (
               <div className="space-y-2">
                 <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
@@ -310,83 +405,30 @@ export default function AdminDashboard() {
                 <div className="text-2xl font-bold">
                   {formatPrice(stats.totalRevenue)}
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mb-2">
                   {currentMonthData ? (
                     `${stats.completedOrders} đơn hoàn tất`
                   ) : (
-                    ""
+                    "Tổng doanh thu tháng"
                   )}
                 </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Nhân viên</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loadingStats ? (
-              <div className="space-y-2">
-                <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">{stats.totalEmployees}</div>
-                <p className="text-xs text-muted-foreground">
-                  {employeesData ? (
-                    `${getActiveEmployeesCount()} đang làm việc`
-                  ) : (
-                    `Tổng số nhân viên`
-                  )}
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Phiếu đặt hàng</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loadingStats ? (
-              <div className="space-y-2">
-                <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold text-blue-600">{stats.totalPurchaseOrdersNCC}</div>
-                <p className="text-xs text-muted-foreground">
-                  {purchaseOrdersNCCData ? (
-                    `Tháng ${new Date().getMonth() + 1}/${new Date().getFullYear()}`
-                  ) : (
-                    `Tổng phiếu đặt hàng`
-                  )}
-                </p>
+                {/* Nút Báo cáo doanh thu */}
+                <div className="pt-1">
+                  <RevenueReport />
+                </div>
               </>
             )}
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex gap-4 mb-6">
-        <RevenueReport />
-        {/* Add other action buttons here if needed */}
-      </div>
-
-      {/* Recent Orders - sử dụng dữ liệu từ API */}
+      {/* Recent Orders section */}
       <Card>
         <CardHeader>
           <CardTitle>Đơn hàng gần đây</CardTitle>
           <CardDescription>
             {currentMonthData ? (
-              `Tháng ${currentMonthData.thongTinThang.thang}/${currentMonthData.thongTinThang.nam}`
+              `Tháng ${currentMonthData.thongTinThang.thang}/${currentMonthData.thongTinThang.nam} - ${currentMonthData.thongTinThang.tongSoDonHang} đơn hàng`
             ) : (
               "Danh sách đơn hàng mới nhất cần xử lý"
             )}
@@ -414,12 +456,10 @@ export default function AdminDashboard() {
                   <TableHead>Tổng tiền</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead>Ngày đặt</TableHead>
-                  <TableHead>Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(currentMonthData?.orders || orders).slice(0, 5).map((order) => {
-                  // Sử dụng dữ liệu từ API hoặc fallback to mock data
                   const isApiData = currentMonthData && order.MaDDH;
                   
                   return (
@@ -439,16 +479,6 @@ export default function AdminDashboard() {
                       <TableCell>
                         {formatDate(isApiData ? order.NgayTao : order.orderDate)}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -457,6 +487,7 @@ export default function AdminDashboard() {
           )}
         </CardContent>
       </Card>
+
     </div>
   );
 
@@ -701,9 +732,17 @@ export default function AdminDashboard() {
     </div>
   );
 
+  useEffect(() => {
+    // Determine activeTab based on current path
+    const path = location.pathname;
+    if (path === "/admin" || path === "/admin/dashboard") {
+      setActiveTab("dashboard");
+    }
+  }, [location.pathname]);
   // Get content component based on active tab
   const getTabContent = () => {
     switch (activeTab) {
+      case "dashboard":
       case "overview":
         return <OverviewContent />;
       case "products":
