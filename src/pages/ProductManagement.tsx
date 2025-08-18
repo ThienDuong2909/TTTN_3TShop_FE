@@ -1295,7 +1295,7 @@ export default function ProductManagement() {
                                         ? "default"
                                         : "secondary"
                                     }
-                                    className="text-xs px-2 py-1"
+                                    className="text-xs px-2 py-1 text-nowrap"
                                     style={{
                                       backgroundColor: product.TrangThai
                                         ? "#825B32"

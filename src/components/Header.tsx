@@ -106,7 +106,7 @@ function Header() {
                 <span className="text-white font-bold text-lg">F</span>
               </div>
               <span className="text-xl font-bold text-gray-900 dark:text-white">
-                FashionHub
+                3TShop
               </span>
             </Link>
           </div>

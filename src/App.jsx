@@ -146,14 +146,14 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/orders" element={
-            <ProtectedRoute requiredPermissions={['donhang.xem', 'donhang.xem_duoc_giao']}>
+            <ProtectedRoute requiredPermissions={['donhang.xem', 'donhang.xem_duoc_giao','donhang.xem']}>
               <AdminLayout>
                 <Orders />
               </AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/orders/:id" element={
-            <ProtectedRoute requiredPermissions={['donhang.xem', 'donhang.xem_duoc_giao']}>
+            <ProtectedRoute requiredPermissions={['donhang.xem', 'donhang.xem_duoc_giao','donhang.xem']}>
               <AdminLayout>
                 <AdminOrderDetail
                 />

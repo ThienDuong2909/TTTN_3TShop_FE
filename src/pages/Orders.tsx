@@ -1494,21 +1494,40 @@ export default function Orders() {
                                   <TableCell className="text-xs text-center">
                                     <div className="flex items-center justify-center gap-1">
                                       {order.MaTTDH === 1 &&
-                                        !isDeliveryStaff && ( // Chỉ hiển thị cho đơn hàng "Đã đặt" và không phải delivery staff
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-8 px-3 text-xs text-[#825B32] border-[#825B32] hover:bg-[#825B32]/10"
-                                            title="Duyệt đơn hàng"
-                                            onClick={(e) =>
-                                              handleApproveOrder(order.MaDDH, e)
-                                            }
-                                          >
-                                            <CheckCircle className="h-3 w-3 mr-1" />
-                                            Duyệt
-                                          </Button>
+                                        !isDeliveryStaff && (
+                                          <>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="h-8 px-3 text-xs text-[#825B32] border-[#825B32] hover:bg-[#825B32]/10"
+                                              title="Duyệt đơn hàng"
+                                              onClick={(e) =>
+                                                handleApproveOrder(
+                                                  order.MaDDH,
+                                                  e
+                                                )
+                                              }
+                                            >
+                                              <CheckCircle className="h-3 w-3 mr-1" />
+                                              Duyệt
+                                            </Button>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="h-8 px-3 text-xs text-red-600 border-red-600 hover:bg-red-50"
+                                              title="Hủy đơn hàng"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setOrderToCancel(order.MaDDH);
+                                                setShowCancelModal(true);
+                                              }}
+                                            >
+                                              <XCircle className="h-3 w-3 mr-1" />
+                                              Hủy
+                                            </Button>
+                                          </>
                                         )}
-                                      {order.MaTTDH === 2 && ( // Đơn hàng "Đã duyệt"
+                                      {order.MaTTDH === 2 && (
                                         <>
                                           {!order.HoaDon ? (
                                             // Nếu chưa có hóa đơn, hiển thị nút tạo hóa đơn
