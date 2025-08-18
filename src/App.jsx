@@ -61,6 +61,8 @@ import TestPage from "./pages/TestPage";
 
 
 import ScrollToTop from "./components/ScrollToTop";
+import { Navigate } from "react-router-dom";
+
 // Wrapper component for main layout
 const MainLayout = ({ children }) => (
   <div className="min-h-screen bg-background">

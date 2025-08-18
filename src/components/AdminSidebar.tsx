@@ -8,10 +8,11 @@ import {
   UserCheck,
   Shield,
   RotateCcw,
+  BarChart3,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useApp } from "../contexts/AppContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { hasPermission } from "../utils/permissions";
 
 interface AdminSidebarProps {
@@ -26,24 +27,25 @@ interface NavigationItem {
   permission: string;
   route: string;
   alternativePermissions?: string[];
+  isDashboard?: boolean;
 }
 
 export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
   const { state } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const userPermissions = state.user?.permissions || [];
-  // const isAdmin = state.user?.role === "Admin";
 
   const navigation: NavigationItem[] = [
-    // {
-    //   name: "Tổng quan",
-    //   id: "overview",
-    //   icon: BarChart3,
-    //   permission: "toanquyen",
-    //   route: "/admin",
-    //   alternativePermissions: ["donhang.xem_duoc_giao", "donhang.xem"],
-    // },
+    {
+      name: "Dashboard",
+      id: "dashboard",
+      icon: BarChart3,
+      permission: "toanquyen",
+      route: "/admin",
+      isDashboard: true,
+    },
     {
       name: "Sản phẩm",
       id: "products",
@@ -75,13 +77,6 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
       route: "/admin/return-management",
       alternativePermissions: ["thongtin.xem"],
     },
-    // {
-    //   name: "Khách hàng",
-    //   id: "customers",
-    //   icon: Users,
-    //   permission: "toanquyen",
-    //   route: "/admin/customers",
-    // },
     {
       name: "Phiếu đặt hàng",
       id: "purchase-orders",
@@ -162,6 +157,18 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
     navigate(item.route);
   };
 
+  const isItemActive = (item: NavigationItem) => {
+    // Special case cho Dashboard
+    if (item.isDashboard) {
+      return location.pathname === "/admin" || 
+             location.pathname === "/admin/dashboard" ||
+             activeTab === "dashboard";
+    }
+    
+    // For other items, check if current path starts with item route
+    return location.pathname.startsWith(item.route) || activeTab === item.id;
+  };
+
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-52 lg:flex-col">
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-4 pb-4 shadow-sm">
@@ -180,30 +187,76 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
             </div>
           </div>
         </div>
+        
         <nav className="flex flex-1 flex-col">
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
             <li>
               <ul role="list" className="-mx-2 space-y-1">
                 {filteredNavigation.map((item) => {
-                  const isActive = activeTab === item.id;
+                  const isActive = isItemActive(item);
+                  const isDashboard = item.isDashboard;
+                  
                   return (
                     <li key={item.name}>
                       <button
                         onClick={() => handleItemClick(item)}
-                        className={`group flex gap-x-2 rounded-md p-2 text-sm leading-6 font-medium w-full text-left ${
-                          isActive
-                            ? "bg-brand-50 text-brand-600 dark:bg-brand-900/50 dark:text-brand-400"
-                            : "text-gray-700 hover:text-brand-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-brand-400 dark:hover:bg-gray-700"
+                        className={`group flex gap-x-2 rounded-md p-2 text-sm leading-6 font-medium w-full text-left transition-all duration-200 relative overflow-hidden ${
+                          isDashboard
+                            ? // Dashboard styling - Active giống hover, nhẹ nhàng hơn
+                              isActive
+                                ? "bg-gradient-to-r from-brand-50 via-brand-100 to-blue-50 text-brand-700 border border-brand-200 font-semibold shadow-sm dark:from-brand-900/30 dark:via-brand-900/40 dark:to-blue-900/30 dark:text-brand-300 dark:border-brand-600"
+                                : "bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 text-gray-600 border border-gray-300 hover:from-brand-50 hover:via-brand-100 hover:to-blue-50 hover:border-brand-200 hover:text-brand-700 dark:from-gray-700 dark:via-gray-800 dark:to-gray-700 dark:text-gray-400 dark:border-gray-600 dark:hover:from-brand-900/30 dark:hover:to-blue-900/30 dark:hover:text-brand-300"
+                            : // Regular menu items
+                              isActive
+                                ? "bg-brand-50 text-brand-600 dark:bg-brand-900/50 dark:text-brand-400"
+                                : "text-gray-700 hover:text-brand-600 hover:bg-gray-50 dark:text-gray-600 dark:hover:text-brand-600 dark:hover:bg-gray-700"
                         }`}
                       >
                         <item.icon
-                          className={`h-5 w-5 shrink-0 ${
-                            isActive
-                              ? "text-brand-600 dark:text-brand-400"
-                              : "text-gray-400 group-hover:text-brand-600 dark:group-hover:text-brand-400"
+                          className={`h-5 w-5 shrink-0 transition-all duration-200 relative z-10 ${
+                            isDashboard
+                              ? isActive
+                                ? "text-brand-600 dark:text-brand-400" // Màu icon nhẹ nhàng khi active
+                                : "text-gray-500 group-hover:text-brand-600 dark:text-gray-400 dark:group-hover:text-brand-400"
+                              : isActive
+                                ? "text-brand-600 dark:text-brand-400"
+                                : "text-gray-400 group-hover:text-brand-600 dark:group-hover:text-brand-400"
                           }`}
                         />
-                        {item.name}
+                        
+                        <span className={`relative z-10 transition-all duration-200 ${
+                          isDashboard 
+                            ? isActive 
+                              ? "font-semibold text-brand-700 dark:text-brand-300" // Font weight vừa phải
+                              : "font-medium text-gray-600 group-hover:text-brand-700 dark:text-gray-400 dark:group-hover:text-brand-300"
+                            : isActive 
+                              ? "font-medium"
+                              : ""
+                        }`}>
+                          {item.name}
+                        </span>
+                        
+                        {/* Dashboard indicators - Nhẹ nhàng hơn */}
+                        {isDashboard && (
+                          <div className="ml-auto flex items-center relative z-10">
+                            {isActive ? (
+                              // Active indicator - subtle, không quá nổi bật
+                              <div className="flex items-center">
+                                <div className="h-2 w-2 bg-brand-500 rounded-full opacity-80 dark:bg-brand-400"></div>
+                              </div>
+                            ) : (
+                              // Inactive indicator - static
+                              <div className="flex items-center">
+                                <div className="h-2 w-0.5 bg-gray-400 rounded-full opacity-30 group-hover:bg-brand-400 group-hover:opacity-70 transition-all duration-200"></div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Active border accent - Subtle */}
+                        {isDashboard && isActive && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 rounded-r-full opacity-60 dark:bg-brand-400"></div>
+                        )}
                       </button>
                     </li>
                   );

@@ -605,53 +605,53 @@ totalRow.height = 50;
 // Cập nhật signature section layout
 const signatureRowNum = worksheet.lastRow.number + 2; // Thêm 1 row spacing
 
-// Chỉ có signature title cho người phê duyệt (căn giữa - column D)
-worksheet.getCell(`${String.fromCharCode(65 + startCol + 1)}${signatureRowNum}`).value = 'Người phê duyệt'; // Column D
+  // Signature title cho người phê duyệt (căn giữa - columns E:G)
+  worksheet.getCell(`${String.fromCharCode(65 + startCol + 2)}${signatureRowNum}`).value = 'Người phê duyệt'; // Column E
 
-// Merge cells cho signature title (chiếm 3 cột D:F)
-worksheet.mergeCells(`${String.fromCharCode(65 + startCol + 1)}${signatureRowNum}:${String.fromCharCode(65 + startCol + 3)}${signatureRowNum}`); // D:F cho "Người phê duyệt"
+  // Merge cells cho signature title (chiếm 3 cột E:G thay vì D:F)
+  worksheet.mergeCells(`${String.fromCharCode(65 + startCol + 2)}${signatureRowNum}:${String.fromCharCode(65 + startCol + 4)}${signatureRowNum}`); // E:G cho "Người phê duyệt"
 
-// Style signature title
-worksheet.getCell(`${String.fromCharCode(65 + startCol + 1)}${signatureRowNum}`).font = { 
-  size: 14,
-  bold: true, 
-  color: { argb: 'FF374151' }
-};
-worksheet.getCell(`${String.fromCharCode(65 + startCol + 1)}${signatureRowNum}`).alignment = { 
-  horizontal: 'center', 
-  vertical: 'middle' 
-};
-worksheet.getRow(signatureRowNum).height = 30;
+  // Style signature title
+  worksheet.getCell(`${String.fromCharCode(65 + startCol + 2)}${signatureRowNum}`).font = { 
+    size: 14,
+    bold: true, 
+    color: { argb: 'FF374151' }
+  };
+  worksheet.getCell(`${String.fromCharCode(65 + startCol + 2)}${signatureRowNum}`).alignment = { 
+    horizontal: 'center', 
+    vertical: 'middle' 
+  };
+  worksheet.getRow(signatureRowNum).height = 30;
 
-// Signature note
-const noteRowNum = signatureRowNum + 1;
-worksheet.getCell(`${String.fromCharCode(65 + startCol + 1)}${noteRowNum}`).value = '(Ký và ghi rõ họ & tên)'; // Column D
+  // Signature note
+  const noteRowNum = signatureRowNum + 1;
+  worksheet.getCell(`${String.fromCharCode(65 + startCol + 2)}${noteRowNum}`).value = '(Ký và ghi rõ họ & tên)'; // Column E
 
-// Merge cells cho signature note (chiếm 3 cột D:F)
-worksheet.mergeCells(`${String.fromCharCode(65 + startCol + 1)}${noteRowNum}:${String.fromCharCode(65 + startCol + 3)}${noteRowNum}`); // D:F cho note
+  // Merge cells cho signature note (chiếm 3 cột E:G thay vì D:F)
+  worksheet.mergeCells(`${String.fromCharCode(65 + startCol + 2)}${noteRowNum}:${String.fromCharCode(65 + startCol + 4)}${noteRowNum}`); // E:G cho note
 
-// Style signature note
-worksheet.getCell(`${String.fromCharCode(65 + startCol + 1)}${noteRowNum}`).font = { 
-  size: 12,
-  italic: true, 
-  color: { argb: 'FF6B7280' }
-};
-worksheet.getCell(`${String.fromCharCode(65 + startCol + 1)}${noteRowNum}`).alignment = { 
-  horizontal: 'center', 
-  vertical: 'middle' 
-};
-worksheet.getRow(noteRowNum).height = 20;
+  // Style signature note
+  worksheet.getCell(`${String.fromCharCode(65 + startCol + 2)}${noteRowNum}`).font = { 
+    size: 12,
+    italic: true, 
+    color: { argb: 'FF6B7280' }
+  };
+  worksheet.getCell(`${String.fromCharCode(65 + startCol + 2)}${noteRowNum}`).alignment = { 
+    horizontal: 'center', 
+    vertical: 'middle' 
+  };
+  worksheet.getRow(noteRowNum).height = 20;
 
-// Cập nhật column widths cho layout 2 cột
-worksheet.columns = [
-  { width: 5 },   // Column A (margin)
-  { width: 25 },  // Column B - Period/Year part 1
-  { width: 25 },  // Column C - Period/Year part 2
-  { width: 25 },  // Column D - Period/Year part 3
-  { width: 25 },  // Column E - Doanh Thu part 1
-  { width: 25 },  // Column F - Doanh Thu part 2
-  { width: 25 },  // Column G - Doanh Thu part 3
-];
+  // Cập nhật column widths cho layout 2 cột
+  worksheet.columns = [
+    { width: 5 },   // Column A (margin)
+    { width: 25 },  // Column B - Period/Year part 1
+    { width: 25 },  // Column C - Period/Year part 2
+    { width: 25 },  // Column D - Period/Year part 3
+    { width: 25 },  // Column E - Doanh Thu part 1
+    { width: 25 },  // Column F - Doanh Thu part 2
+    { width: 25 },  // Column G - Doanh Thu part 3
+  ];
 
   // Save file
   const buffer = await workbook.xlsx.writeBuffer();
@@ -774,47 +774,69 @@ const exportToWord = () => {
             color: #DC2626;
           }
 
+          /* Table layout cho signature section với 2 rows riêng biệt */
           .signature-table {
-            width: 50%; 
-            margin: 60px auto 0 auto; 
+            width: 100%;
+            margin: 60px 0 0 0;
             border-collapse: collapse;
+            border: none;
+            border-spacing: 0; /* Loại bỏ spacing giữa cells */
           }
 
           .signature-table td {
-             width: 100%;
-            text-align: center;
-            vertical-align: top;
-            padding: 20px 40px;
             border: none;
+            padding: 0;
+            margin: 0;
+            vertical-align: top;
+            line-height: 1; /* Giảm line-height xuống minimum */
+          }
+
+          .signature-table .left-cell {
+            width: 50%;
+            text-align: left;
+          }
+
+          .signature-table .right-cell {
+            width: 50%;
+            text-align: center;
           }
 
           .signature-title {
             font-size: 16px;
             font-weight: bold;
             color: #374151;
-            margin-bottom: 3px;
+            margin: 0;
+            padding: 0;
+            line-height: 1; /* Giảm line-height */
           }
 
           .signature-note {
             font-size: 12px;
             font-style: italic;
             color: #6B7280;
-            margin-bottom: 50px;
+            margin: 0;
+            padding: 0;
+            line-height: 1; /* Giảm line-height */
           }
 
           .signature-line {
             border-bottom: 1px solid #D1D5DB;
             height: 50px;
-            margin: 0 auto;
+            margin: 20px auto 0 auto;
             width: 200px;
+          }
+
+          /* Loại bỏ spacing giữa rows */
+          .signature-table tr {
+            margin: 0;
+            padding: 0;
+            height: auto;
           }
 
           @media print {
             .signature-table {
-              position: fixed;
-              bottom: 0;
-              left: 0;
-              right: 0;
+              position: relative;
+              margin-top: 40px;
             }
             
             .data-table thead {
@@ -845,7 +867,7 @@ const exportToWord = () => {
           </div>
           <div class="info-item">
             <span class="info-label">Chức vụ:</span>
-            <span class="info-value">${state.user?.role === 'admin' ? 'Quản trị viên' : 'Nhân viên'}</span>
+            <span class="info-value">${state.user?.role === 'Admin' ? 'Quản trị viên' : 'Nhân viên'}</span>
           </div>
           <div class="info-item">
             <span class="info-label">Thời gian lập báo cáo:</span>
@@ -876,10 +898,23 @@ const exportToWord = () => {
           </span>
         </div>
 
+        <!-- Table layout với 2 rows riêng biệt cho signature section -->
         <table class="signature-table">
+          <!-- Row 1: Người phê duyệt -->
           <tr>
-            <td style="width: 100%; text-align: center;">
+            <td class="left-cell">
+              <!-- Cột trái để trống -->
+            </td>
+            <td class="right-cell">
               <div class="signature-title">Người phê duyệt</div>
+            </td>
+          </tr>
+          <!-- Row 2: (Ký và ghi rõ họ & tên) - ngay sát dưới -->
+          <tr>
+            <td class="left-cell">
+              <!-- Cột trái để trống -->
+            </td>
+            <td class="right-cell">
               <div class="signature-note">(Ký và ghi rõ họ & tên)</div>
               <div class="signature-line"></div>
             </td>
@@ -916,8 +951,8 @@ const exportToWord = () => {
       if (!open) resetForm();
     }}>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <TrendingUp className="h-4 w-4" />
+        <Button size="sm" variant="outline" className="w-full flex items-center gap-1 text-xs h-8">
+          <TrendingUp className="h-3 w-3" />
           Báo Cáo Doanh Thu
         </Button>
       </DialogTrigger>

@@ -557,7 +557,7 @@ export default function Index() {
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-16 bg-brand-600 text-white">
+      {/* <section className="py-16 bg-brand-600 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">
             Đăng ký nhận ưu đãi đặc biệt
@@ -577,7 +577,7 @@ export default function Index() {
             </Button>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }
