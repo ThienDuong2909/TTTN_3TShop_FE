@@ -283,6 +283,9 @@ export const ProductAdd = () => {
         throw new Error("OpenAI API key không được cấu hình. Vui lòng kiểm tra file .env");
       }
 
+      // Tạo danh sách danh mục hiện có để AI tham khảo
+      const availableCategories = categories.map(cat => cat.TenLoai).join(", ");
+
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -297,17 +300,25 @@ export const ProductAdd = () => {
               content: [
                 {
                   type: "text",
-                  text: `Hãy phân tích ảnh sau và trả lời CHỈ với JSON thuần túy, không có markdown, không có text khác:
+                  text: `Hãy phân tích ảnh sau và trả lời CHỈ với JSON thuần túy, không có markdown, không có text khác.
+
+Danh mục sản phẩm hiện có trong hệ thống: ${availableCategories}
+
+Hãy chọn danh mục phù hợp nhất từ danh sách trên hoặc gợi ý danh mục mới nếu cần thiết.
 
 {
-  "type": "Tên loại sản phẩm (ví dụ: Áo thun, Quần short, Quần jean, Váy...)",
+  "category_name": "Tên danh mục phù hợp nhất (phải có trong danh sách: ${availableCategories})",
+  "category_id": "Mã danh mục tương ứng (số)",
   "gender": "Nam / Nữ / Unisex",
   "main_color": "Tên màu sắc chính",
   "suggested_name": "Tên sản phẩm gợi ý",
-  "description": "Mô tả ngắn về dáng, họa tiết, phong cách, dịp phù hợp, giới tính, mô tả cực hay và dài để marketing"
+  "description": "Mô tả thật dài và hay về dáng, họa tiết, phong cách, dịp phù hợp, giới tính, mô tả cực hay và dài để marketing"
 }
 
-QUAN TRỌNG: Chỉ trả về JSON thuần túy, không có \`\`\`json, không có \`\`\`, không có text giải thích.`
+QUAN TRỌNG: 
+- Chỉ trả về JSON thuần túy, không có \`\`\`json, không có \`\`\`, không có text giải thích
+- category_name phải khớp chính xác với một trong các danh mục: ${availableCategories}
+- category_id phải là mã số tương ứng với category_name`
                 },
                 {
                   type: "image_url",
@@ -371,14 +382,41 @@ QUAN TRỌNG: Chỉ trả về JSON thuần túy, không có \`\`\`json, không 
         throw new Error('AI trả về dữ liệu không hợp lệ');
       }
 
+      // Tìm danh mục phù hợp từ kết quả AI
+      let selectedCategoryId = 0;
+      if (analysis.category_name && analysis.category_id) {
+        // Kiểm tra xem category_id có khớp với category_name không
+        const matchedCategory = categories.find(cat => 
+          cat.MaLoaiSP === parseInt(analysis.category_id) && 
+          cat.TenLoai === analysis.category_name
+        );
+        
+        if (matchedCategory) {
+          selectedCategoryId = matchedCategory.MaLoaiSP;
+        } else {
+          // Nếu không khớp, tìm theo tên
+          const categoryByName = categories.find(cat => 
+            cat.TenLoai.toLowerCase() === analysis.category_name.toLowerCase()
+          );
+          if (categoryByName) {
+            selectedCategoryId = categoryByName.MaLoaiSP;
+          }
+        }
+      }
+
       // Auto-fill form with AI suggestions
       setFormData(prev => ({
         ...prev,
         TenSP: analysis.suggested_name || prev.TenSP,
         MoTa: analysis.description || prev.MoTa,
+        MaLoaiSP: selectedCategoryId || prev.MaLoaiSP,
       }));
 
-      toast.success("Phân tích AI thành công! Đã cập nhật tên và mô tả sản phẩm.");
+      if (selectedCategoryId > 0) {
+        toast.success(`Phân tích AI thành công! Đã cập nhật tên, mô tả và chọn danh mục: ${analysis.category_name}`);
+      } else {
+        toast.success("Phân tích AI thành công! Đã cập nhật tên và mô tả sản phẩm.");
+      }
     } catch (error) {
       console.error('AI Analysis error:', error);
       toast.error(error instanceof Error ? error.message : "Có lỗi xảy ra khi phân tích AI");
