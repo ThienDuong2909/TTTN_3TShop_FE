@@ -296,6 +296,27 @@ export function createPromotion(promotionData: any): Promise<any>;
 export function updatePromotion(promotionId: string | number, promotionData: any): Promise<any>;
 export function deletePromotion(promotionId: string | number): Promise<any>;
 export function getProductsForPromotion(): Promise<any>;
+export function getAvailableProducts(maDot: string | number): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    dotGiamGia: {
+      MaDot: number;
+      MoTa: string;
+      NgayBatDau: string;
+      NgayKetThuc: string;
+    };
+    availableProducts: Array<{
+      MaSP: number;
+      TenSP: string;
+      MoTa: string;
+      GiaHienTai: number;
+      TenLoaiSP: string;
+      AnhChinh: string;
+    }>;
+    totalItems: number;
+  };
+}>;
 export function getAvailableProductsForPromotion(): Promise<{
   success: boolean;
   message: string;
