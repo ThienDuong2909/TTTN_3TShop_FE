@@ -30,6 +30,7 @@ import {
 import {
   getAvailableProductsForPromotion,
   addProductToPromotion,
+  getAvailableProducts,
 } from "../services/api";
 import { useToast } from "../hooks/use-toast";
 
@@ -111,22 +112,29 @@ export function AddProductToDiscountDialog({
   const loadProducts = async () => {
     try {
       setLoadingProducts(true);
-      const response = await getAvailableProductsForPromotion();
+      const response = await getAvailableProducts(period.MaDot);
 
-      if (response.success) {
-        // Transform API response to match our interface
-        const products: ProductForDiscount[] = response.data.map(
-          (product: any) => ({
-            MaSP: product.MaSP,
-            TenSP: product.TenSP,
-            AnhSP: product.AnhChinh || "/default-image.jpg", // Updated field name
-            DanhMuc: product.TenLoaiSP || "Khác", // Updated field name
-            GiaGoc: parseFloat(product.GiaHienTai?.toString() || "0"), // Updated field name
-            TrangThai: product.TrangThai ? "active" : "inactive",
-            DaCoGiam: product.DaCoGiam || false,
-            PhanTramGiamHienTai: product.PhanTramGiamHienTai || 0,
-          })
-        );
+      console.log("Available products for promotion: ", response);
+
+      if (
+        response.success &&
+        response.data?.availableProducts &&
+        Array.isArray(response.data.availableProducts)
+      ) {
+        const products: ProductForDiscount[] =
+          response.data.availableProducts.map((product: any) => {
+            return {
+              MaSP: product.MaSP,
+              TenSP: product.TenSP,
+              AnhSP: product.AnhChinh || "/default-image.jpg",
+              DanhMuc: product.TenLoaiSP || "Khác",
+              GiaGoc: parseFloat(product.GiaHienTai?.toString() || "0"),
+              TrangThai: "active", // Tất cả sản phẩm từ API này đều là available
+              DaCoGiam: false, // API đã lọc ra những sản phẩm chưa có giảm giá
+              PhanTramGiamHienTai: 0,
+            };
+          });
+
         setAvailableProducts(products);
       } else {
         toast({
@@ -289,7 +297,7 @@ export function AddProductToDiscountDialog({
           </DialogTitle>
           <DialogDescription>
             Chọn sản phẩm và thiết lập phần trăm giảm giá cho đợt khuyến mại #
-            {period.MaDot.toString().padStart(3, "0")}
+            {period.MaDot}
           </DialogDescription>
         </DialogHeader>
 

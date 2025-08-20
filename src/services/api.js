@@ -1521,13 +1521,26 @@ export const getProductsForPromotion = async () => {
 };
 
 // Lấy danh sách sản phẩm available cho đợt giảm giá
-export const getAvailableProductsForPromotion = async () => {
+export const getAvailableProducts = async (maDot) => {
   try {
-    const response = await api.get("/products");
+    const response = await api.get(`/promotions/${maDot}/available-products`);
     return {
       success: response.data.success,
       message: response.data.message,
-      data: response.data.data, // Direct access to data array
+      data: response.data.data,
+    };
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const getAvailableProductsForPromotion = async () => {
+  try {
+    const response = await api.get(`/products`);
+    return {
+      success: response.data.success,
+      message: response.data.message,
+      data: response.data.data,
     };
   } catch (error) {
     return handleError(error);
