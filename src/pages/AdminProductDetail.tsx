@@ -84,6 +84,12 @@ interface ApiBinhLuan {
   MaHex: string;
 }
 
+interface ApiBinhLuanData {
+  avgRate: number;
+  luotBinhLuan: number;
+  DanhSachBinhLuan: ApiBinhLuan[];
+}
+
 interface ApiProductDetail {
   MaSP: number;
   TenSP: string;
@@ -91,8 +97,7 @@ interface ApiProductDetail {
   MaNCC: number;
   MoTa: string;
   TrangThai: boolean;
-  SoLuongBinhLuan?: number;
-  SoSaoTrungBinh?: string;
+  NgayTao?: string;
   NhaCungCap: {
     MaNCC: number;
     TenNCC: string;
@@ -108,13 +113,13 @@ interface ApiProductDetail {
   };
   AnhSanPhams: ApiProductImage[];
   ThayDoiGia: Array<{
-    MaSP: number;
-    NgayThayDoi: string;
     Gia: string;
+    NgayThayDoi: string;
     NgayApDung: string;
   }>;
   ChiTietSanPhams: ApiProductVariant[];
-  BinhLuans?: ApiBinhLuan[];
+  CT_DotGiamGia?: any[];
+  BinhLuan?: ApiBinhLuanData;
 }
 
 export const AdminProductDetail: React.FC = () => {
@@ -135,6 +140,8 @@ export const AdminProductDetail: React.FC = () => {
       try {
         setLoading(true);
         const result = await getProductDetailById(id);
+
+        console.log("Product detail: ", result);
 
         if (result && result.success) {
           setProduct(result.data);
@@ -348,14 +355,14 @@ export const AdminProductDetail: React.FC = () => {
                   <p className="text-sm font-medium text-gray-500">Đánh giá</p>
                   <div className="flex items-center space-x-2">
                     <p className="text-xl font-bold text-[#825B32]">
-                      {product.SoSaoTrungBinh
-                        ? parseFloat(product.SoSaoTrungBinh).toFixed(1)
+                      {product.BinhLuan?.avgRate
+                        ? product.BinhLuan.avgRate.toFixed(1)
                         : "0.0"}
                     </p>
                     <Star className="w-4 h-4 text-yellow-500 fill-current" />
                   </div>
                   <p className="text-xs text-gray-500">
-                    {product.SoLuongBinhLuan || 0} bình luận
+                    {product.BinhLuan?.luotBinhLuan || 0} bình luận
                   </p>
                 </div>
               </div>
@@ -364,7 +371,10 @@ export const AdminProductDetail: React.FC = () => {
                 size="sm"
                 onClick={() => setShowComments(true)}
                 className="text-[#825B32] border-[#825B32] hover:bg-[#825B32] hover:text-white"
-                disabled={!product.BinhLuans || product.BinhLuans.length === 0}
+                disabled={
+                  !product.BinhLuan?.DanhSachBinhLuan ||
+                  product.BinhLuan.DanhSachBinhLuan.length === 0
+                }
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Xem
@@ -845,7 +855,10 @@ export const AdminProductDetail: React.FC = () => {
         isOpen={showPriceHistory}
         onClose={() => setShowPriceHistory(false)}
         productName={product.TenSP}
-        priceHistory={product.ThayDoiGia}
+        priceHistory={product.ThayDoiGia.map((price) => ({
+          MaSP: product.MaSP,
+          ...price,
+        }))}
         formatCurrency={formatCurrency}
       />
 
@@ -854,9 +867,9 @@ export const AdminProductDetail: React.FC = () => {
         isOpen={showComments}
         onClose={() => setShowComments(false)}
         productName={product.TenSP}
-        averageRating={product.SoSaoTrungBinh}
-        totalComments={product.SoLuongBinhLuan}
-        comments={product.BinhLuans}
+        averageRating={product.BinhLuan?.avgRate?.toString()}
+        totalComments={product.BinhLuan?.luotBinhLuan}
+        comments={product.BinhLuan?.DanhSachBinhLuan}
       />
     </div>
   );
