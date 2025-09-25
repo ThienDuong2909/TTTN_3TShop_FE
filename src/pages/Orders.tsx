@@ -811,7 +811,10 @@ export default function Orders() {
     // Fetch available delivery staff
     try {
       setLoadingStaff(true);
-      const result = await getAvailableDeliveryStaff(order.DiaChiGiao);
+      const result = await getAvailableDeliveryStaff(
+        order.ThoiGianGiao,
+        order.DiaChiGiao
+      );
 
       if (result && result.success) {
         setDeliveryStaff(result.data || []);

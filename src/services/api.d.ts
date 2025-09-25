@@ -76,7 +76,7 @@ export function getOrderStatistics(): Promise<any>;
 export function getOrderDetailById(orderId: string | number): Promise<any>;
 export function updateOrderStatus(orderId: number, statusData: any): Promise<any>;
 export function updateBatchOrderStatus(ordersData: any): Promise<any>;
-export function getAvailableDeliveryStaff(address: string): Promise<{
+export function getAvailableDeliveryStaff(deliveryTime: string, address: string): Promise<{
   success: boolean;
   message: string;
   data: Array<{
@@ -160,6 +160,7 @@ export declare function getProductsByCategory(id: number): Promise<any[]>;
 
 
 export function getCurrentExchangeRate(): Promise<number>;
+
 // ...existing code...
 
 export function getBestSellerProducts(): Promise<any[]>;
@@ -768,3 +769,88 @@ export interface GetPurchaseOrdersNCCResponse {
 
 // Function declaration
 export declare function getPurchaseOrdersNCC(): Promise<GetPurchaseOrdersNCCResponse>;
+
+// ===================
+// DELIVERY AREA MANAGEMENT TYPES
+// ===================
+
+export interface KhuVuc {
+  MaKhuVuc: string; // Change to string to match actual data
+  TenKhuVuc: string;
+}
+
+export interface KhuVucPhuTrach extends KhuVuc {
+  NgayBatDau: string;
+  NgayTao?: string;
+}
+
+export interface KhuVucData {
+  ThongTinNhanVien?: {
+    MaNV: number;
+    TenNV: string;
+  };
+  MaNV?: number;
+  TenNV?: string;
+  KhuVucPhuTrach: KhuVucPhuTrach[];
+}
+
+export interface NewAreaSelection {
+  MaKhuVuc: string; // Change to string to match actual data
+  TenKhuVuc: string;
+  NgayBatDau: string;
+}
+
+export interface GetEmployeeAreasResponse {
+  success: boolean;
+  message: string;
+  data: KhuVucData;
+}
+
+export interface GetAvailableAreasResponse {
+  success: boolean;
+  message: string;
+  data: {
+    KhuVucChuaPhuTrach: KhuVuc[];
+  };
+}
+
+export interface RemoveEmployeeAreasRequest {
+  danhSachMaNVKV: string[];
+}
+
+export interface AddEmployeeAreasRequest {
+  danhSachKhuVuc: Array<{
+    MaKhuVuc: string;
+    NgayBatDau: string;
+  }>;
+}
+
+export interface EmployeeAreaApiResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
+// Function declarations
+export declare function getEmployeeAreas(employeeId: number): Promise<GetEmployeeAreasResponse>;
+export declare function getAvailableAreasForEmployee(employeeId: number): Promise<GetAvailableAreasResponse>;
+export declare function removeEmployeeAreas(areaIds: string[]): Promise<EmployeeAreaApiResponse>;
+export declare function addEmployeeAreas(employeeId: number, areaData: Array<{ MaKhuVuc: string; NgayBatDau: string }>): Promise<EmployeeAreaApiResponse>;
+
+// Inventory Report
+export declare function getInventoryReport(reportDate: string): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    ngayBaoCao: string;
+    data: Array<{
+      "Loại sản phẩm": string;
+      "Mã sản phẩm": number;
+      "Tên sản phẩm": string;
+      "Số lượng tồn": string;
+      "Giá nhập (trung bình)": string;
+    }>;
+  };
+}>;
+
+export declare function getInventoryReportPDF(reportDate: string, nguoiLap: string): Promise<Blob>;

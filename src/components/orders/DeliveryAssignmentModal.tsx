@@ -127,102 +127,98 @@ export const DeliveryAssignmentModal: React.FC<
                     Đang tải danh sách nhân viên...
                   </div>
                 </div>
-              ) : deliveryStaff.length === 0 ? (
+              ) : deliveryStaff.filter((staff) => staff.KhuVucPhuTrach)
+                  .length === 0 ? (
                 <div className="flex justify-center items-center py-8">
                   <div className="text-sm text-muted-foreground">
-                    Không có nhân viên giao hàng khả dụng
+                    Không có nhân viên giao hàng có khu vực phụ trách
                   </div>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {deliveryStaff.map((staff) => (
-                    <div
-                      key={staff.MaNV}
-                      className={`border rounded-lg p-3 cursor-pointer transition-all duration-200 relative ${
-                        selectedStaff === staff.MaNV
-                          ? "border-[#825B32] bg-[#825B32]/10 shadow-md"
-                          : "border-gray-200 hover:border-[#825B32]/50 hover:bg-[#825B32]/5"
-                      }`}
-                      onClick={() => onStaffSelect(staff.MaNV)}
-                    >
-                      {/* Selected Check Icon */}
-                      {selectedStaff === staff.MaNV && (
-                        <div className="absolute top-2 right-2 w-5 h-5 bg-[#825B32] rounded-full flex items-center justify-center">
-                          <Check className="h-3 w-3 text-white" />
-                        </div>
-                      )}
+                  {deliveryStaff
+                    .filter((staff) => staff.KhuVucPhuTrach)
+                    .map((staff) => (
+                      <div
+                        key={staff.MaNV}
+                        className={`border rounded-lg p-3 cursor-pointer transition-all duration-200 relative ${
+                          selectedStaff === staff.MaNV
+                            ? "border-[#825B32] bg-[#825B32]/10 shadow-md"
+                            : "border-gray-200 hover:border-[#825B32]/50 hover:bg-[#825B32]/5"
+                        }`}
+                        onClick={() => onStaffSelect(staff.MaNV)}
+                      >
+                        {/* Selected Check Icon */}
+                        {selectedStaff === staff.MaNV && (
+                          <div className="absolute top-2 right-2 w-5 h-5 bg-[#825B32] rounded-full flex items-center justify-center">
+                            <Check className="h-3 w-3 text-white" />
+                          </div>
+                        )}
 
-                      <div className="flex items-center justify-between pr-6">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h5
-                              className={`font-medium text-sm ${
-                                selectedStaff === staff.MaNV
-                                  ? "text-[#825B32]"
-                                  : "text-gray-900"
-                              }`}
-                            >
-                              {staff.TenNV}
-                            </h5>
-                            {staff.KhuVucPhuTrach && (
+                        <div className="flex items-center justify-between pr-6">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h5
+                                className={`font-medium text-sm ${
+                                  selectedStaff === staff.MaNV
+                                    ? "text-[#825B32]"
+                                    : "text-gray-900"
+                                }`}
+                              >
+                                {staff.TenNV}
+                              </h5>
                               <div className="flex items-center gap-1">
                                 <Star className="h-3 w-3 text-yellow-500 fill-current" />
                                 <span className="text-xs text-yellow-600 font-medium">
                                   Có khu vực phụ trách
                                 </span>
                               </div>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            <p>Địa chỉ: {staff.DiaChi}</p>
-                            {staff.KhuVucPhuTrach ? (
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              <p>Địa chỉ: {staff.DiaChi}</p>
                               <p className="text-blue-600">
                                 Khu vực:{" "}
-                                {staff.KhuVucPhuTrach.length > 60
+                                {staff.KhuVucPhuTrach &&
+                                staff.KhuVucPhuTrach.length > 60
                                   ? `${staff.KhuVucPhuTrach.substring(
                                       0,
                                       60
                                     )}...`
                                   : staff.KhuVucPhuTrach}
                               </p>
-                            ) : (
-                              <p className="text-amber-600">
-                                ⚠️ Chưa được phân khu vực
-                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-muted-foreground">
+                              Đơn đang giao
+                            </div>
+                            <div
+                              className={`text-sm font-medium ${
+                                staff.SoDonDangGiao === 0
+                                  ? "text-green-600"
+                                  : staff.SoDonDangGiao <= 3
+                                  ? "text-yellow-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {staff.SoDonDangGiao}
+                            </div>
+                            {staff.SoDonDangGiao === 0 && (
+                              <div className="text-xs text-green-600">Rảnh</div>
+                            )}
+                            {staff.SoDonDangGiao > 0 &&
+                              staff.SoDonDangGiao <= 3 && (
+                                <div className="text-xs text-yellow-600">
+                                  Bình thường
+                                </div>
+                              )}
+                            {staff.SoDonDangGiao > 3 && (
+                              <div className="text-xs text-red-600">Bận</div>
                             )}
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-muted-foreground">
-                            Đơn đang giao
-                          </div>
-                          <div
-                            className={`text-sm font-medium ${
-                              staff.SoDonDangGiao === 0
-                                ? "text-green-600"
-                                : staff.SoDonDangGiao <= 3
-                                ? "text-yellow-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {staff.SoDonDangGiao}
-                          </div>
-                          {staff.SoDonDangGiao === 0 && (
-                            <div className="text-xs text-green-600">Rảnh</div>
-                          )}
-                          {staff.SoDonDangGiao > 0 &&
-                            staff.SoDonDangGiao <= 3 && (
-                              <div className="text-xs text-yellow-600">
-                                Bình thường
-                              </div>
-                            )}
-                          {staff.SoDonDangGiao > 3 && (
-                            <div className="text-xs text-red-600">Bận</div>
-                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               )}
             </div>

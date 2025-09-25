@@ -8,6 +8,7 @@ import {
   Shield,
   Users,
   CheckCircle,
+  MapPin,
 } from "lucide-react";
 import { DataTable, Column } from "../components/ui/DataTable";
 import { toast, Toaster } from "sonner";
@@ -32,6 +33,7 @@ import {
 import { usePermission } from "../components/PermissionGuard";
 import { ROLES, PERMISSIONS } from "../utils/permissions";
 import { Modal } from "@/components/ui/Modal";
+import { ChangeDeliveryArea } from "../components/employee/change-delivery-area";
 
 // Interface matching SQL structure
 interface Employee {
@@ -400,6 +402,17 @@ export const EmployeeManagement = () => {
       toast.error("Có lỗi khi gán vai trò");
     }
   };
+
+  // Handle open change delivery area modal
+  const handleOpenChangeArea = (employee: Employee) => {
+    if (employee.department !== "11") {
+      toast.error("Chức năng này chỉ dành cho nhân viên bộ phận giao hàng");
+      return;
+    }
+    setAreaEmployee(employee);
+    setIsChangeAreaModalOpen(true);
+  };
+
   // Fetch departments with TrangThai === true
   React.useEffect(() => {
     const fetchDepartments = async () => {
@@ -438,7 +451,7 @@ export const EmployeeManagement = () => {
   const refreshEmployees = async () => {
     try {
       const employeesData = await getEmployees();
-      // Ensure we always set an array
+      console.log(`🔍 Fetched employees:`, employeesData);
       setEmployees(Array.isArray(employeesData) ? employeesData : []);
     } catch (error) {
       console.error("💥 Fetch Error:", error);
@@ -454,6 +467,7 @@ export const EmployeeManagement = () => {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isChangeAreaModalOpen, setIsChangeAreaModalOpen] = useState(false);
   const [openFromDetail, setOpenFromDetail] = useState(false); // Track if modal opened from detail
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null
@@ -468,6 +482,7 @@ export const EmployeeManagement = () => {
     null
   );
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [areaEmployee, setAreaEmployee] = useState<Employee | null>(null);
 
   // Debug logging for selectedRole
   React.useEffect(() => {
@@ -496,6 +511,7 @@ export const EmployeeManagement = () => {
     position: "Nhân viên",
     notes: "",
     selectedAreas: [] as string[], // Changed from district to selectedAreas array
+    areaStartDate: "", // Ngày bắt đầu phụ trách giao hàng (khi chuyển sang bộ phận giao hàng)
   });
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -513,6 +529,7 @@ export const EmployeeManagement = () => {
     password: "3TShop@2025",
     isActive: "DANGLAMVIEC",
     selectedAreas: [] as string[], // Changed from district to selectedAreas array
+    areaStartDate: "",
   });
 
   // Handle view employee detail
@@ -525,6 +542,7 @@ export const EmployeeManagement = () => {
   const handleEditFromDetail = () => {
     if (selectedEmployee) {
       setEditingEmployee(selectedEmployee);
+      // const activeAreas = selectedEmployee.khuVucPhuTrach || []; // Commented out - using dedicated modal
       setFormData({
         tenNV: selectedEmployee.tenNV || "",
         ngaySinh: selectedEmployee.ngaySinh || "",
@@ -536,10 +554,9 @@ export const EmployeeManagement = () => {
         username: selectedEmployee.username || "",
         password: "",
         isActive: selectedEmployee.isActive || "DANGLAMVIEC",
-        selectedAreas:
-          selectedEmployee.khuVucPhuTrach
-            ?.filter((kv) => kv.NhanVien_KhuVuc?.TrangThai === 1)
-            ?.map((kv) => kv.MaKhuVuc) || [],
+        // selectedAreas: activeAreas.map((kv: any) => kv.MaKhuVuc?.toString()), // Commented out - using dedicated modal
+        selectedAreas: [], // Keep empty since we use dedicated modal for area management
+        areaStartDate: "",
       });
       setIsDetailModalOpen(false);
       setOpenFromDetail(true);
@@ -557,6 +574,7 @@ export const EmployeeManagement = () => {
         position: "Nhân viên",
         notes: "",
         selectedAreas: [],
+        areaStartDate: "",
       });
       setIsDetailModalOpen(false);
       setOpenFromDetail(true);
@@ -592,6 +610,7 @@ export const EmployeeManagement = () => {
       password: "3TShop@2025",
       isActive: "DANGLAMVIEC",
       selectedAreas: [],
+      areaStartDate: "",
     });
     setIsModalOpen(true);
   };
@@ -619,7 +638,17 @@ export const EmployeeManagement = () => {
       );
       return;
     }
-
+    if (isDeliveryDepartment && transferData.selectedAreas.length > 0) {
+      if (!transferData.areaStartDate) {
+        toast.warning("Vui lòng chọn ngày bắt đầu phụ trách khu vực!");
+        return;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      if (transferData.areaStartDate <= today) {
+        toast.error("Ngày bắt đầu phụ trách phải lớn hơn ngày hiện tại!");
+        return;
+      }
+    }
     try {
       const payload = {
         MaNV: transferEmployee.maNV,
@@ -629,7 +658,8 @@ export const EmployeeManagement = () => {
         GhiChu: transferData.notes,
         ...(isDeliveryDepartment && {
           KhuVucPhuTrach: transferData.selectedAreas,
-        }), // Chỉ gửi KhuVucPhuTrach nếu là bộ phận giao hàng
+          NgayBatDauPhuTrach: transferData.areaStartDate,
+        }),
       };
 
       await transferEmployeeAPI(payload);
@@ -642,6 +672,7 @@ export const EmployeeManagement = () => {
         position: "Nhân viên",
         notes: "",
         selectedAreas: [],
+        areaStartDate: "",
       });
       refreshEmployees(); // Refresh lại danh sách nhân viên
 
@@ -692,8 +723,26 @@ export const EmployeeManagement = () => {
       );
       return;
     }
+    // Validate area start date for new delivery employees
+    if (
+      !editingEmployee &&
+      formData.department === "11" &&
+      formData.selectedAreas.length > 0
+    ) {
+      if (!formData.areaStartDate) {
+        toast.warning("Vui lòng chọn ngày bắt đầu phụ trách khu vực!");
+        return;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      if (formData.areaStartDate <= today) {
+        toast.error("Ngày bắt đầu phụ trách phải lớn hơn ngày hiện tại!");
+        return;
+      }
+    }
 
     // For editing employees in delivery department, areas are required
+    // NOTE: Commented out - Now using dedicated modal for area management
+    /*
     if (
       editingEmployee &&
       editingEmployee.department === "11" &&
@@ -704,6 +753,7 @@ export const EmployeeManagement = () => {
       );
       return;
     }
+    */
 
     // For new employees, password is required
     if (!editingEmployee && !formData.password) {
@@ -740,17 +790,17 @@ export const EmployeeManagement = () => {
           DiaChi: formData.diaChi,
           Luong: formData.luong,
         };
-
         // Add area assignments if employee is in delivery department
+        // NOTE: Commented out - Now using dedicated modal for area management
+        /*
         if (editingEmployee.department === "11") {
           editPayload.KhuVucPhuTrach = formData.selectedAreas;
         }
-
+        */
         // Only add password when it's provided (not empty)
         if (formData.password && formData.password.trim() !== "") {
           editPayload.Password = formData.password;
         }
-
         await updateEmployee(editingEmployee.maNV, editPayload);
         toast.success("Cập nhật nhân viên thành công");
         setIsModalOpen(false);
@@ -770,6 +820,9 @@ export const EmployeeManagement = () => {
         // Nếu là bộ phận giao hàng, thêm trường KhuVuc
         if (formData.department === "11" && formData.selectedAreas.length > 0) {
           employeePayload.KhuVucPhuTrach = formData.selectedAreas; // Send array of selected areas
+          if (formData.areaStartDate) {
+            employeePayload.NgayBatDauPhuTrach = formData.areaStartDate; // custom field for backend
+          }
         }
 
         // For new employees, always include departments array
@@ -906,55 +959,6 @@ export const EmployeeManagement = () => {
       ),
     },
     {
-      key: "khuVucPhuTrach",
-      title: "Khu vực",
-      dataIndex: "khuVucPhuTrach",
-      width: "120px",
-      render: (value, record) => {
-        if (!value || value.length === 0) {
-          return <span className="text-xs text-gray-500">-</span>;
-        }
-
-        // Chỉ hiển thị cho nhân viên giao hàng (bộ phận 11)
-        if (record.department !== "11") {
-          return <span className="text-xs text-gray-500">-</span>;
-        }
-
-        const activeAreas = value.filter(
-          (area: any) => area.NhanVien_KhuVuc?.TrangThai === 1
-        );
-
-        if (activeAreas.length === 0) {
-          return <span className="text-xs text-gray-500">Chưa có</span>;
-        }
-
-        if (activeAreas.length === 1) {
-          return (
-            <span
-              className="text-xs truncate block max-w-[110px]"
-              title={activeAreas[0].TenKhuVuc}
-            >
-              {activeAreas[0].TenKhuVuc}
-            </span>
-          );
-        }
-
-        return (
-          <div className="text-xs">
-            <span
-              className="truncate block max-w-[110px]"
-              title={activeAreas.map((area: any) => area.TenKhuVuc).join(", ")}
-            >
-              {activeAreas[0].TenKhuVuc}
-            </span>
-            <span className="text-gray-500">
-              +{activeAreas.length - 1} khác
-            </span>
-          </div>
-        );
-      },
-    },
-    {
       key: "isActive",
       title: "Trạng thái",
       dataIndex: "isActive",
@@ -974,7 +978,7 @@ export const EmployeeManagement = () => {
     {
       key: "actions",
       title: "Thao tác",
-      width: "80px",
+      width: "120px",
       render: (_, record) => (
         <div className="flex gap-2 justify-center">
           <button
@@ -987,6 +991,18 @@ export const EmployeeManagement = () => {
           >
             <Eye className="w-4 h-4" />
           </button>
+          {record.department === "11" && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent row click
+                handleOpenChangeArea(record);
+              }}
+              className="group relative bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
+              title="Quản lý khu vực phụ trách"
+            >
+              <MapPin className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={() => handleOpenPermissions(record)}
             className="group relative bg-amber-50 hover:bg-amber-100 text-amber-600 hover:text-amber-700 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
@@ -998,6 +1014,15 @@ export const EmployeeManagement = () => {
       ),
     },
   ];
+
+  // const [areaSearch, setAreaSearch] = useState(""); // Commented out - using dedicated modal for area management
+  const [transferAreaSearch, setTransferAreaSearch] = useState("");
+  // const filteredAreas = areas.filter((a: any) =>
+  //   a.TenKhuVuc.toLowerCase().includes(areaSearch.toLowerCase())
+  // ); // Commented out - using dedicated modal for area management
+  const filteredTransferAreas = areas.filter((a: any) =>
+    a.TenKhuVuc.toLowerCase().includes(transferAreaSearch.toLowerCase())
+  );
 
   return (
     <>
@@ -1255,6 +1280,8 @@ export const EmployeeManagement = () => {
               </div>
 
               {/* Khu vực phụ trách cho bộ phận giao hàng */}
+              {/* NOTE: Commented out - Now using dedicated modal from change-delivery-area.tsx */}
+              {/*
               {((!editingEmployee && formData.department === "11") ||
                 (editingEmployee && editingEmployee.department === "11")) && (
                 <div className="mt-4">
@@ -1262,30 +1289,42 @@ export const EmployeeManagement = () => {
                     Khu vực phụ trách {!editingEmployee ? "*" : ""} (có thể chọn
                     nhiều)
                   </Label>
+                  <div className="mb-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Tìm khu vực..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      value={areaSearch}
+                      onChange={(e) => setAreaSearch(e.target.value)}
+                    />
+                  </div>
                   <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-3 bg-white">
                     {areas.length === 0 ? (
                       <div className="text-sm text-gray-500 text-center py-4">
                         Đang tải danh sách khu vực...
                       </div>
+                    ) : filteredAreas.length === 0 ? (
+                      <div className="text-sm text-gray-500 text-center py-4">
+                        Không tìm thấy khu vực phù hợp
+                      </div>
                     ) : (
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {areas.map((area) => (
+                        {filteredAreas.map((area) => (
                           <label
                             key={area.MaKhuVuc}
                             className="flex items-center space-x-2 text-sm hover:bg-gray-50 p-2 rounded cursor-pointer transition-colors"
                           >
                             <input
                               type="checkbox"
-                              checked={isAreaSelected(area.MaKhuVuc)}
-                              onChange={() => handleAreaToggle(area.MaKhuVuc)}
+                              checked={isAreaSelected(
+                                area.MaKhuVuc?.toString()
+                              )}
+                              onChange={() =>
+                                handleAreaToggle(area.MaKhuVuc?.toString())
+                              }
                               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
-                            <span
-                              className="flex-1 truncate"
-                              title={area.TenKhuVuc}
-                            >
-                              {area.TenKhuVuc}
-                            </span>
+                            <span className="truncate">{area.TenKhuVuc}</span>
                           </label>
                         ))}
                       </div>
@@ -1299,12 +1338,13 @@ export const EmployeeManagement = () => {
                       <div className="flex flex-wrap gap-1">
                         {formData.selectedAreas.slice(0, 5).map((areaCode) => {
                           const area = areas.find(
-                            (a) => a.MaKhuVuc === areaCode
+                            (a) =>
+                              a.MaKhuVuc?.toString() === areaCode?.toString()
                           );
                           return area ? (
                             <span
-                              key={areaCode}
-                              className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+                              key={area.MaKhuVuc}
+                              className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full"
                             >
                               {area.TenKhuVuc}
                             </span>
@@ -1327,8 +1367,31 @@ export const EmployeeManagement = () => {
                       </div>
                     </div>
                   )}
+                  {!editingEmployee && formData.department === "11" && (
+                    <div className="mt-4">
+                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                        Ngày bắt đầu phụ trách *
+                      </Label>
+                      <Input
+                        type="date"
+                        value={formData.areaStartDate}
+                        min={new Date().toISOString().slice(0, 10)}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            areaStartDate: e.target.value,
+                          })
+                        }
+                        className="text-sm"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Phải lớn hơn ngày hiện tại.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
+              */}
 
               {!editingEmployee && (
                 <div className="mt-4">
@@ -1502,7 +1565,7 @@ export const EmployeeManagement = () => {
                               (area: any) =>
                                 area.NhanVien_KhuVuc?.TrangThai === 1
                             ).length > 2 && (
-                              <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                              <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
                                 +
                                 {transferEmployee.khuVucPhuTrach.filter(
                                   (area: any) =>
@@ -1619,14 +1682,27 @@ export const EmployeeManagement = () => {
                       (có thể chọn nhiều)
                     </span>
                   </Label>
+                  <div className="mb-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Tìm khu vực..."
+                      className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      value={transferAreaSearch}
+                      onChange={(e) => setTransferAreaSearch(e.target.value)}
+                    />
+                  </div>
                   <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2 bg-white">
                     {areas.length === 0 ? (
                       <div className="text-sm text-gray-500 text-center py-3">
                         Đang tải...
                       </div>
+                    ) : filteredTransferAreas.length === 0 ? (
+                      <div className="text-sm text-gray-500 text-center py-3">
+                        Không tìm thấy khu vực phù hợp
+                      </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-1">
-                        {areas.map((area) => (
+                        {filteredTransferAreas.map((area) => (
                           <label
                             key={area.MaKhuVuc}
                             className="flex items-center space-x-1.5 text-sm hover:bg-gray-50 p-1.5 rounded cursor-pointer transition-colors"
@@ -1657,6 +1733,26 @@ export const EmployeeManagement = () => {
                       </div>
                     </div>
                   )}
+                  <div className="mt-4">
+                    <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                      Ngày bắt đầu phụ trách *
+                    </Label>
+                    <Input
+                      type="date"
+                      value={transferData.areaStartDate}
+                      min={new Date().toISOString().slice(0, 10)}
+                      onChange={(e) =>
+                        setTransferData({
+                          ...transferData,
+                          areaStartDate: e.target.value,
+                        })
+                      }
+                      className="text-sm"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Phải lớn hơn ngày hiện tại.
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -1734,7 +1830,7 @@ export const EmployeeManagement = () => {
             {/* Employee Info - Compact */}
             <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
                   <div className="bg-blue-500 text-white text-sm font-bold rounded-full w-10 h-10 flex items-center justify-center">
                     {selectedEmployeeHistory?.maNV}
                   </div>
@@ -1979,14 +2075,11 @@ export const EmployeeManagement = () => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-gray-600">
-                    Ngày sinh
-                  </label>
                   <p className="text-xs text-gray-900 mt-1">
                     {selectedEmployee?.ngaySinh
-                      ? new Date(selectedEmployee.ngaySinh).toLocaleDateString(
-                          "vi-VN"
-                        )
+                      ? new Date(
+                          selectedEmployee.ngaySinh as string
+                        ).toLocaleDateString("vi-VN")
                       : "Chưa có thông tin"}
                   </p>
                 </div>
@@ -2237,6 +2330,14 @@ export const EmployeeManagement = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Change Delivery Area Modal */}
+      <ChangeDeliveryArea
+        isOpen={isChangeAreaModalOpen}
+        onClose={() => setIsChangeAreaModalOpen(false)}
+        employeeId={areaEmployee?.maNV || 0}
+        employeeName={areaEmployee?.tenNV || ""}
+      />
     </>
   );
 };

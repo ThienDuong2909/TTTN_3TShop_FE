@@ -89,7 +89,11 @@ export default function Login() {
         apiUser?.MaTK ||
         apiUser?.TaiKhoan?.MaTK,
       email: apiUser?.TaiKhoan?.Email || apiUser?.Email || apiUser?.TenKH,
-      name: apiUser?.TenKH || apiUser?.TenNV || apiUser?.TaiKhoan?.Email || apiUser?.Email,
+      name:
+        apiUser?.TenKH ||
+        apiUser?.TenNV ||
+        apiUser?.TaiKhoan?.Email ||
+        apiUser?.Email,
       role,
       permissions,
       avatar: apiUser?.avatar || undefined,
@@ -259,7 +263,7 @@ export default function Login() {
               </Button>
             </form>
 
-            <div className="mt-6">
+            {/* <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300" />
@@ -286,7 +290,7 @@ export default function Login() {
                   Google
                 </Button>
               </div>
-            </div>
+            </div> */}
 
             <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
               Chưa có tài khoản?{" "}

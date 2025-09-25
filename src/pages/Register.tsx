@@ -158,7 +158,9 @@ export default function Register() {
                     placeholder="Nhập mật khẩu"
                     className="pl-10 pr-10"
                     value={formData.Password}
-                    onChange={(e) => handleInputChange("Password", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("Password", e.target.value)
+                    }
                   />
                   <button
                     type="button"
@@ -187,7 +189,9 @@ export default function Register() {
                     placeholder="Nhập lại mật khẩu"
                     className="pl-10 pr-10"
                     value={formData.confirmPassword}
-                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("confirmPassword", e.target.value)
+                    }
                   />
                   <button
                     type="button"
@@ -250,7 +254,7 @@ export default function Register() {
               </Button>
             </form>
 
-            <div className="mt-6">
+            {/* <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300" />
@@ -277,7 +281,7 @@ export default function Register() {
                   Google
                 </Button>
               </div>
-            </div>
+            </div> */}
 
             <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
               Đã có tài khoản?{" "}

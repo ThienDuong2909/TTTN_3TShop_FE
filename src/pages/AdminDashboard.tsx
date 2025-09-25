@@ -18,7 +18,7 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  } from "lucide-react";
+} from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import {
@@ -54,7 +54,8 @@ import {
 import { useApp } from "../contexts/AppContext";
 import AdminHeader from "../components/AdminHeader";
 import AdminSidebar from "../components/AdminSidebar";
-import RevenueReport from '../pages/RevenueReport';
+import RevenueReport from "../pages/RevenueReport";
+import InventoryReport from "../pages/InventoryReport";
 // import PermissionDebug from "../components/PermissionDebug";
 // import PermissionTest from "../components/PermissionTest";
 // import UserStateTest from "../components/UserStateTest";
@@ -68,27 +69,57 @@ import {
   categories,
   purchaseOrders,
   goodsReceipts,
-  } from "../libs/data";
+} from "../libs/data";
 
 import { useNavigate } from "react-router-dom";
-import { getCurrentMonthOrders,getAllEmployees,getPurchaseOrdersNCC } from "../services/api";
-import type { CurrentMonthOrdersData,GetAllEmployeesResponse,GetPurchaseOrdersNCCResponse } from "../services/api";
+import {
+  getCurrentMonthOrders,
+  getAllEmployees,
+  getPurchaseOrdersNCC,
+  getInventoryReport,
+} from "../services/api";
+import type {
+  CurrentMonthOrdersData,
+  GetAllEmployeesResponse,
+  GetPurchaseOrdersNCCResponse,
+} from "../services/api";
+
+// Inventory Report Types
+interface InventoryItem {
+  "Loại sản phẩm": string;
+  "Mã sản phẩm": number;
+  "Tên sản phẩm": string;
+  "Số lượng tồn": string;
+  "Giá nhập (trung bình)": string;
+}
+
+interface InventoryReportData {
+  ngayBaoCao: string;
+  data: InventoryItem[];
+}
 export default function AdminDashboard() {
   const { state } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
 
-  const [currentMonthData, setCurrentMonthData] = useState<CurrentMonthOrdersData | null>(null);
-    const [employeesData, setEmployeesData] = useState<GetAllEmployeesResponse | null>(null);
-    const [purchaseOrdersNCCData, setPurchaseOrdersNCCData] = useState<GetPurchaseOrdersNCCResponse | null>(null); 
+  const [currentMonthData, setCurrentMonthData] =
+    useState<CurrentMonthOrdersData | null>(null);
+  const [employeesData, setEmployeesData] =
+    useState<GetAllEmployeesResponse | null>(null);
+  const [purchaseOrdersNCCData, setPurchaseOrdersNCCData] =
+    useState<GetPurchaseOrdersNCCResponse | null>(null);
+  const [currentInventoryData, setCurrentInventoryData] =
+    useState<InventoryReportData | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
   // Check if user has permission to access admin dashboard
-  const hasAdminAccess = state.user?.permissions?.includes('toanquyen');
-  const hasOrderAssignedAccess = state.user?.permissions?.includes('donhang.xem_duoc_giao');
-  const hasOrderViewAccess = state.user?.permissions?.includes('donhang.xem');
-  
+  const hasAdminAccess = state.user?.permissions?.includes("toanquyen");
+  const hasOrderAssignedAccess = state.user?.permissions?.includes(
+    "donhang.xem_duoc_giao"
+  );
+  const hasOrderViewAccess = state.user?.permissions?.includes("donhang.xem");
+
   // Load current month orders data
   useEffect(() => {
     loadDashboardData();
@@ -97,16 +128,26 @@ export default function AdminDashboard() {
   const loadDashboardData = async () => {
     try {
       setLoadingStats(true);
-      
-      // Gọi cả 2 API song song
-      const [ordersResponse, employeesResponse, purchaseOrdersResponse] = await Promise.all([
+
+      // Get today's date for current inventory report
+      const today = new Date().toISOString().split("T")[0];
+
+      // Gọi cả API song song
+      const [
+        ordersResponse,
+        employeesResponse,
+        purchaseOrdersResponse,
+        inventoryResponse,
+      ] = await Promise.all([
         getCurrentMonthOrders(),
         getAllEmployees(),
-        getPurchaseOrdersNCC()
+        getPurchaseOrdersNCC(),
+        getInventoryReport(today),
       ]);
 
       console.log("Orders response:", ordersResponse);
       console.log("Employees response:", employeesResponse);
+      console.log("Inventory response:", inventoryResponse);
 
       if (ordersResponse.success) {
         setCurrentMonthData(ordersResponse.data);
@@ -118,12 +159,16 @@ export default function AdminDashboard() {
       if (purchaseOrdersResponse.success) {
         setPurchaseOrdersNCCData(purchaseOrdersResponse);
       }
+      if (inventoryResponse.success) {
+        setCurrentInventoryData(inventoryResponse.data);
+      }
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.error("Error loading dashboard data:", error);
       // Fallback to mock data if API fails
       setCurrentMonthData(null);
       setEmployeesData(null);
       setPurchaseOrdersNCCData(null);
+      setCurrentInventoryData(null);
     } finally {
       setLoadingStats(false);
     }
@@ -131,16 +176,16 @@ export default function AdminDashboard() {
 
   const getCurrentMonthPurchaseOrdersCount = () => {
     if (!purchaseOrdersNCCData?.data) return 0;
-    
+
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11
     const currentYear = currentDate.getFullYear();
-    
-    return purchaseOrdersNCCData.data.filter(order => {
+
+    return purchaseOrdersNCCData.data.filter((order) => {
       const orderDate = new Date(order.NgayDat);
       const orderMonth = orderDate.getMonth() + 1;
       const orderYear = orderDate.getFullYear();
-      
+
       return orderMonth === currentMonth && orderYear === currentYear;
     }).length;
   };
@@ -148,34 +193,39 @@ export default function AdminDashboard() {
   // Helper function để đếm phiếu đặt hàng theo trạng thái trong tháng hiện tại
   const getCurrentMonthPurchaseOrdersByStatus = (statusId: number) => {
     if (!purchaseOrdersNCCData?.data) return 0;
-    
+
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1;
     const currentYear = currentDate.getFullYear();
-    
-    return purchaseOrdersNCCData.data.filter(order => {
+
+    return purchaseOrdersNCCData.data.filter((order) => {
       const orderDate = new Date(order.NgayDat);
       const orderMonth = orderDate.getMonth() + 1;
       const orderYear = orderDate.getFullYear();
-      
-      return orderMonth === currentMonth && 
-             orderYear === currentYear && 
-             order.MaTrangThai === statusId;
+
+      return (
+        orderMonth === currentMonth &&
+        orderYear === currentYear &&
+        order.MaTrangThai === statusId
+      );
     }).length;
   };
 
-    const mapOrderStatus = (trangThai: string | number) => {
+  const mapOrderStatus = (trangThai: string | number) => {
     const statusMap = {
-      "CHOXACNHAN": "pending",
-      "DAXACNHAN": "confirmed", 
-      "DANGGIAO": "shipping",
-      "HOANTAT": "delivered",
-      "DAHUY": "cancelled",
+      CHOXACNHAN: "pending",
+      DAXACNHAN: "confirmed",
+      DANGGIAO: "shipping",
+      HOANTAT: "delivered",
+      DAHUY: "cancelled",
     };
     return statusMap[trangThai as keyof typeof statusMap] || "pending";
   };
 
-  if (!state.user || (!hasAdminAccess && !hasOrderAssignedAccess && !hasOrderViewAccess)) {
+  if (
+    !state.user ||
+    (!hasAdminAccess && !hasOrderAssignedAccess && !hasOrderViewAccess)
+  ) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="text-center">
@@ -183,7 +233,8 @@ export default function AdminDashboard() {
             Không có quyền truy cập
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mb-8">
-            Bạn cần có quyền admin hoặc quyền xem đơn hàng để truy cập trang này.
+            Bạn cần có quyền admin hoặc quyền xem đơn hàng để truy cập trang
+            này.
           </p>
           <Link to="/login">
             <Button>Đăng nhập</Button>
@@ -226,18 +277,35 @@ export default function AdminDashboard() {
   };
 
   const stats = {
-    totalOrders: currentMonthData?.thongTinThang?.tongSoDonHang || orders.length,
-    totalRevenue: currentMonthData?.orders?.reduce((sum, order) => sum + order.TongTien, 0) || orders.reduce((sum, order) => sum + order.total, 0),
+    totalOrders:
+      currentMonthData?.thongTinThang?.tongSoDonHang || orders.length,
+    totalRevenue:
+      currentMonthData?.orders?.reduce(
+        (sum, order) => sum + order.TongTien,
+        0
+      ) || orders.reduce((sum, order) => sum + order.total, 0),
     totalEmployees: employeesData?.data?.length || 0,
     totalCustomers: 156,
-    pendingOrders: currentMonthData?.orders?.filter((o) => o.TrangThaiDH.TrangThai === "CHOXACNHAN").length || orders.filter((o) => o.status === "pending").length,
-    confirmedOrders: currentMonthData?.orders?.filter((o) => o.TrangThaiDH.TrangThai === "DAXACNHAN").length || orders.filter((o) => o.status === "confirmed").length,
-    completedOrders: currentMonthData?.orders?.filter((o) => o.TrangThaiDH.TrangThai === "HOANTAT").length || 0,
-    cancelledOrders: currentMonthData?.orders?.filter((o) => o.TrangThaiDH.TrangThai === "DA_HUY").length || 0,
+    pendingOrders:
+      currentMonthData?.orders?.filter(
+        (o) => o.TrangThaiDH.TrangThai === "CHOXACNHAN"
+      ).length || orders.filter((o) => o.status === "pending").length,
+    confirmedOrders:
+      currentMonthData?.orders?.filter(
+        (o) => o.TrangThaiDH.TrangThai === "DAXACNHAN"
+      ).length || orders.filter((o) => o.status === "confirmed").length,
+    completedOrders:
+      currentMonthData?.orders?.filter(
+        (o) => o.TrangThaiDH.TrangThai === "HOANTAT"
+      ).length || 0,
+    cancelledOrders:
+      currentMonthData?.orders?.filter(
+        (o) => o.TrangThaiDH.TrangThai === "DA_HUY"
+      ).length || 0,
 
     totalPurchaseOrdersNCC: getCurrentMonthPurchaseOrdersCount(),
     nhapPurchaseOrders: getCurrentMonthPurchaseOrdersByStatus(1), // Nhập
-    daguiPurchaseOrders: getCurrentMonthPurchaseOrdersByStatus(2), // Đã gửi  
+    daguiPurchaseOrders: getCurrentMonthPurchaseOrdersByStatus(2), // Đã gửi
     daxacnhanPurchaseOrders: getCurrentMonthPurchaseOrdersByStatus(3), // Đã xác nhận
     danhapmotphanPurchaseOrders: getCurrentMonthPurchaseOrdersByStatus(4), // Đã nhập một phần
     hoanthanhPurchaseOrders: getCurrentMonthPurchaseOrdersByStatus(5), // Hoàn thành
@@ -246,11 +314,11 @@ export default function AdminDashboard() {
 
   const getActiveEmployeesCount = () => {
     if (!employeesData?.data) return 0;
-    
-    return employeesData.data.filter(employee => {
+
+    return employeesData.data.filter((employee) => {
       // Kiểm tra có bộ phận đang làm việc không
-      const hasActiveDepartment = employee.NhanVien_BoPhans.some(dept => 
-        dept.TrangThai === "DANGLAMVIEC" && dept.NgayKetThuc === null
+      const hasActiveDepartment = employee.NhanVien_BoPhans.some(
+        (dept) => dept.TrangThai === "DANGLAMVIEC" && dept.NgayKetThuc === null
       );
       return hasActiveDepartment;
     }).length;
@@ -259,15 +327,44 @@ export default function AdminDashboard() {
   // Helper function để đếm nhân viên theo vai trò
   const getEmployeesByRole = (role: string) => {
     if (!employeesData?.data) return 0;
-    
-    return employeesData.data.filter(employee => 
-      employee.TaiKhoan.VaiTro.TenVaiTro === role
+
+    return employeesData.data.filter(
+      (employee) => employee.TaiKhoan.VaiTro.TenVaiTro === role
     ).length;
   };
   console.log("Dashboard Stats:", stats);
 
+  // Helper functions for inventory data
+  const getInventoryByCategory = () => {
+    if (!currentInventoryData?.data) return {};
 
+    return currentInventoryData.data.reduce((acc, item) => {
+      const category = item["Loại sản phẩm"];
+      const quantity = parseInt(item["Số lượng tồn"]) || 0;
+      const price = parseFloat(item["Giá nhập (trung bình)"]) || 0;
+      const value = quantity * price;
 
+      if (!acc[category]) {
+        acc[category] = {
+          totalQuantity: 0,
+          totalValue: 0,
+          itemCount: 0,
+        };
+      }
+
+      acc[category].totalQuantity += quantity;
+      acc[category].totalValue += value;
+      acc[category].itemCount += 1;
+
+      return acc;
+    }, {} as Record<string, { totalQuantity: number; totalValue: number; itemCount: number }>);
+  };
+
+  const inventoryByCategory = getInventoryByCategory();
+  const totalInventoryValue = Object.values(inventoryByCategory).reduce(
+    (sum, category) => sum + category.totalValue,
+    0
+  );
 
   // Overview Dashboard
   const OverviewContent = () => (
@@ -277,7 +374,11 @@ export default function AdminDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Tổng đơn hàng tháng {currentMonthData?.thongTinThang?.thang || new Date().getMonth() + 1}/{currentMonthData?.thongTinThang?.nam || new Date().getFullYear()}
+              Tổng đơn hàng tháng{" "}
+              {currentMonthData?.thongTinThang?.thang ||
+                new Date().getMonth() + 1}
+              /
+              {currentMonthData?.thongTinThang?.nam || new Date().getFullYear()}
             </CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -295,9 +396,9 @@ export default function AdminDashboard() {
                 </p>
                 {/* Navigation button */}
                 <div className="pt-1">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
+                  <Button
+                    size="sm"
+                    variant="outline"
                     className="w-full flex items-center gap-1 text-xs h-8"
                     onClick={() => navigate("/admin/orders")}
                   >
@@ -312,7 +413,9 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Phiếu đặt hàng NCC</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Phiếu đặt hàng NCC
+            </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="space-y-3">
@@ -323,19 +426,21 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold ">{stats.totalPurchaseOrdersNCC}</div>
+                <div className="text-2xl font-bold ">
+                  {stats.totalPurchaseOrdersNCC}
+                </div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  {purchaseOrdersNCCData ? (
-                    `Tháng ${new Date().getMonth() + 1}/${new Date().getFullYear()}`
-                  ) : (
-                    `Tổng phiếu đặt hàng`
-                  )}
+                  {purchaseOrdersNCCData
+                    ? `Tháng ${
+                        new Date().getMonth() + 1
+                      }/${new Date().getFullYear()}`
+                    : `Tổng phiếu đặt hàng`}
                 </p>
                 {/* Navigation button */}
                 <div className="pt-1">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
+                  <Button
+                    size="sm"
+                    variant="outline"
                     className="w-full flex items-center gap-1 text-xs h-8"
                     onClick={() => navigate("/admin/purchase-orders")}
                   >
@@ -363,17 +468,15 @@ export default function AdminDashboard() {
               <>
                 <div className="text-2xl font-bold">{stats.totalEmployees}</div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  {employeesData ? (
-                    `${getActiveEmployeesCount()} đang làm việc`
-                  ) : (
-                    `Tổng số nhân viên`
-                  )}
+                  {employeesData
+                    ? `${getActiveEmployeesCount()} đang làm việc`
+                    : `Tổng số nhân viên`}
                 </p>
                 {/* Navigation button */}
                 <div className="pt-1">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
+                  <Button
+                    size="sm"
+                    variant="outline"
                     className="w-full flex items-center gap-1 text-xs h-8"
                     onClick={() => navigate("/admin/employees")}
                   >
@@ -390,7 +493,11 @@ export default function AdminDashboard() {
         <Card className="relative">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium pr-2">
-              Doanh thu tháng {currentMonthData?.thongTinThang?.thang || new Date().getMonth() + 1}/{currentMonthData?.thongTinThang?.nam || new Date().getFullYear()}
+              Doanh thu tháng{" "}
+              {currentMonthData?.thongTinThang?.thang ||
+                new Date().getMonth() + 1}
+              /
+              {currentMonthData?.thongTinThang?.nam || new Date().getFullYear()}
             </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
@@ -406,11 +513,9 @@ export default function AdminDashboard() {
                   {formatPrice(stats.totalRevenue)}
                 </div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  {currentMonthData ? (
-                    `${stats.completedOrders} đơn hoàn tất`
-                  ) : (
-                    "Tổng doanh thu tháng"
-                  )}
+                  {currentMonthData
+                    ? `${stats.completedOrders} đơn hoàn tất`
+                    : "Tổng doanh thu tháng"}
                 </p>
                 {/* Nút Báo cáo doanh thu */}
                 <div className="pt-1">
@@ -422,16 +527,105 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
+      {/* Current Inventory Report Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Tồn kho hiện tại
+            </CardTitle>
+            <div className="scale-90">
+              <InventoryReport />
+            </div>
+          </div>
+          <CardDescription>
+            {currentInventoryData
+              ? `Tính đến ngày ${formatDate(
+                  currentInventoryData.ngayBaoCao
+                )} - Tổng trị giá: ${formatPrice(totalInventoryValue)}`
+              : "Báo cáo tồn kho theo loại sản phẩm"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loadingStats ? (
+            <div className="space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-3 border rounded"
+                >
+                  <div className="space-y-1">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : currentInventoryData ? (
+            <div className="space-y-4">
+              {/* Grid display for inventory categories */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.entries(inventoryByCategory).map(([category, data]) => (
+                  <div
+                    key={category}
+                    className="p-4 border rounded-lg hover:bg-muted/50 transition-colors bg-white dark:bg-gray-800 shadow-sm"
+                  >
+                    <div className="space-y-2">
+                      <div className="font-semibold text-lg text-primary">
+                        {category}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">
+                            Số sản phẩm:
+                          </span>
+                          <span className="font-medium">{data.itemCount}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">
+                            Tồn kho:
+                          </span>
+                          <span className="font-medium">
+                            {data.totalQuantity.toLocaleString("vi-VN")}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center pt-1 border-t">
+                          <span className="text-sm font-medium">Trị giá:</span>
+                          <span className="font-bold text-primary">
+                            {formatPrice(data.totalValue)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-4">
+                Không thể tải dữ liệu tồn kho
+              </p>
+              <InventoryReport />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Recent Orders section */}
       <Card>
         <CardHeader>
           <CardTitle>Đơn hàng gần đây</CardTitle>
           <CardDescription>
-            {currentMonthData ? (
-              `Tháng ${currentMonthData.thongTinThang.thang}/${currentMonthData.thongTinThang.nam} - ${currentMonthData.thongTinThang.tongSoDonHang} đơn hàng`
-            ) : (
-              "Danh sách đơn hàng mới nhất cần xử lý"
-            )}
+            {currentMonthData
+              ? `Tháng ${currentMonthData.thongTinThang.thang}/${currentMonthData.thongTinThang.nam} - ${currentMonthData.thongTinThang.tongSoDonHang} đơn hàng`
+              : "Danh sách đơn hàng mới nhất cần xử lý"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -459,35 +653,46 @@ export default function AdminDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(currentMonthData?.orders || orders).slice(0, 5).map((order) => {
-                  const isApiData = currentMonthData && order.MaDDH;
-                  
-                  return (
-                    <TableRow key={isApiData ? order.MaDDH : order.id}>
-                      <TableCell className="font-medium">
-                        {isApiData ? `#${order.MaDDH}` : order.id}
-                      </TableCell>
-                      <TableCell>
-                        {isApiData ? order.KhachHang.TenKH : order.customerName}
-                      </TableCell>
-                      <TableCell>
-                        {formatPrice(isApiData ? order.TongTien : order.total)}
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(isApiData ? mapOrderStatus(order.TrangThaiDH.TrangThai) : order.status)}
-                      </TableCell>
-                      <TableCell>
-                        {formatDate(isApiData ? order.NgayTao : order.orderDate)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {(currentMonthData?.orders || orders)
+                  .slice(0, 5)
+                  .map((order) => {
+                    const isApiData = currentMonthData && order.MaDDH;
+
+                    return (
+                      <TableRow key={isApiData ? order.MaDDH : order.id}>
+                        <TableCell className="font-medium">
+                          {isApiData ? `#${order.MaDDH}` : order.id}
+                        </TableCell>
+                        <TableCell>
+                          {isApiData
+                            ? order.KhachHang.TenKH
+                            : order.customerName}
+                        </TableCell>
+                        <TableCell>
+                          {formatPrice(
+                            isApiData ? order.TongTien : order.total
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(
+                            isApiData
+                              ? mapOrderStatus(order.TrangThaiDH.TrangThai)
+                              : order.status
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {formatDate(
+                            isApiData ? order.NgayTao : order.orderDate
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
-
     </div>
   );
 
@@ -575,8 +780,8 @@ export default function AdminDashboard() {
                     (cat) =>
                       cat.id === product.category?.split("-")[0] ||
                       cat.subcategories?.some(
-                        (sub) => sub.id === product.category,
-                      ),
+                        (sub) => sub.id === product.category
+                      )
                   )?.name || "Khác"}
                 </TableCell>
                 <TableCell>
@@ -709,7 +914,9 @@ export default function AdminDashboard() {
                       <Eye className="h-3 w-3" />
                     </Button>
                     {(isAdmin ||
-                      state.user?.permissions?.includes("donhang.capnhat_trangthai") ||
+                      state.user?.permissions?.includes(
+                        "donhang.capnhat_trangthai"
+                      ) ||
                       state.user?.permissions?.includes("toanquyen")) && (
                       <>
                         {order.status === "pending" && (
@@ -825,9 +1032,7 @@ export default function AdminDashboard() {
       <AdminHeader title="Dashboard" />
 
       <main className="py-8">
-        <div className="px-4 sm:px-6 lg:px-8">
-          {getTabContent()}
-        </div>
+        <div className="px-4 sm:px-6 lg:px-8">{getTabContent()}</div>
       </main>
     </div>
   );
