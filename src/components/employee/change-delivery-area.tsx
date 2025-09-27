@@ -123,6 +123,7 @@ export const ChangeDeliveryArea: React.FC<ChangeDeliveryAreaProps> = ({
       if (result.success) {
         console.log("Employee areas:", result.data);
         setKhuVucData(result.data);
+        console.log("Employee areas:", khuVucData);
       } else {
         throw new Error(result.message || "Có lỗi xảy ra");
       }
@@ -166,7 +167,7 @@ export const ChangeDeliveryArea: React.FC<ChangeDeliveryAreaProps> = ({
   }, [isOpen, employeeId]);
 
   // Remove a specific area
-  const handleRemoveArea = (areaId: string, areaName: string) => {
+  const handleRemoveArea = (areaId: number, areaName: string) => {
     setConfirmModal({
       isOpen: true,
       type: "delete",
@@ -186,24 +187,22 @@ export const ChangeDeliveryArea: React.FC<ChangeDeliveryAreaProps> = ({
       title: "Xác nhận xóa tất cả khu vực",
       message: `Bạn có chắc chắn muốn xóa tất cả ${khuVucData.KhuVucPhuTrach.length} khu vực khỏi danh sách phụ trách của nhân viên ${employeeName}?`,
       onConfirm: () => {
-        const allAreaIds = khuVucData.KhuVucPhuTrach.map(
-          (area) => area.MaKhuVuc
-        );
+        const allAreaIds = khuVucData.KhuVucPhuTrach.map((area) => area.MaNVKV);
         removeArea(allAreaIds);
       },
     });
   };
 
   // API call to remove areas
-  const removeArea = async (areaIds: string[]) => {
+  const removeArea = async (areaIds: number[]) => {
     try {
       setLoading(true);
       const result = await removeEmployeeAreas(areaIds);
 
       if (result.success) {
         toast.success("Xóa khu vực thành công");
-        fetchEmployeeAreas(); // Refresh current areas
-        fetchAvailableAreas(); // Refresh available areas
+        fetchEmployeeAreas();
+        fetchAvailableAreas();
       } else {
         throw new Error(result.message || "Có lỗi xảy ra");
       }
@@ -373,7 +372,7 @@ export const ChangeDeliveryArea: React.FC<ChangeDeliveryAreaProps> = ({
                         </div>
                         <Button
                           onClick={() =>
-                            handleRemoveArea(area.MaKhuVuc, area.TenKhuVuc)
+                            handleRemoveArea(area.MaNVKV, area.TenKhuVuc)
                           }
                           variant="ghost"
                           size="sm"

@@ -779,19 +779,16 @@ export interface KhuVuc {
   TenKhuVuc: string;
 }
 
-export interface KhuVucPhuTrach extends KhuVuc {
+export interface KhuVucGiaoHang extends KhuVuc {
+  MaNVKV: number;
   NgayBatDau: string;
   NgayTao?: string;
 }
 
 export interface KhuVucData {
-  ThongTinNhanVien?: {
-    MaNV: number;
-    TenNV: string;
-  };
   MaNV?: number;
   TenNV?: string;
-  KhuVucPhuTrach: KhuVucPhuTrach[];
+  KhuVucPhuTrach: KhuVucGiaoHang[];
 }
 
 export interface NewAreaSelection {
@@ -834,7 +831,7 @@ export interface EmployeeAreaApiResponse {
 // Function declarations
 export declare function getEmployeeAreas(employeeId: number): Promise<GetEmployeeAreasResponse>;
 export declare function getAvailableAreasForEmployee(employeeId: number): Promise<GetAvailableAreasResponse>;
-export declare function removeEmployeeAreas(areaIds: string[]): Promise<EmployeeAreaApiResponse>;
+export declare function removeEmployeeAreas(areaIds: number[]): Promise<EmployeeAreaApiResponse>;
 export declare function addEmployeeAreas(employeeId: number, areaData: Array<{ MaKhuVuc: string; NgayBatDau: string }>): Promise<EmployeeAreaApiResponse>;
 
 // Inventory Report

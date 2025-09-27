@@ -178,13 +178,16 @@ export const DeliveryAssignmentModal: React.FC<
                               <p>Địa chỉ: {staff.DiaChi}</p>
                               <p className="text-blue-600">
                                 Khu vực:{" "}
-                                {staff.KhuVucPhuTrach &&
-                                staff.KhuVucPhuTrach.length > 60
-                                  ? `${staff.KhuVucPhuTrach.substring(
-                                      0,
-                                      60
-                                    )}...`
-                                  : staff.KhuVucPhuTrach}
+                                {
+                                  staff.KhuVucPhuTrach
+                                  // &&
+                                  // staff.KhuVucPhuTrach.length > 60
+                                  //   ? `${staff.KhuVucPhuTrach.substring(
+                                  //       0,
+                                  //       60
+                                  //     )}...`
+                                  //   : staff.KhuVucPhuTrach
+                                }
                               </p>
                             </div>
                           </div>

@@ -1,11 +1,16 @@
 import { useState, useEffect } from "react";
-import { Edit, FileSpreadsheet, Save, Loader2, Eye, AlertCircle } from "lucide-react";
+import {
+  Edit,
+  FileSpreadsheet,
+  Save,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
 import { Card, CardContent } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
-import { Textarea } from "../../../components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -43,7 +48,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../../../components/ui/tooltip";
-import { formatPrice, formatDate, getPurchaseOrderReceivedStatus } from "../../../services/api";
+import {
+  formatPrice,
+  formatDate,
+  getPurchaseOrderReceivedStatus,
+} from "../../../services/api";
 import ExcelImport from "./ExcelImport";
 import clsx from "clsx";
 import { formatVietnameseCurrency } from "../../../lib/utils";
@@ -68,15 +77,14 @@ interface GoodsReceiptItem {
   unitPrice: number;
   condition: "good" | "damaged" | "defective";
   notes?: string;
-  totalReceivedValue: number;
-  colorName?: string; // thêm dòng này
+  colorName?: string;
 }
 
 interface GRForm {
   purchaseOrderId: string;
   receivedBy: string;
   notes: string;
-  items: Omit<GoodsReceiptItem, "totalReceivedValue">[];
+  items: GoodsReceiptItem[];
 }
 
 interface CreateGoodsReceiptFormProps {
@@ -128,48 +136,26 @@ export default function CreateGoodsReceiptForm({
   // Xóa state isPreviewModalOpen
 
   // Validate form
-  const [touched, setTouched] = useState<{[key: string]: boolean}>({});
+  const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
   const isFieldInvalid = (field: string, value: any) => {
     if (!touched[field]) return false;
-    if (typeof value === 'string') return !value.trim();
-    if (typeof value === 'number') return value === 0;
+    if (typeof value === "string") return !value.trim();
+    if (typeof value === "number") return value === 0;
     return !value;
   };
-
-  // const getConditionBadge = (condition: string) => {
-  //   const conditionMap = {
-  //     good: { label: "Tốt", variant: "default" as const, icon: CheckCircle },
-  //     damaged: {
-  //       label: "Hư hỏng",
-  //       variant: "destructive" as const,
-  //       icon: AlertTriangle,
-  //     },
-  //     defective: {
-  //       label: "Lỗi",
-  //       variant: "destructive" as const,
-  //       icon: AlertTriangle,
-  //     },
-  //   };
-
-  //   const conditionInfo = conditionMap[condition as keyof typeof conditionMap];
-  //   const Icon = conditionInfo?.icon || CheckCircle;
-
-  //   return (
-  //     <Badge variant={conditionInfo?.variant || "secondary"}>
-  //       <Icon className="w-3 h-3 mr-1" />
-  //       {conditionInfo?.label || condition}
-  //     </Badge>
-  //   );
-  // };
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
       draft: { label: "Nháp", className: "bg-gray-300 text-gray-900" },
       sent: { label: "Đã gửi", className: "bg-blue-200 text-blue-900" },
-      confirmed: { label: "Đã xác nhận", className: "bg-indigo-500 text-white" },
-      partially_received: { // Sửa key và label
+      confirmed: {
+        label: "Đã xác nhận",
+        className: "bg-indigo-500 text-white",
+      },
+      partially_received: {
+        // Sửa key và label
         label: "Đã gửi một phần",
-        className: "bg-yellow-300 text-yellow-900"
+        className: "bg-yellow-300 text-yellow-900",
       },
       completed: { label: "Hoàn thành", className: "bg-green-600 text-white" },
       cancelled: { label: "Đã hủy", className: "bg-red-500 text-white" },
@@ -185,7 +171,7 @@ export default function CreateGoodsReceiptForm({
 
   const updateGRItem = (
     index: number,
-    field: keyof Omit<GoodsReceiptItem, "totalReceivedValue">,
+    field: keyof GoodsReceiptItem,
     value: any
   ) => {
     const newItems = [...(grForm.items || [])];
@@ -195,41 +181,38 @@ export default function CreateGoodsReceiptForm({
 
   const calculateTotalReceived = () => {
     // Tính tổng từ TẤT CẢ items, không lọc bỏ lỗi validation
-    return (grForm.items || []).reduce(
-      (sum, item) => {
-        const quantity = typeof item.receivedQuantity === 'number' ? item.receivedQuantity : 0;
-        return sum + quantity * item.unitPrice;
-      },
-      0
-    );
+    return (grForm.items || []).reduce((sum, item) => {
+      const quantity =
+        typeof item.receivedQuantity === "number" ? item.receivedQuantity : 0;
+      return sum + quantity * item.unitPrice;
+    }, 0);
   };
 
   // Function to check if a row has validation errors
   const getRowErrors = (index: number) => {
-    const errors = excelValidationErrors.filter((error: any) => error.row === index + 2); // +2 because Excel rows start from 2
+    const errors = excelValidationErrors.filter(
+      (error: any) => error.row === index + 2
+    ); // +2 because Excel rows start from 2
     return errors;
   };
 
-  // Function to get row styling based on errors
-  const getRowStyle = (index: number) => {
-    const errors = getRowErrors(index);
-    if (errors.length > 0) {
-      return "bg-red-50 border-l-4 border-red-500";
-    }
-    return "";
-  };
-
-  const handleExcelDataProcessed = (items: Omit<GoodsReceiptItem, "totalReceivedValue">[]) => {
+  const handleExcelDataProcessed = (items: GoodsReceiptItem[]) => {
     console.log("=== HANDLE EXCEL DATA PROCESSED ===");
     console.log("Received items:", items);
-    console.log("Items unitPrice values:", items.map(item => ({ productName: item.productName, unitPrice: item.unitPrice })));
-    
+    console.log(
+      "Items unitPrice values:",
+      items.map((item) => ({
+        productName: item.productName,
+        unitPrice: item.unitPrice,
+      }))
+    );
+
     setGRForm({
       ...grForm,
       items: items,
     });
     setHasExcelData(true);
-    
+
     console.log("Updated grForm.items:", grForm.items);
   };
 
@@ -244,8 +227,9 @@ export default function CreateGoodsReceiptForm({
     }
     // Nếu nhập tay, chỉ lấy các item có receivedQuantity > 0
     if (inputMethod === "manual") {
-      return grForm.items.filter(item => {
-        const quantity = typeof item.receivedQuantity === 'number' ? item.receivedQuantity : 0;
+      return grForm.items.filter((item) => {
+        const quantity =
+          typeof item.receivedQuantity === "number" ? item.receivedQuantity : 0;
         return quantity > 0;
       });
     }
@@ -258,11 +242,15 @@ export default function CreateGoodsReceiptForm({
     const filteredItems = getFilteredItemsForSubmission();
     const filteredForm = {
       ...grForm,
-      items: filteredItems
+      items: filteredItems,
     };
 
     // Kiểm tra nếu có lỗi validation Excel và có items bị lọc bỏ
-    if (inputMethod === "excel" && excelValidationErrors.length > 0 && filteredItems.length < grForm.items.length) {
+    if (
+      inputMethod === "excel" &&
+      excelValidationErrors.length > 0 &&
+      filteredItems.length < grForm.items.length
+    ) {
       setPendingFormData(filteredForm);
       setShowConfirmDialog(true);
       return;
@@ -301,7 +289,7 @@ export default function CreateGoodsReceiptForm({
 
   // Thay thế onPOSelect để khởi tạo lại danh sách sản phẩm nhận khi chọn phiếu đặt hàng
   const handlePOSelect = (poId: string) => {
-    const po = availablePOs.find(po => po.MaPDH === poId || po.id === poId);
+    const po = availablePOs.find((po) => po.MaPDH === poId || po.id === poId);
     if (po) {
       setGRForm({
         ...grForm,
@@ -310,15 +298,20 @@ export default function CreateGoodsReceiptForm({
           purchaseOrderItemId: ct.MaCTSP,
           productId: ct.MaCTSP,
           productName: ct.ChiTietSanPham?.SanPham?.TenSP || ct.TenSP || "",
-          selectedColor: normalizeHexColor(ct.ChiTietSanPham?.Mau?.MaHex || ct.Mau?.MaHex),
+          selectedColor: normalizeHexColor(
+            ct.ChiTietSanPham?.Mau?.MaHex || ct.Mau?.MaHex
+          ),
           colorName: ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
-          selectedSize: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ct.KichThuoc?.TenKichThuoc || "",
+          selectedSize:
+            ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc ||
+            ct.KichThuoc?.TenKichThuoc ||
+            "",
           orderedQuantity: ct.SoLuong,
-          receivedQuantity: 0, // Để trống để người dùng nhập
+          receivedQuantity: getRemainingQuantity(ct.MaCTSP), // đặt mặc định = số lượng tối đa còn lại
           unitPrice: parseFloat(ct.DonGia),
           condition: "good",
           notes: "",
-        }))
+        })),
       });
       // Reset Excel data khi chọn PO mới
       setExcelData([]);
@@ -330,19 +323,24 @@ export default function CreateGoodsReceiptForm({
 
   // State để lưu trạng thái nhập hàng thực tế của từng sản phẩm
   const [receivedStatus, setReceivedStatus] = useState<any[]>([]);
-  const [quantityErrors, setQuantityErrors] = useState<{[key: number]: string}>({});
+  const [quantityErrors, setQuantityErrors] = useState<{
+    [key: number]: string;
+  }>({});
 
   // Debug: Theo dõi thay đổi của grForm.items
   useEffect(() => {
     console.log("=== GRFORM.ITEMS CHANGED ===");
     console.log("Current grForm.items:", grForm.items);
     if (grForm.items && grForm.items.length > 0) {
-      console.log("Items unitPrice values:", grForm.items.map(item => ({ 
-        productName: item.productName, 
-        unitPrice: item.unitPrice,
-        receivedQuantity: item.receivedQuantity,
-        total: item.receivedQuantity * item.unitPrice
-      })));
+      console.log(
+        "Items unitPrice values:",
+        grForm.items.map((item) => ({
+          productName: item.productName,
+          unitPrice: item.unitPrice,
+          receivedQuantity: item.receivedQuantity,
+          total: item.receivedQuantity * item.unitPrice,
+        }))
+      );
     }
   }, [grForm.items]);
 
@@ -358,8 +356,10 @@ export default function CreateGoodsReceiptForm({
     const fetchReceivedStatus = async () => {
       if (grForm.purchaseOrderId) {
         try {
-          const status = await getPurchaseOrderReceivedStatus(grForm.purchaseOrderId);
-  
+          const status = await getPurchaseOrderReceivedStatus(
+            grForm.purchaseOrderId
+          );
+
           setReceivedStatus(Array.isArray(status?.data) ? status.data : []);
         } catch (e) {
           setReceivedStatus([]);
@@ -373,9 +373,61 @@ export default function CreateGoodsReceiptForm({
 
   // Hàm lấy số còn lại phải nhập cho 1 sản phẩm (theo MaCTSP)
   const getRemainingQuantity = (maCTSP: string | number) => {
-    const found = receivedStatus.find((item: any) => String(item.MaCTSP) === String(maCTSP));
+    const found = receivedStatus.find(
+      (item: any) => String(item.MaCTSP) === String(maCTSP)
+    );
     return found ? found.SoLuongConLai : 0;
   };
+
+  // Số lượng đã nhập = SL đặt - SL còn lại (nếu có dữ liệu trạng thái), ngược lại trả 0
+  const getAlreadyReceivedQuantity = (
+    maCTSP: string | number,
+    orderedQuantity?: number
+  ) => {
+    const found = receivedStatus.find(
+      (item: any) => String(item.MaCTSP) === String(maCTSP)
+    );
+    if (!found) return 0;
+    const remaining = found.SoLuongConLai ?? 0;
+    if (typeof orderedQuantity === "number") {
+      const val = orderedQuantity - remaining;
+      return val < 0 ? 0 : val;
+    }
+    return 0;
+  };
+
+  // Tự động thiết lập giá trị ban đầu = số lượng tối đa có thể nhập (chỉ khi chưa được người dùng chỉnh sửa)
+  useEffect(() => {
+    if (!grForm.purchaseOrderId) return;
+    if (inputMethod !== "manual") return; // chỉ áp dụng cho nhập tay
+    if (!receivedStatus || receivedStatus.length === 0) return; // cần dữ liệu tồn còn lại
+
+    // Cập nhật các item có receivedQuantity hiện tại = 0 hoặc chuỗi rỗng
+    const updatedItems = grForm.items.map((it) => {
+      const currentVal = it.receivedQuantity as any;
+      if (
+        currentVal === 0 ||
+        currentVal === "" ||
+        currentVal === undefined ||
+        currentVal === null
+      ) {
+        const remaining = getRemainingQuantity(it.purchaseOrderItemId);
+        return {
+          ...it,
+          receivedQuantity: remaining > 0 ? remaining : 0,
+        };
+      }
+      return it;
+    });
+
+    // Chỉ set state nếu có thay đổi thực sự
+    const hasChange = updatedItems.some(
+      (it, idx) => it.receivedQuantity !== grForm.items[idx].receivedQuantity
+    );
+    if (hasChange) {
+      setGRForm({ ...grForm, items: updatedItems });
+    }
+  }, [receivedStatus, grForm.purchaseOrderId, inputMethod]);
 
   // Validate số lượng thực tế khi nhập tay
   const handleReceivedQuantityChange = (index: number, value: number) => {
@@ -384,8 +436,12 @@ export default function CreateGoodsReceiptForm({
 
     // Tổng số đã nhập cho sản phẩm này trong form (trừ dòng hiện tại)
     const totalEnteredOtherRows = grForm.items.reduce((sum, it, idx) => {
-      if (idx !== index && String(it.purchaseOrderItemId) === String(item.purchaseOrderItemId)) {
-        const quantity = typeof it.receivedQuantity === 'number' ? it.receivedQuantity : 0;
+      if (
+        idx !== index &&
+        String(it.purchaseOrderItemId) === String(item.purchaseOrderItemId)
+      ) {
+        const quantity =
+          typeof it.receivedQuantity === "number" ? it.receivedQuantity : 0;
         return sum + quantity;
       }
       return sum;
@@ -394,15 +450,15 @@ export default function CreateGoodsReceiptForm({
     // Số còn lại thực sự cho dòng này
     const realRemaining = (remainingFromAPI ?? 0) - totalEnteredOtherRows;
 
-    let error = '';
+    let error = "";
     if (value <= 0) {
-      error = 'Số lượng phải lớn hơn 0';
+      error = "Số lượng phải lớn hơn 0";
     } else if (realRemaining >= 0 && value > realRemaining) {
       error = `Số lượng tối đa có thể nhập: ${realRemaining}`;
     }
-    setQuantityErrors(prev => ({ ...prev, [index]: error }));
+    setQuantityErrors((prev) => ({ ...prev, [index]: error }));
     if (!error) {
-      updateGRItem(index, 'receivedQuantity', value);
+      updateGRItem(index, "receivedQuantity", value);
     }
   };
 
@@ -418,18 +474,28 @@ export default function CreateGoodsReceiptForm({
             disabled={loading.purchaseOrders}
           >
             <SelectTrigger
-              className={clsx(isFieldInvalid('purchaseOrderId', grForm.purchaseOrderId) && 'border-red-500', 'focus:outline-none')}
-              onBlur={() => setTouched(t => ({...t, purchaseOrderId: true}))}
+              className={clsx(
+                isFieldInvalid("purchaseOrderId", grForm.purchaseOrderId) &&
+                  "border-red-500",
+                "focus:outline-none"
+              )}
+              onBlur={() =>
+                setTouched((t) => ({ ...t, purchaseOrderId: true }))
+              }
             >
               <SelectValue placeholder="Chọn phiếu đặt hàng" />
             </SelectTrigger>
             <SelectContent>
               {availablePOs.length === 0 ? (
-                <div className="px-4 py-2 text-muted-foreground">Không có dữ liệu</div>
+                <div className="px-4 py-2 text-muted-foreground">
+                  Không có dữ liệu
+                </div>
               ) : (
                 availablePOs.map((po: any) => (
                   <SelectItem key={po.MaPDH || po.id} value={po.MaPDH || po.id}>
-                    {po.MaPDH || po.id} - {po.NhaCungCap?.TenNCC || po.supplierName}
+                    {po.MaPDH || po.id} -{" "}
+                    {po.NhaCungCap?.TenNCC || po.supplierName} -{" "}
+                    {formatDate(po.NgayDat)}
                   </SelectItem>
                 ))
               )}
@@ -450,7 +516,9 @@ export default function CreateGoodsReceiptForm({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <Label>Nhà cung cấp</Label>
-                <div className="font-medium">{selectedPO?.NhaCungCap?.TenNCC || "N/A"}</div>
+                <div className="font-medium">
+                  {selectedPO?.NhaCungCap?.TenNCC || "N/A"}
+                </div>
               </div>
               <div>
                 <Label>Ngày đặt</Label>
@@ -461,7 +529,8 @@ export default function CreateGoodsReceiptForm({
                 <div className="font-medium">
                   {formatPrice(
                     (selectedPO?.CT_PhieuDatHangNCCs || []).reduce(
-                      (sum: number, ct: any) => sum + (parseFloat(ct.DonGia) * ct.SoLuong),
+                      (sum: number, ct: any) =>
+                        sum + parseFloat(ct.DonGia) * ct.SoLuong,
                       0
                     )
                   )}
@@ -469,7 +538,11 @@ export default function CreateGoodsReceiptForm({
               </div>
               <div>
                 <Label>Trạng thái</Label>
-                <div>{getStatusBadge(getStatusFromTrangThai(selectedPO?.MaTrangThai) || "draft")}</div>
+                <div>
+                  {getStatusBadge(
+                    getStatusFromTrangThai(selectedPO?.MaTrangThai) || "draft"
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -488,30 +561,42 @@ export default function CreateGoodsReceiptForm({
             value={inputMethod}
             onValueChange={(value: string) => {
               console.log(`Tab changed from ${inputMethod} to ${value}`);
-              console.log("Current grForm.items before tab change:", grForm.items);
+              console.log(
+                "Current grForm.items before tab change:",
+                grForm.items
+              );
               setInputMethod(value as "manual" | "excel");
               if (value === "manual" && selectedPO) {
                 console.log("Resetting to manual input mode");
                 console.log("Selected PO:", selectedPO);
                 // Sử dụng selectedPO trực tiếp thay vì tìm trong availablePOs
                 if (selectedPO) {
-                  const newItems = (selectedPO.CT_PhieuDatHangNCCs || []).map((ct: any) => ({
-                    purchaseOrderItemId: ct.MaCTSP,
-                    productId: ct.MaCTSP,
-                    productName: ct.ChiTietSanPham?.SanPham?.TenSP || ct.TenSP || "",
-                    selectedColor: normalizeHexColor(ct.ChiTietSanPham?.Mau?.MaHex || ct.Mau?.MaHex),
-                    colorName: ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
-                    selectedSize: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ct.KichThuoc?.TenKichThuoc || "",
-                    orderedQuantity: ct.SoLuong,
-                    receivedQuantity: 0,
-                    unitPrice: parseFloat(ct.DonGia),
-                    condition: "good",
-                    notes: "",
-                  }));
+                  const newItems = (selectedPO.CT_PhieuDatHangNCCs || []).map(
+                    (ct: any) => ({
+                      purchaseOrderItemId: ct.MaCTSP,
+                      productId: ct.MaCTSP,
+                      productName:
+                        ct.ChiTietSanPham?.SanPham?.TenSP || ct.TenSP || "",
+                      selectedColor: normalizeHexColor(
+                        ct.ChiTietSanPham?.Mau?.MaHex || ct.Mau?.MaHex
+                      ),
+                      colorName:
+                        ct.ChiTietSanPham?.Mau?.TenMau || ct.Mau?.TenMau || "",
+                      selectedSize:
+                        ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc ||
+                        ct.KichThuoc?.TenKichThuoc ||
+                        "",
+                      orderedQuantity: ct.SoLuong,
+                      receivedQuantity: getRemainingQuantity(ct.MaCTSP), // đặt mặc định = số lượng tối đa còn lại
+                      unitPrice: parseFloat(ct.DonGia),
+                      condition: "good",
+                      notes: "",
+                    })
+                  );
                   console.log("New items for manual mode:", newItems);
                   setGRForm({
                     ...grForm,
-                    items: newItems
+                    items: newItems,
                   });
                   console.log("grForm updated with new items");
                 }
@@ -545,65 +630,115 @@ export default function CreateGoodsReceiptForm({
                           <TableHead>Màu</TableHead>
                           <TableHead>Kích thước</TableHead>
                           <TableHead>Đặt hàng</TableHead>
+                          <TableHead>Đã nhập</TableHead>
                           <TableHead>Nhận thực tế</TableHead>
                           <TableHead>Thành tiền</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {(grForm.items || []).map((item, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium">
-                              {item.productName}
-                            </TableCell>
-                            <TableCell>
-                              {item.selectedColor && (
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className="w-4 h-4 rounded border"
-                                    style={{ 
-                                      backgroundColor: item.selectedColor || undefined,
-                                      borderColor: item.selectedColor ? '#e5e7eb' : '#d1d5db'
-                                    }}
-                                  />
-                                  <span>{item.colorName}</span>
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {item.selectedSize}
-                            </TableCell>
-                            <TableCell>{item.orderedQuantity}</TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                value={item.receivedQuantity}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  if (value === "") {
-                                    updateGRItem(index, 'receivedQuantity', "");
-                                  } else {
-                                    const val = parseInt(value);
-                                    if (!isNaN(val) && val >= 1) {
-                                      handleReceivedQuantityChange(index, val);
+                        {(grForm.items || [])
+                          .filter((item) => {
+                            const already = getAlreadyReceivedQuantity(
+                              item.purchaseOrderItemId,
+                              item.orderedQuantity
+                            );
+                            return already < item.orderedQuantity; // chỉ hiển thị nếu chưa nhập đủ
+                          })
+                          .map((item, index) => (
+                            <TableRow key={item.purchaseOrderItemId}>
+                              <TableCell className="font-medium">
+                                {item.productName}
+                              </TableCell>
+                              <TableCell>
+                                {item.selectedColor && (
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className="w-4 h-4 rounded border"
+                                      style={{
+                                        backgroundColor:
+                                          item.selectedColor || undefined,
+                                        borderColor: item.selectedColor
+                                          ? "#e5e7eb"
+                                          : "#d1d5db",
+                                      }}
+                                    />
+                                    <span>{item.colorName}</span>
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>{item.selectedSize}</TableCell>
+                              <TableCell>{item.orderedQuantity}</TableCell>
+                              <TableCell>
+                                {getAlreadyReceivedQuantity(
+                                  item.purchaseOrderItemId,
+                                  item.orderedQuantity
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  value={item.receivedQuantity}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value === "") {
+                                      updateGRItem(
+                                        index,
+                                        "receivedQuantity",
+                                        ""
+                                      );
                                     } else {
-                                      // Keep the string value if it's not a valid number
-                                      updateGRItem(index, 'receivedQuantity', value);
+                                      const val = parseInt(value);
+                                      if (!isNaN(val) && val >= 1) {
+                                        handleReceivedQuantityChange(
+                                          index,
+                                          val
+                                        );
+                                      } else {
+                                        // Keep the string value if it's not a valid number
+                                        updateGRItem(
+                                          index,
+                                          "receivedQuantity",
+                                          value
+                                        );
+                                      }
                                     }
+                                  }}
+                                  onBlur={() =>
+                                    setTouched((t) => ({
+                                      ...t,
+                                      [`receivedQuantity_${index}`]: true,
+                                    }))
                                   }
-                                }}
-                                onBlur={() => setTouched(t => ({...t, [`receivedQuantity_${index}`]: true}))}
-                                min="1"
-                                max={getRemainingQuantity(item.purchaseOrderItemId) || item.orderedQuantity}
-                                className={clsx("w-20 focus:outline-none", (isFieldInvalid(`receivedQuantity_${index}`, item.receivedQuantity) || quantityErrors[index]) && 'border-red-500')}
-                              />
-                              {quantityErrors[index] && (
-                                <div className="text-xs text-red-500 mt-1">{quantityErrors[index]}</div>
-                              )}
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {formatVietnameseCurrency((typeof item.receivedQuantity === 'number' ? item.receivedQuantity : 0) * item.unitPrice)}
-                            </TableCell>
-                            {/* <TableCell>
+                                  min="1"
+                                  max={
+                                    getRemainingQuantity(
+                                      item.purchaseOrderItemId
+                                    ) || item.orderedQuantity
+                                  }
+                                  className={clsx(
+                                    "w-20 focus:outline-none",
+                                    (isFieldInvalid(
+                                      `receivedQuantity_${index}`,
+                                      item.receivedQuantity
+                                    ) ||
+                                      quantityErrors[index]) &&
+                                      "border-red-500"
+                                  )}
+                                />
+                                {quantityErrors[index] && (
+                                  <div className="text-xs text-red-500 mt-1">
+                                    {quantityErrors[index]}
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {formatVietnameseCurrency(
+                                  (typeof item.receivedQuantity === "number"
+                                    ? item.receivedQuantity
+                                    : 0) * item.unitPrice
+                                )}
+                              </TableCell>
+                              {/* <TableCell>
                               <Input
                                 value={item.notes || ""}
                                 onChange={(e) =>
@@ -613,13 +748,14 @@ export default function CreateGoodsReceiptForm({
                                 className="w-32 focus:outline-none"
                               />
                             </TableCell> */}
-                          </TableRow>
-                        ))}
+                            </TableRow>
+                          ))}
                       </TableBody>
                     </Table>
                     <div className="p-4 text-right border-t">
                       <div className="text-lg font-bold">
-                        Tổng tiền nhận: {formatVietnameseCurrency(calculateTotalReceived())}
+                        Tổng tiền nhận:{" "}
+                        {formatVietnameseCurrency(calculateTotalReceived())}
                       </div>
                     </div>
                   </Card>
@@ -645,144 +781,187 @@ export default function CreateGoodsReceiptForm({
                 />
 
                 {/* Excel Data Summary + Chi tiết luôn hiển thị */}
-                {hasExcelData && excelData.length > 0 && (grForm.items || []).length > 0 && (
-                  <div className="space-y-4">
-                    {/* Bảng chi tiết luôn hiển thị */}
-                    <Card>
-                      <div className="p-4">
-                        <div className="text-base font-semibold mb-2">Xem trước dữ liệu nhập kho</div>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>STT</TableHead>
-                            <TableHead>Sản phẩm</TableHead>
-                            <TableHead>Màu</TableHead>
-                            <TableHead>Size</TableHead>
-                            <TableHead>SL Đặt</TableHead>
-                            <TableHead>SL Nhận</TableHead>
-                            <TableHead>Đơn giá</TableHead>
-                            <TableHead>Thành tiền</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                          <TableBody>
-                            {(grForm.items || []).map((item, index) => {
-                              const rowErrors = getRowErrors(index);
-                              const hasErrors = rowErrors.length > 0;
-                              
-                              // Debug logging
-                              console.log(`Display Row ${index + 1}:`, {
-                                productName: item.productName,
-                                unitPrice: item.unitPrice,
-                                receivedQuantity: item.receivedQuantity,
-                                total: item.receivedQuantity * item.unitPrice
-                              });
-                              
-                              return (
-                                <TableRow
-                                  key={index}
-                                  className={hasErrors ? "bg-red-50 border-l-4 border-red-500" : ""}
-                                >
-                                  <TableCell>
-                                    <div className="flex items-center gap-2">
-                                      {index + 1}
-                                      {hasErrors && (
-                                        <div className="w-2 h-2 bg-red-500 rounded-full" title={`${rowErrors.length} lỗi`} />
-                                      )}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div>
-                                      <div className="font-medium">{item.productName}</div>
-                                      <div className="text-sm text-muted-foreground">
-                                        ID: {item.productId}
+                {hasExcelData &&
+                  excelData.length > 0 &&
+                  (grForm.items || []).length > 0 && (
+                    <div className="space-y-4">
+                      {/* Bảng chi tiết luôn hiển thị */}
+                      <Card>
+                        <div className="p-4">
+                          <div className="text-base font-semibold mb-2">
+                            Xem trước dữ liệu nhập kho
+                          </div>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>STT</TableHead>
+                                <TableHead>Sản phẩm</TableHead>
+                                <TableHead>Màu</TableHead>
+                                <TableHead>Size</TableHead>
+                                <TableHead>SL Đặt</TableHead>
+                                <TableHead>Đã nhập</TableHead>
+                                <TableHead>SL Nhận</TableHead>
+                                <TableHead>Đơn giá</TableHead>
+                                <TableHead>Thành tiền</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {(grForm.items || []).map((item, index) => {
+                                const rowErrors = getRowErrors(index);
+                                const hasErrors = rowErrors.length > 0;
+
+                                // Debug logging
+                                console.log(`Display Row ${index + 1}:`, {
+                                  productName: item.productName,
+                                  unitPrice: item.unitPrice,
+                                  receivedQuantity: item.receivedQuantity,
+                                  total: item.receivedQuantity * item.unitPrice,
+                                });
+
+                                return (
+                                  <TableRow
+                                    key={index}
+                                    className={
+                                      hasErrors
+                                        ? "bg-red-50 border-l-4 border-red-500"
+                                        : ""
+                                    }
+                                  >
+                                    <TableCell>
+                                      <div className="flex items-center gap-2">
+                                        {index + 1}
+                                        {hasErrors && (
+                                          <div
+                                            className="w-2 h-2 bg-red-500 rounded-full"
+                                            title={`${rowErrors.length} lỗi`}
+                                          />
+                                        )}
                                       </div>
-                                      {hasErrors && (
-                                        <div className="mt-1 text-xs text-red-600">
-                                          {rowErrors.map((error: any, errorIndex: number) => (
-                                            <div key={errorIndex}>• {error.message}</div>
-                                          ))}
+                                    </TableCell>
+                                    <TableCell>
+                                      <div>
+                                        <div className="font-medium">
+                                          {item.productName}
+                                        </div>
+                                        <div className="text-sm text-muted-foreground">
+                                          ID: {item.productId}
+                                        </div>
+                                        {hasErrors && (
+                                          <div className="mt-1 text-xs text-red-600">
+                                            {rowErrors.map(
+                                              (
+                                                error: any,
+                                                errorIndex: number
+                                              ) => (
+                                                <div key={errorIndex}>
+                                                  • {error.message}
+                                                </div>
+                                              )
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      {item.selectedColor && (
+                                        <div className="flex items-center gap-2">
+                                          <div
+                                            className="w-3 h-3 rounded border"
+                                            style={{
+                                              backgroundColor:
+                                                item.selectedColor || undefined,
+                                              borderColor: item.selectedColor
+                                                ? "#e5e7eb"
+                                                : "#d1d5db",
+                                            }}
+                                          />
+                                          <span className="text-sm">
+                                            {item.colorName ||
+                                              item.selectedColor}
+                                          </span>
                                         </div>
                                       )}
-                                    </div>
-                                  </TableCell>
-                                                                  <TableCell>
-                                  {item.selectedColor && (
-                                    <div className="flex items-center gap-2">
-                                      <div
-                                        className="w-3 h-3 rounded border"
-                                        style={{ 
-                                          backgroundColor: item.selectedColor || undefined,
-                                          borderColor: item.selectedColor ? '#e5e7eb' : '#d1d5db'
-                                        }}
-                                      />
-                                      <span className="text-sm">{item.colorName || item.selectedColor}</span>
-                                    </div>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  <span className="text-sm">{item.selectedSize}</span>
-                                </TableCell>
-                                <TableCell>{item.orderedQuantity}</TableCell>
-                                <TableCell className="font-medium">
-                                  {item.receivedQuantity}
-                                </TableCell>
-                                <TableCell>
-                                  {(() => {
-                                    // Hiển thị đơn giá với dấu chấm ngăn cách phần nghìn
-                                    const formattedPrice = item.unitPrice.toLocaleString('vi-VN');
-                                    console.log(`Displaying unitPrice for ${item.productName}:`, {
-                                      rawValue: item.unitPrice,
-                                      formattedValue: formattedPrice,
-                                      type: typeof item.unitPrice
-                                    });
-                                    return formattedPrice;
-                                  })()}
-                                </TableCell>
-                                <TableCell className="font-medium">
-                                  {(() => {
-                                    const quantity = typeof item.receivedQuantity === 'number' ? item.receivedQuantity : 0;
-                                    const total = quantity * item.unitPrice;
-                                    const formattedTotal = formatVietnameseCurrency(total);
-                                    console.log(`Displaying total for ${item.productName}:`, {
-                                      receivedQuantity: item.receivedQuantity,
-                                      unitPrice: item.unitPrice,
-                                      total: total,
-                                      formattedTotal: formattedTotal
-                                    });
-                                    return formattedTotal;
-                                  })()}
-                                </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                        <div className="text-right mt-2">
-                          <div className="text-lg font-bold">
-                            Tổng giá trị: {formatVietnameseCurrency(calculateTotalReceived())}
+                                    </TableCell>
+                                    <TableCell>
+                                      <span className="text-sm">
+                                        {item.selectedSize}
+                                      </span>
+                                    </TableCell>
+                                    <TableCell>
+                                      {item.orderedQuantity}
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                      {getAlreadyReceivedQuantity(
+                                        item.purchaseOrderItemId,
+                                        item.orderedQuantity
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                      {item.receivedQuantity}
+                                    </TableCell>
+                                    <TableCell>
+                                      {(() => {
+                                        // Hiển thị đơn giá với dấu chấm ngăn cách phần nghìn
+                                        const formattedPrice =
+                                          item.unitPrice.toLocaleString(
+                                            "vi-VN"
+                                          );
+                                        console.log(
+                                          `Displaying unitPrice for ${item.productName}:`,
+                                          {
+                                            rawValue: item.unitPrice,
+                                            formattedValue: formattedPrice,
+                                            type: typeof item.unitPrice,
+                                          }
+                                        );
+                                        return formattedPrice;
+                                      })()}
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                      {(() => {
+                                        const quantity =
+                                          typeof item.receivedQuantity ===
+                                          "number"
+                                            ? item.receivedQuantity
+                                            : 0;
+                                        const total = quantity * item.unitPrice;
+                                        const formattedTotal =
+                                          formatVietnameseCurrency(total);
+                                        console.log(
+                                          `Displaying total for ${item.productName}:`,
+                                          {
+                                            receivedQuantity:
+                                              item.receivedQuantity,
+                                            unitPrice: item.unitPrice,
+                                            total: total,
+                                            formattedTotal: formattedTotal,
+                                          }
+                                        );
+                                        return formattedTotal;
+                                      })()}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                          <div className="text-right mt-2">
+                            <div className="text-lg font-bold">
+                              Tổng giá trị:{" "}
+                              {formatVietnameseCurrency(
+                                calculateTotalReceived()
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </Card>
-                  </div>
-                )}
+                      </Card>
+                    </div>
+                  )}
               </div>
             </TabsContent>
           </Tabs>
         )}
       </div>
-
-      {/* Notes */}
-      {/* <div>
-        <Label htmlFor="grNotes">Ghi chú nhập kho</Label>
-        <Textarea
-          id="grNotes"
-          value={grForm.notes}
-          onChange={(e) => setGRForm({ ...grForm, notes: e.target.value })}
-          placeholder="Ghi chú về tình trạng hàng nhận, vấn đề phát sinh..."
-          rows={3}
-        />
-      </div> */}
 
       {/* Error Summary */}
       {inputMethod === "excel" && excelValidationErrors.length > 0 && (
@@ -790,7 +969,8 @@ export default function CreateGoodsReceiptForm({
           <div className="flex items-center gap-2 text-red-700">
             <AlertCircle className="h-4 w-4" />
             <span className="font-medium">
-              Không thể nhập kho: {excelValidationErrors.length} lỗi trong file Excel
+              Không thể nhập kho: {excelValidationErrors.length} lỗi trong file
+              Excel
             </span>
           </div>
           <p className="text-sm text-red-600 mt-1">
@@ -813,7 +993,10 @@ export default function CreateGoodsReceiptForm({
             <TooltipTrigger asChild>
               <Button
                 onClick={handleCreateGRWithFilter}
-                disabled={loading.creating || (inputMethod === "excel" && excelValidationErrors.length > 0)}
+                disabled={
+                  loading.creating ||
+                  (inputMethod === "excel" && excelValidationErrors.length > 0)
+                }
                 className="bg-brand-600 hover:bg-brand-700"
               >
                 {loading.creating ? (
@@ -838,25 +1021,22 @@ export default function CreateGoodsReceiptForm({
         </TooltipProvider>
       </div>
 
-      {/* Preview Modal Dialog */}
-      {/* Removed as per edit hint */}
-
       {/* Confirmation Dialog for Excel Validation Errors */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận nhập kho</AlertDialogTitle>
             <AlertDialogDescription>
-              File Excel hiện tại có một số record không hợp lệ. Nếu bạn xác nhận, chỉ những record hợp lệ sẽ được nhập kho.
-              <br /><br />
+              File Excel hiện tại có một số record không hợp lệ. Nếu bạn xác
+              nhận, chỉ những record hợp lệ sẽ được nhập kho.
+              <br />
+              <br />
               <strong>Thống kê:</strong>
+              <br />• Tổng số record: {grForm.items.length}
+              <br />• Record hợp lệ: {pendingFormData?.items.length || 0}
+              <br />• Record có lỗi: {excelValidationErrors.length}
               <br />
-              • Tổng số record: {grForm.items.length}
               <br />
-              • Record hợp lệ: {pendingFormData?.items.length || 0}
-              <br />
-              • Record có lỗi: {excelValidationErrors.length}
-              <br /><br />
               Bạn có muốn tiếp tục nhập kho với những record hợp lệ không?
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -870,4 +1050,4 @@ export default function CreateGoodsReceiptForm({
       </AlertDialog>
     </div>
   );
-} 
+}

@@ -50,7 +50,7 @@ interface Employee {
   isActive: string; // Changed from boolean to string to match API
   createdAt: string;
   updatedAt?: string;
-  currentRole?: string; // Thêm trường để lưu vai trò hiện tại
+  currentRole?: string;
   khuVucPhuTrach?: Array<{
     MaKhuVuc: string;
     TenKhuVuc: string;
@@ -60,8 +60,6 @@ interface Employee {
     };
   }>;
 }
-
-// ...existing code...
 
 export const EmployeeManagement = () => {
   const { hasPermission } = usePermission();
@@ -262,11 +260,6 @@ export const EmployeeManagement = () => {
   // Fetch vai trò hiện tại của nhân viên
   const fetchEmployeeRole = async (maNV: number): Promise<string | null> => {
     try {
-      console.log(`🔍 Fetching role for employee maNV: ${maNV}`);
-      console.log(
-        `🔑 Token: ${localStorage.getItem("token")?.substring(0, 20)}...`
-      );
-
       const response = await fetch(
         `http://localhost:8080/api/employees/${maNV}/role`,
         {
