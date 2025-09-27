@@ -1823,3 +1823,27 @@ export const getInventoryReportPDF = async (reportDate, nguoiLap) => {
     return response.data;
   });
 };
+
+// Profit Report APIs
+export const getProfitReport = async (ngayBatDau, ngayKetThuc) => {
+  return handleApiCall(async () => {
+    const response = await api.post('/bao-cao-loi-nhuan', {
+      ngayBatDau,
+      ngayKetThuc
+    });
+    return response.data;
+  });
+};
+
+export const getProfitReportPDF = async (ngayBatDau, ngayKetThuc, nguoiLap) => {
+  return handleApiCall(async () => {
+    const response = await api.post('/bao-cao-loi-nhuan/pdf', {
+      ngayBatDau,
+      ngayKetThuc,
+      nguoiLap
+    }, {
+      responseType: 'blob'
+    });
+    return response.data;
+  });
+};

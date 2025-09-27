@@ -854,3 +854,40 @@ export declare function getInventoryReport(reportDate: string): Promise<{
 }>;
 
 export declare function getInventoryReportPDF(reportDate: string, nguoiLap: string): Promise<Blob>;
+
+// Profit Report
+export declare function getProfitReport(ngayBatDau: string, ngayKetThuc: string): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    data: Array<{
+      stt: number;
+      loaiSanPham: string;
+      maSanPham: number;
+      tenSanPham: string;
+      tongTriGiaNhap: number;
+      tongTriGiaXuat: number;
+      loiNhuan: number;
+      phanTramLoiNhuan: number;
+      tongTriGiaNhapFormatted: string;
+      tongTriGiaXuatFormatted: string;
+      loiNhuanFormatted: string;
+      phanTramLoiNhuanFormatted: string;
+    }>;
+    summary: {
+      tongTriGiaNhapTotal: number;
+      tongTriGiaXuatTotal: number;
+      tongLoiNhuan: number;
+      phanTramLoiNhuanTrungBinh: number;
+      tongTriGiaNhapTotalFormatted: string;
+      tongTriGiaXuatTotalFormatted: string;
+      tongLoiNhuanFormatted: string;
+      phanTramLoiNhuanTrungBinhFormatted: string;
+      soLuongSanPham: number;
+    };
+    ngayBatDau: string;
+    ngayKetThuc: string;
+  };
+}>;
+
+export declare function getProfitReportPDF(ngayBatDau: string, ngayKetThuc: string, nguoiLap: string): Promise<Blob>;
