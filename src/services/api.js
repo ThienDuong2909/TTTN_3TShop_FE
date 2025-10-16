@@ -1737,7 +1737,7 @@ export const getCurrentMonthOrders = async () => {
 
 export const getAllEmployees = async () => {
   try {
-    const response = await apiWrapper.get("/nhan-vien");
+    const response = await apiWrapper.get("/employees");
     return response.data;
   } catch (error) {
     return handleError(error);

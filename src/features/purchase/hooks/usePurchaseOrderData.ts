@@ -99,12 +99,12 @@ const transformProductFromAPI = (apiProduct: any): Product => {
 // Helper function to map status
 const getStatusFromTrangThai = (maTrangThai: number): PurchaseOrder["status"] => {
   switch (maTrangThai) {
-    case 1: return "draft";
+    case 1: return "draft" ;
     case 2: return "sent";
     case 3: return "confirmed";
     case 4: return "partially_received";
     case 5: return "completed";
-    case 5: return "cancelled";
+    case 6: return "cancelled";
     default: return "draft";
   }
 };

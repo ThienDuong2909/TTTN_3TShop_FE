@@ -45,12 +45,7 @@ function Footer() {
         {/* Company Info */}
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-gradient-to-r from-brand-500 to-brand-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">F</span>
-            </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">
-              3TShop
-            </span>
+            <img className="h-28 w-28" src="../public/3tshop.png" alt="Logo" />
           </div>
           <p className="text-gray-600 dark:text-gray-300">
             Thời trang hiện đại, chất lượng cao với giá cả hợp lý. Mang đến

@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { useApp } from "../contexts/AppContext";
-import { getAllProducts,getAllCategories, getBestSellerProducts, getNewProducts, getDiscountProducts  } from "../services/api";
-import { mapSanPhamFromApi } from "../utils/productMapper.ts";
+import { useApp } from "../contexts/AppContext.tsx";
 import {
-  ChevronRight,
-  ChevronLeft,
-} from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { ProductCard, Product } from "../components/ProductCard";
+  getAllProducts,
+  getAllCategories,
+  getBestSellerProducts,
+  getNewProducts,
+  getDiscountProducts,
+} from "../services/api";
+import { mapSanPhamFromApi } from "../utils/productMapper.ts";
+import { ChevronRight, ChevronLeft } from "lucide-react";
+import { Button } from "../components/ui/button.tsx";
+import { Badge } from "../components/ui/badge.tsx";
+import { ProductCard, Product } from "../components/ProductCard.tsx";
 
 const HERO_SLIDES = [
   {
@@ -23,7 +26,8 @@ const HERO_SLIDES = [
         </span>
       </>
     ),
-    description: "Khám phá những xu hướng thời trang mới nhất với chất lượng cao và giá cả hợp lý.",
+    description:
+      "Khám phá những xu hướng thời trang mới nhất với chất lượng cao và giá cả hợp lý.",
     button: "Mua sắm ngay",
     productsKey: "newProducts",
     bg: "from-brand-600 via-brand-500 to-brand-400",
@@ -39,7 +43,8 @@ const HERO_SLIDES = [
         </span>
       </>
     ),
-    description: "Những sản phẩm bán chạy nhất, được nhiều khách hàng lựa chọn.",
+    description:
+      "Những sản phẩm bán chạy nhất, được nhiều khách hàng lựa chọn.",
     button: "Khám phá ngay",
     productsKey: "bestSellerProducts",
     bg: "from-pink-600 via-pink-500 to-red-400",
@@ -70,12 +75,12 @@ export default function Index() {
     href: string;
     count: number;
   }
-  
+
   const { toggleWishlist, isInWishlist, addToCart } = useApp();
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<CategoryDisplay[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
-  
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -88,7 +93,7 @@ export default function Index() {
             name: cat.TenLoai,
             image: cat.HinhMinhHoa || "/images/category-placeholder.jpg",
             href: `/category/${cat.MaLoaiSP}`,
-            count: cat.soLuongSanPham, 
+            count: cat.soLuongSanPham,
           }))
         );
       } catch (error) {
@@ -194,7 +199,7 @@ export default function Index() {
   }
 
   const [catStart, setCatStart] = useState(0);
-  
+
   const catPerPage = 4;
   const maxStart = Math.max(0, categories.length - catPerPage);
   const categoryWidth = 260;
@@ -207,7 +212,7 @@ export default function Index() {
   );
 
   // Component skeleton cho hero products
-   const HeroProductsSkeleton = () => (
+  const HeroProductsSkeleton = () => (
     <div className="flex justify-center gap-6 flex-nowrap overflow-x-auto lg:overflow-visible">
       {[...Array(3)].map((_, i) => (
         <div key={i} className="min-w-[180px] max-w-[240px]">
@@ -234,7 +239,9 @@ export default function Index() {
     <div className="relative flex justify-center items-center overflow-hidden">
       <div
         className="w-full overflow-hidden"
-        style={{ maxWidth: catPerPage * categoryWidth + (catPerPage - 1) * gap }}
+        style={{
+          maxWidth: catPerPage * categoryWidth + (catPerPage - 1) * gap,
+        }}
       >
         <div className="flex gap-6">
           {[...Array(4)].map((_, i) => (
@@ -275,7 +282,9 @@ export default function Index() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className={`relative bg-gradient-to-r ${slideData.bg} text-white overflow-hidden transition-all duration-700`}>
+      <section
+        className={`relative bg-gradient-to-r ${slideData.bg} text-white overflow-hidden transition-all duration-700`}
+      >
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative container mx-auto px-4 py-12 lg:py-20 max-w-[1200px]">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -302,7 +311,11 @@ export default function Index() {
                 {HERO_SLIDES.map((s, idx) => (
                   <button
                     key={s.key}
-                    className={`w-3 h-3 rounded-full border-2 ${slide === idx ? "bg-white border-white" : "bg-white/30 border-white/30"} transition`}
+                    className={`w-3 h-3 rounded-full border-2 ${
+                      slide === idx
+                        ? "bg-white border-white"
+                        : "bg-white/30 border-white/30"
+                    } transition`}
                     onClick={() => setSlide(idx)}
                     aria-label={`Chuyển đến slide ${idx + 1}`}
                   />
@@ -315,7 +328,10 @@ export default function Index() {
               ) : productSamples.length > 0 ? (
                 <div className="flex justify-center gap-6 flex-nowrap overflow-x-auto lg:overflow-visible">
                   {productSamples.map((product) => (
-                    <div key={product.id} className="min-w-[180px] max-w-[240px]">
+                    <div
+                      key={product.id}
+                      className="min-w-[180px] max-w-[240px]"
+                    >
                       <ProductCard
                         product={product}
                         isLiked={isInWishlist(product.id)}
@@ -327,7 +343,10 @@ export default function Index() {
                     </div>
                   ))}
                   {[...Array(3 - productSamples.length)].map((_, idx) => (
-                    <div key={`placeholder-${idx}`} className="min-w-[180px] max-w-[200px] invisible" />
+                    <div
+                      key={`placeholder-${idx}`}
+                      className="min-w-[180px] max-w-[200px] invisible"
+                    />
                   ))}
                 </div>
               ) : (
@@ -350,10 +369,11 @@ export default function Index() {
               Danh mục sản phẩm
             </h2>
             <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Khám phá các danh mục thời trang đa dạng với hàng ngàn sản phẩm chất lượng
+              Khám phá các danh mục thời trang đa dạng với hàng ngàn sản phẩm
+              chất lượng
             </p>
           </div>
-          
+
           {categoriesLoading ? (
             <CategoriesSkeleton />
           ) : (
@@ -370,12 +390,16 @@ export default function Index() {
               )}
               <div
                 className="w-full overflow-hidden"
-                style={{ maxWidth: catPerPage * categoryWidth + (catPerPage - 1) * gap }}
+                style={{
+                  maxWidth: catPerPage * categoryWidth + (catPerPage - 1) * gap,
+                }}
               >
                 <div
                   className="flex gap-6 transition-transform duration-500"
                   style={{
-                    width: categories.length * categoryWidth + (categories.length - 1) * gap,
+                    width:
+                      categories.length * categoryWidth +
+                      (categories.length - 1) * gap,
                     transform: `translateX(${translateX}px)`,
                   }}
                 >
@@ -384,7 +408,10 @@ export default function Index() {
                       key={category.id}
                       to={category.href}
                       className="group relative overflow-hidden rounded-xl aspect-[4/3] hover:shadow-lg transition-all duration-300"
-                      style={{ minWidth: categoryWidth, maxWidth: categoryWidth }}
+                      style={{
+                        minWidth: categoryWidth,
+                        maxWidth: categoryWidth,
+                      }}
                     >
                       <img
                         src={category.image}
@@ -393,8 +420,12 @@ export default function Index() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                       <div className="absolute bottom-6 left-6 text-white">
-                        <h3 className="text-xl font-bold mb-1">{category.name}</h3>
-                        <p className="text-white/80">{category.count} sản phẩm</p>
+                        <h3 className="text-xl font-bold mb-1">
+                          {category.name}
+                        </h3>
+                        <p className="text-white/80">
+                          {category.count} sản phẩm
+                        </p>
                       </div>
                       <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <ChevronRight className="w-5 h-5 text-white" />
@@ -406,7 +437,9 @@ export default function Index() {
               {canNext && (
                 <button
                   className="absolute right-0 z-10 bg-white shadow rounded-full p-2 hover:bg-gray-100 transition"
-                  onClick={() => setCatStart((prev) => Math.min(maxStart, prev + 1))}
+                  onClick={() =>
+                    setCatStart((prev) => Math.min(maxStart, prev + 1))
+                  }
                   aria-label="Xem danh mục tiếp"
                   style={{ top: "50%", transform: "translateY(-50%)" }}
                 >
@@ -437,7 +470,7 @@ export default function Index() {
               </Link>
             </Button>
           </div>
-          
+
           {newProductsLoading ? (
             <ProductGridSkeleton />
           ) : (
@@ -477,7 +510,7 @@ export default function Index() {
               </Link>
             </Button>
           </div>
-          
+
           {bestSellerLoading ? (
             <ProductGridSkeleton />
           ) : (
@@ -495,7 +528,7 @@ export default function Index() {
               ))}
             </div>
           )}
-          
+
           <div className="text-center mt-8 md:hidden">
             <Button variant="outline">
               <Link to="/bestseller-products" className="flex items-center">
@@ -526,7 +559,7 @@ export default function Index() {
               </Link>
             </Button>
           </div>
-          
+
           {discountLoading ? (
             <ProductGridSkeleton />
           ) : (
@@ -544,7 +577,7 @@ export default function Index() {
               ))}
             </div>
           )}
-          
+
           <div className="text-center mt-8 md:hidden">
             <Button variant="outline">
               <Link to="/discount-products" className="flex items-center">
