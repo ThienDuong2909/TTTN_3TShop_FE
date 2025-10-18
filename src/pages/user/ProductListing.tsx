@@ -10,7 +10,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import { Checkbox } from "../../components/ui/checkbox";
 import {
@@ -34,7 +33,9 @@ import {
 } from "../../components/ui/collapsible";
 import { ProductCard } from "../../components/ProductCard";
 import { useApp } from "../../contexts/AppContext";
-import { getProductsByCategory, categories, products } from "../../libs/data";
+import { Category } from "@/types/category.type";
+import { getProductsByCategory } from "@/lib/product-helper";
+import { Product } from "@/types/product.type";
 
 interface ProductListingProps {
   category: string;
@@ -86,7 +87,7 @@ export default function ProductListing({ category }: ProductListingProps) {
     }
 
     const allCategories = [...categories];
-    categories.forEach((cat) => {
+    categories.forEach((cat: Category) => {
       if (cat.subcategories) {
         allCategories.push(...cat.subcategories);
       }
@@ -102,7 +103,7 @@ export default function ProductListing({ category }: ProductListingProps) {
 
     if (searchQuery) {
       // Search mode
-      productList = products.filter((product) =>
+      productList = products.filter((product: Product) =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     } else {
@@ -111,7 +112,7 @@ export default function ProductListing({ category }: ProductListingProps) {
     }
 
     // Apply filters
-    productList = productList.filter((product) => {
+    productList = productList.filter((product: Product) => {
       // Price range
       if (
         product.price < filters.priceRange[0] ||
@@ -154,22 +155,28 @@ export default function ProductListing({ category }: ProductListingProps) {
     // Apply sorting
     switch (sortBy) {
       case "price-low":
-        productList.sort((a, b) => a.price - b.price);
+        productList.sort((a: Product, b: Product) => a.price - b.price);
         break;
       case "price-high":
-        productList.sort((a, b) => b.price - a.price);
+        productList.sort((a: Product, b: Product) => b.price - a.price);
         break;
       case "name-asc":
-        productList.sort((a, b) => a.name.localeCompare(b.name));
+        productList.sort((a: Product, b: Product) =>
+          a.name.localeCompare(b.name)
+        );
         break;
       case "name-desc":
-        productList.sort((a, b) => b.name.localeCompare(a.name));
+        productList.sort((a: Product, b: Product) =>
+          b.name.localeCompare(a.name)
+        );
         break;
       case "rating-high":
-        productList.sort((a, b) => b.rating - a.rating);
+        productList.sort((a: Product, b: Product) => b.rating - a.rating);
         break;
       case "newest":
-        productList.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
+        productList.sort(
+          (a: Product, b: Product) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0)
+        );
         break;
       default:
         // Keep original order
@@ -188,7 +195,7 @@ export default function ProductListing({ category }: ProductListingProps) {
     const colors = new Set<string>();
     const sizes = new Set<string>();
 
-    allProducts.forEach((product) => {
+    allProducts.forEach((product: Product) => {
       product.colors?.forEach((color) => colors.add(color));
       product.sizes?.forEach((size) => sizes.add(size));
     });

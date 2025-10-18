@@ -406,14 +406,14 @@ function App() {
           />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route
+          {/* <Route
             path="/products"
             element={
               <MainLayout>
                 <ProductListing category={""} />
               </MainLayout>
             }
-          />
+          /> */}
           <Route
             path="/product/:id"
             element={

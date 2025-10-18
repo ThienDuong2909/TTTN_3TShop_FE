@@ -26,7 +26,7 @@ import {
 import { Avatar, AvatarFallback } from "../../components/ui/avatar";
 import { ProductCard } from "../../components/ProductCard";
 import { useApp } from "../../contexts/AppContext";
-import { products, categories } from "../../libs/data";
+// import { products, categories } from "../../types/data";
 import { getProductDetail, getProductComments } from "../../services/api";
 import { mapProductDetailFromApi } from "../../utils/productMapper";
 import type { Product } from "../../components/ProductCard";

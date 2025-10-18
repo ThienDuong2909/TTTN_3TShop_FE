@@ -8,13 +8,11 @@ import {
   CardHeader,
   CardTitle,
 } from "../../components/ui/card";
-import { Input } from "../../components/ui/input";
 import { Separator } from "../../components/ui/separator";
 import { Badge } from "../../components/ui/badge";
 import { useApp } from "../../contexts/AppContext";
 import { getCartItemsApi, checkStockAvailability } from "../../services/api";
-import type { Product } from "../../components/ProductCard";
-import type { CartItem } from "../../libs/data";
+import { CartItem } from "@/types";
 export default function Cart() {
   const { state, setCartFromBackend, setLoading, clearCartFully } = useApp();
 

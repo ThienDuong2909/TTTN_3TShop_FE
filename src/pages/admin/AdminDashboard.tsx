@@ -30,7 +30,7 @@ import AdminHeader from "../../components/AdminHeader";
 import RevenueReport from "./RevenueReport";
 import InventoryReport from "./InventoryReport";
 import ProfitReport from "./ProfitReport";
-import { orders } from "../../libs/data";
+import { Order } from "@/types/order.type";
 
 import { useNavigate } from "react-router-dom";
 import {
@@ -45,6 +45,7 @@ import type {
   GetAllEmployeesResponse,
   GetPurchaseOrdersNCCResponse,
 } from "../../services/api";
+import { orders } from "@/libs/data";
 
 // Inventory Report Types
 interface InventoryItem {
