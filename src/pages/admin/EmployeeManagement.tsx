@@ -1008,11 +1008,11 @@ export const EmployeeManagement = () => {
     },
   ];
 
-  // const [areaSearch, setAreaSearch] = useState(""); // Commented out - using dedicated modal for area management
+  const [areaSearch, setAreaSearch] = useState("");
   const [transferAreaSearch, setTransferAreaSearch] = useState("");
-  // const filteredAreas = areas.filter((a: any) =>
-  //   a.TenKhuVuc.toLowerCase().includes(areaSearch.toLowerCase())
-  // ); // Commented out - using dedicated modal for area management
+  const filteredAreas = areas.filter((a: any) =>
+    a.TenKhuVuc.toLowerCase().includes(areaSearch.toLowerCase())
+  );
   const filteredTransferAreas = areas.filter((a: any) =>
     a.TenKhuVuc.toLowerCase().includes(transferAreaSearch.toLowerCase())
   );
@@ -1198,13 +1198,31 @@ export const EmployeeManagement = () => {
                   <select
                     id="department"
                     value={formData.department}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
                       setFormData({
                         ...formData,
-                        department: e.target.value,
+                        department: value,
                         selectedAreas: [],
-                      })
-                    }
+                      });
+                      // When selecting Delivery department on Add flow, fetch areas if not loaded
+                      if (
+                        !editingEmployee &&
+                        value === "11" &&
+                        areas.length === 0
+                      ) {
+                        getAreas()
+                          .then((areasData) => {
+                            setAreas(Array.isArray(areasData) ? areasData : []);
+                          })
+                          .catch((err) => {
+                            console.error(
+                              "Error fetching areas on department change:",
+                              err
+                            );
+                          });
+                      }
+                    }}
                     className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none text-sm ${
                       editingEmployee ? "bg-gray-100 cursor-not-allowed" : ""
                     }`}
@@ -1386,116 +1404,196 @@ export const EmployeeManagement = () => {
               )}
               */}
 
-              {!editingEmployee && (
+              {/* Area selection for Delivery department when adding a new employee */}
+              {!editingEmployee && formData.department === "11" && (
                 <div className="mt-4">
-                  <Label
-                    htmlFor="ghiChu"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Ghi chú
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                    Khu vực phụ trách * (có thể chọn nhiều)
                   </Label>
-                  <textarea
-                    id="ghiChu"
-                    value={formData.ghiChu}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ghiChu: e.target.value })
-                    }
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none text-sm"
-                    rows={3}
-                    placeholder="Ghi chú về nhân viên..."
-                  />
+                  <div className="mb-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Tìm khu vực..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      value={areaSearch}
+                      onChange={(e) => setAreaSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-3 bg-white">
+                    {areas.length === 0 ? (
+                      <div className="text-sm text-gray-500 text-center py-4">
+                        Đang tải danh sách khu vực...
+                      </div>
+                    ) : filteredAreas.length === 0 ? (
+                      <div className="text-sm text-gray-500 text-center py-4">
+                        Không tìm thấy khu vực phù hợp
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {filteredAreas.map((area) => (
+                          <label
+                            key={area.MaKhuVuc}
+                            className="flex items-center space-x-2 text-sm hover:bg-gray-50 p-2 rounded cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isAreaSelected(
+                                area.MaKhuVuc?.toString()
+                              )}
+                              onChange={() =>
+                                handleAreaToggle(area.MaKhuVuc?.toString())
+                              }
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="truncate">{area.TenKhuVuc}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {formData.selectedAreas.length > 0 && (
+                    <div className="mt-3 p-3 bg-blue-50 rounded-md">
+                      <div className="text-sm font-medium text-gray-700 mb-2">
+                        Đã chọn {formData.selectedAreas.length} khu vực:
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {formData.selectedAreas.slice(0, 5).map((areaCode) => {
+                          const area = areas.find(
+                            (a) =>
+                              a.MaKhuVuc?.toString() === areaCode?.toString()
+                          );
+                          return area ? (
+                            <span
+                              key={area.MaKhuVuc}
+                              className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full"
+                            >
+                              {area.TenKhuVuc}
+                            </span>
+                          ) : null;
+                        })}
+                        {formData.selectedAreas.length > 5 && (
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            +{formData.selectedAreas.length - 5} khác
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-4">
+                    <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                      Ngày bắt đầu phụ trách *
+                    </Label>
+                    <Input
+                      type="date"
+                      value={formData.areaStartDate}
+                      min={new Date().toISOString().slice(0, 10)}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          areaStartDate: e.target.value,
+                        })
+                      }
+                      className="text-sm"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Phải lớn hơn ngày hiện tại.
+                    </p>
+                  </div>
                 </div>
               )}
-            </div>
 
-            {/* Thông tin bảo mật */}
-            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
-                Thông tin bảo mật
-              </h3>
-              <div>
-                <Label
-                  htmlFor="password"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Mật khẩu{" "}
-                  {!editingEmployee
-                    ? "*"
-                    : "(Để trống nếu không muốn thay đổi)"}
-                </Label>
-                <div className="flex items-center space-x-2 mt-1">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="flex-1"
-                    required={!editingEmployee}
-                    minLength={8}
-                    placeholder={
-                      editingEmployee
-                        ? "Nhập mật khẩu mới nếu muốn thay đổi"
-                        : "Nhập mật khẩu"
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="px-3"
-                    title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              {/* Thông tin bảo mật */}
+              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+                  Thông tin bảo mật
+                </h3>
+                <div>
+                  <Label
+                    htmlFor="password"
+                    className="text-sm font-medium text-gray-700"
                   >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-                <div className="mt-2 text-xs text-gray-600">
-                  {!editingEmployee
-                    ? "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ thường, chữ hoa, số và ký tự đặc biệt"
-                    : "Để trống nếu không muốn thay đổi mật khẩu hiện tại"}
+                    Mật khẩu{" "}
+                    {!editingEmployee
+                      ? "*"
+                      : "(Để trống nếu không muốn thay đổi)"}
+                  </Label>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className="flex-1"
+                      required={!editingEmployee}
+                      minLength={8}
+                      placeholder={
+                        editingEmployee
+                          ? "Nhập mật khẩu mới nếu muốn thay đổi"
+                          : "Nhập mật khẩu"
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="px-3"
+                      title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-600">
+                    {!editingEmployee
+                      ? "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ thường, chữ hoa, số và ký tự đặc biệt"
+                      : "Để trống nếu không muốn thay đổi mật khẩu hiện tại"}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Action buttons */}
-            <div className="flex justify-between pt-6 border-t">
-              <div>
-                {openFromDetail && (
+              {/* Action buttons */}
+              <div className="flex justify-between pt-6 border-t">
+                <div>
+                  {openFromDetail && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setIsModalOpen(false);
+                        setOpenFromDetail(false);
+                        setIsDetailModalOpen(true);
+                      }}
+                      className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
+                      ← Quay lại
+                    </Button>
+                  )}
+                </div>
+                <div className="flex space-x-3">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
                       setIsModalOpen(false);
                       setOpenFromDetail(false);
-                      setIsDetailModalOpen(true);
                     }}
-                    className="border-gray-300 text-gray-700 hover:bg-gray-50"
                   >
-                    ← Quay lại
+                    Hủy
                   </Button>
-                )}
-              </div>
-              <div className="flex space-x-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setOpenFromDetail(false);
-                  }}
-                >
-                  Hủy
-                </Button>
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                  {editingEmployee ? "Cập nhật" : "Thêm nhân viên"}
-                </Button>
+                  <Button
+                    type="submit"
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {editingEmployee ? "Cập nhật" : "Thêm nhân viên"}
+                  </Button>
+                </div>
               </div>
             </div>
           </form>
