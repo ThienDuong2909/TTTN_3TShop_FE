@@ -262,6 +262,8 @@ export default function PermissionManagement() {
         return "Thông tin";
       case "toanquyen":
         return "Toàn quyền";
+      case "taobaocao":
+        return "Tạo báo cáo";
       default:
         return "Khác";
     }

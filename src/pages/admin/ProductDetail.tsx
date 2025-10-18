@@ -26,11 +26,13 @@ import {
 import { Avatar, AvatarFallback } from "../../components/ui/avatar";
 import { ProductCard } from "../../components/ProductCard";
 import { useApp } from "../../contexts/AppContext";
-// import { products, categories } from "../../types/data";
+import { products, categories } from "../../libs/data";
 import { getProductDetail, getProductComments } from "../../services/api";
 import { mapProductDetailFromApi } from "../../utils/productMapper";
 import type { Product } from "../../components/ProductCard";
 import { addToCartApi } from "../../services/api";
+import { Toast } from "@radix-ui/react-toast";
+import { toast } from "sonner";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -193,7 +195,7 @@ export default function ProductDetail() {
 
     try {
       await addToCartApi({
-        maKH: Number(state.user.id),
+        maKH: Number(state?.user?.id),
         maSP: product.id,
         soLuong: quantity,
         maHex: selectedColor,
@@ -204,7 +206,7 @@ export default function ProductDetail() {
       // alert("Đã thêm vào giỏ hàng!");
       // Optionally update local context/cart state if cần
     } catch (error) {
-      alert("Thêm sản phẩm vào giỏ hàng thất bại");
+      toast.error("Thêm sản phẩm vào giỏ hàng thất bại");
       console.error(error);
     }
   };

@@ -128,7 +128,8 @@ export default function ReturnManagement() {
     );
   }
 
-  const isAdmin = state.user.role === "Admin";
+  const isPermitted =
+    state.user.role === "Admin" || state.user.role === "NhanVienCuaHang";
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -714,7 +715,7 @@ export default function ReturnManagement() {
                         <div className="flex gap-2">
                           {returnRequest.TrangThai === 1 &&
                             activeTab === 1 &&
-                            isAdmin && (
+                            isPermitted && (
                               <>
                                 <Button
                                   size="sm"
@@ -744,7 +745,7 @@ export default function ReturnManagement() {
                             )}
                           {returnRequest.TrangThai === 2 &&
                             activeTab === 2 &&
-                            isAdmin && (
+                            isPermitted && (
                               <>
                                 {returnRequest.PhieuChi ? (
                                   <Button
@@ -1135,7 +1136,7 @@ export default function ReturnManagement() {
                 </Button>
                 {selectedReturn?.TrangThai === 1 &&
                   activeTab === 1 &&
-                  isAdmin && (
+                  isPermitted && (
                     <>
                       <Button
                         size="sm"

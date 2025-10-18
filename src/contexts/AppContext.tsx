@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
-import { CartItem, User } from "../types/data";
+import { CartItem, User } from "../types";
 import { Product } from "../components/ProductCard";
 import { removeFromCartApi } from "../services/api";
 import { clearCartApi } from "../services/api";
@@ -258,7 +258,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const clearCartFully = async () => {
     if (!state.user) return;
     try {
-      await clearCartApi(state.user.id);
+      await clearCartApi(Number(state.user.id));
       dispatch({ type: "CLEAR_CART" });
     } catch (error) {
       console.error("Không thể xoá giỏ hàng:", error);
@@ -268,15 +268,21 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const removeFromCart = async (
     productId: number,
-    color?: string,
-    size?: string,
-    donGia?: number
+    color: string,
+    size: string,
+    donGia: number
   ) => {
     if (!state.user) return;
 
     try {
       console.log("Removing from cart:", { productId, color, size, donGia });
-      await removeFromCartApi(state.user.id, productId, color, size, donGia);
+      await removeFromCartApi(
+        Number(state.user.id),
+        productId,
+        color,
+        size,
+        donGia
+      );
       dispatch({
         type: "REMOVE_FROM_CART",
         productId,

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@radix-ui/react-checkbox";
-import { Label } from "@radix-ui/react-select";
+import { Label } from "@radix-ui/react-dropdown-menu";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -24,7 +24,6 @@ export default function Register() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -57,9 +56,9 @@ export default function Register() {
       newErrors.confirmPassword = "Mật khẩu không khớp";
     }
 
-    if (!agreeTerms) {
-      newErrors.terms = "Bạn phải đồng ý với điều khoản sử dụng";
-    }
+    // if (!agreeTerms) {
+    //   newErrors.terms = "Bạn phải đồng ý với điều khoản sử dụng";
+    // }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -113,7 +112,7 @@ export default function Register() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label>Họ và tên</Label>
+                <Label htmlFor="TenKH">Họ và tên</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -131,7 +130,7 @@ export default function Register() {
               </div>
 
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label htmlFor="Email">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -149,7 +148,7 @@ export default function Register() {
               </div>
 
               <div className="space-y-2">
-                <Label>Mật khẩu</Label>
+                <Label htmlFor="Password">Mật khẩu</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -180,7 +179,7 @@ export default function Register() {
               </div>
 
               <div className="space-y-2">
-                <Label>Xác nhận mật khẩu</Label>
+                <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -212,7 +211,7 @@ export default function Register() {
                 )}
               </div>
 
-              <div className="flex items-start space-x-2">
+              {/* <div className="flex items-start space-x-2">
                 <Checkbox
                   id="terms"
                   checked={agreeTerms}
@@ -222,7 +221,7 @@ export default function Register() {
                       setErrors((prev) => ({ ...prev, terms: "" }));
                     }
                   }}
-                  className="mt-1"
+                  className="mt-1 bg-amber-200"
                 />
                 <Label className="text-sm leading-5">
                   Tôi đồng ý với{" "}
@@ -243,7 +242,7 @@ export default function Register() {
               </div>
               {errors.terms && (
                 <p className="text-sm text-red-500">{errors.terms}</p>
-              )}
+              )} */}
 
               <Button
                 type="submit"

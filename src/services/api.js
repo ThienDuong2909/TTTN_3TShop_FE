@@ -214,6 +214,14 @@ export const fetchAllPermissions = async () => {
     return handleError(error);
   }
 };
+export const fetchAllPermissionsByRole = async (roleId) => {
+  try {
+    const res = await api.get(`/permissions/role/${roleId}`);
+    return res.data?.data || [];
+  } catch (error) {
+    return handleError(error);
+  }
+};
 
 // (Optional) Lấy quyền của một nhân viên theo id — nếu backend hỗ trợ
 export const fetchEmployeePermissions = async (nhanVienId) => {

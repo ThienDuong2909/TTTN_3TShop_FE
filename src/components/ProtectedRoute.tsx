@@ -31,15 +31,16 @@ const ProtectedRoute = ({
 
   // Kiểm tra quyền admin nếu yêu cầu
   if (requireAdmin && !user.permissions?.includes("toanquyen")) {
+    console.log("Require admin");
     return <Navigate to="/" replace />;
   }
 
   // Kiểm tra permissions cụ thể nếu có yêu cầu
   if (requiredPermissions.length > 0) {
+    console.log("Require permission");
     const userPermissions = user.permissions || [];
     console.log(requiredPermissions, userPermissions);
     if (!hasAnyPermission(userPermissions, requiredPermissions)) {
-      console.log("heh");
       return <Navigate to="/" replace />;
     }
   }
@@ -50,6 +51,7 @@ const ProtectedRoute = ({
   console.log("routePermissions", routePermissions);
 
   if (routePermissions.length > 0) {
+    console.log("No permission was found");
     const userPermissions = user.permissions || [];
     console.log("userPermissions", userPermissions);
     if (!hasAnyPermission(userPermissions, routePermissions)) {

@@ -1217,13 +1217,21 @@ export default function Orders() {
                 onValueChange={handleTabChange}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-6 mb-6">
-                  <TabsTrigger value="1" className="text-xs">
-                    Đã đặt ({stats.placed})
-                  </TabsTrigger>
-                  <TabsTrigger value="2" className="text-xs">
-                    Đã duyệt ({stats.approved})
-                  </TabsTrigger>
+                <TabsList
+                  className={`grid w-full ${
+                    isDeliveryStaff ? "grid-cols-4 mb-6" : "grid-cols-6 mb-6"
+                  }`}
+                >
+                  {!isDeliveryStaff && (
+                    <TabsTrigger value="1" className="text-xs">
+                      Đã đặt ({stats.placed})
+                    </TabsTrigger>
+                  )}
+                  {!isDeliveryStaff && (
+                    <TabsTrigger value="2" className="text-xs">
+                      Đã duyệt ({stats.approved})
+                    </TabsTrigger>
+                  )}
                   <TabsTrigger value="3" className="text-xs">
                     Đang giao ({stats.shipping})
                   </TabsTrigger>

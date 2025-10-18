@@ -89,13 +89,7 @@ function App() {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute
-                requiredPermissions={[
-                  "toanquyen",
-                  "donhang.xem_duoc_giao",
-                  "donhang.xem",
-                ]}
-              >
+              <ProtectedRoute requiredPermissions={["taobaocao"]}>
                 <AdminLayout>
                   <AdminDashboard />
                 </AdminLayout>
@@ -105,13 +99,7 @@ function App() {
           <Route
             path="/admin/dashboard"
             element={
-              <ProtectedRoute
-                requiredPermissions={[
-                  "toanquyen",
-                  "donhang.xem_duoc_giao",
-                  "donhang.xem",
-                ]}
-              >
+              <ProtectedRoute requiredPermissions={["taobaocao"]}>
                 <AdminLayout>
                   <AdminDashboard />
                 </AdminLayout>
@@ -242,7 +230,12 @@ function App() {
             path="/admin/return-management"
             element={
               <ProtectedRoute
-                requiredPermissions={["thongtin.xem", "toanquyen"]}
+                requiredPermissions={[
+                  "toanquyen",
+                  "thongtin.xem",
+                  "trahang.duyet",
+                  "phieuchi.tao",
+                ]}
               >
                 <AdminLayout>
                   <ReturnManagement />

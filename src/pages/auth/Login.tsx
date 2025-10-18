@@ -49,7 +49,7 @@ export default function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
-  function mapUserFromApi(res: any) {
+  async function mapUserFromApi(res: any) {
     // Extract role from response
     const maVaiTro = res.data?.user?.TaiKhoan?.VaiTro?.MaVaiTro;
     const tenVaiTro = res.data?.user?.TaiKhoan?.VaiTro?.TenVaiTro;
@@ -78,10 +78,16 @@ export default function Login() {
     }
 
     // Get permissions for the role using roleName
-    const permissions = getPermissionsForRole(roleName);
+    const permissions = await getPermissionsForRole(maVaiTro);
+    if (!permissions) {
+      console.error("Không thể lấy quyền cho vai trò:", roleName);
+      return null;
+    }
 
     // Extract user info
     const apiUser = res.data?.user;
+
+    console.log("Permissions for role", roleName, permissions);
     return {
       id:
         apiUser?.MaKH ||
@@ -128,7 +134,12 @@ export default function Login() {
         // Save token
         localStorage.setItem("token", res.data.token);
         // Set user context
-        const userObj = mapUserFromApi(res);
+        const userObj = await mapUserFromApi(res);
+        if (!userObj) {
+          console.error("Không thể lấy thông tin người dùng");
+          toast.error("Đăng nhập thất bại: Không thể lấy thông tin người dùng");
+          return;
+        }
         console.log("USER AFTER MAP", userObj);
         setUser(userObj);
         toast.success("Đăng nhập thành công!");

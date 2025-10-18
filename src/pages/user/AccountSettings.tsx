@@ -1,6 +1,12 @@
 // Tạo file src/pages/AccountSettings.tsx
 
 import { useState, useEffect } from "react";
+import {
+  AccountInfo,
+  VaiTro,
+  getAccountInfo,
+  changePassword,
+} from "../../services/api";
 import { toast } from "sonner";
 import {
   Settings,
@@ -18,18 +24,12 @@ import { DialogHeader } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useApp } from "@/contexts/AppContext";
 import {
-  AccountInfo,
-  getAccountInfo,
-  changePassword,
-  VaiTro,
-} from "@/services/api";
-import {
   Dialog,
   DialogTrigger,
   DialogContent,
   DialogTitle,
 } from "@radix-ui/react-dialog";
-import { Label } from "@radix-ui/react-select";
+import { Label } from "@radix-ui/react-dropdown-menu";
 
 // Skeleton Component
 const Skeleton = ({ className = "", ...props }) => (

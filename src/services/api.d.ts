@@ -122,8 +122,8 @@ export function addToCartApi(data: {
   maKH: number;
   maSP: number;
   soLuong: number;
-  maHex: number;
-  tenKichThuoc: number;
+  maHex: string;
+  tenKichThuoc: string;
 }): Promise<any>;
 
 export function getCartItemsApi (maKH: string | number): Promise<any>;
@@ -274,6 +274,7 @@ export declare function changePassword(passwordData: ChangePasswordRequest): Pro
 // Permissions functions
 export function fetchMyPermissions(): Promise<string[]>;
 export function fetchAllPermissions(): Promise<Array<{ id: number; Ten: string; TenHienThi: string; NgayTao?: string }>>;
+export function fetchAllPermissionsByRole(roleId: number): Promise<Array<{ id: number; Ten: string; TenHienThi: string; NgayTao?: string }>>;
 export function fetchEmployeePermissions(nhanVienId: number): Promise<number[]>;
 export function assignPermissionsToEmployee(nhanVienId: number, permissionIds: number[]): Promise<any>;
 
@@ -787,7 +788,7 @@ export interface KhuVucGiaoHang extends KhuVuc {
 
 export interface KhuVucData {
   MaNV?: number;
-  TenNV?: string;
+  TenNV?: number;
   KhuVucPhuTrach: KhuVucGiaoHang[];
 }
 
