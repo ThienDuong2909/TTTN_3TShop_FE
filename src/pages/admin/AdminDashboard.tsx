@@ -53,7 +53,7 @@ interface InventoryItem {
   "Mã sản phẩm": number;
   "Tên sản phẩm": string;
   "Số lượng tồn": string;
-  "Giá nhập (trung bình)": string;
+  "Giá nhập": string;
 }
 
 interface InventoryReportData {
@@ -329,7 +329,7 @@ export default function AdminDashboard() {
     return currentInventoryData.data.reduce((acc, item) => {
       const category = item["Loại sản phẩm"];
       const quantity = parseInt(item["Số lượng tồn"]) || 0;
-      const price = parseFloat(item["Giá nhập (trung bình)"]) || 0;
+      const price = parseFloat(item["Giá nhập"]) || 0;
       const value = quantity * price;
 
       if (!acc[category]) {

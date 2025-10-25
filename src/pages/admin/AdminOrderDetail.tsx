@@ -39,6 +39,7 @@ import {
   getInvoiceByOrderId,
   createInvoice,
 } from "../../services/api";
+import { useApp } from "@/contexts/AppContext";
 
 interface OrderDetail {
   ThongTinDonHang: {
@@ -102,6 +103,7 @@ interface OrderDetail {
 export const OrderDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { state } = useApp();
 
   const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -122,6 +124,21 @@ export const OrderDetail = () => {
   // States for invoice view
   const [showInvoiceView, setShowInvoiceView] = useState(false);
   const [invoiceNumber, setInvoiceNumber] = useState<string | null>(null);
+
+  useEffect(() => {
+    console.log(
+      "Checking access for user:",
+      state.user,
+      "and orderDetail:",
+      orderDetail
+    );
+    if (
+      state.user?.role === "NhanVienGiaoHang" &&
+      parseInt(state.user.id) !== orderDetail?.ThongTinXuLy.NguoiGiao.MaNV
+    ) {
+      navigate("/admin/orders");
+    }
+  }, []);
 
   const fetchOrderDetail = async (orderId: string) => {
     try {

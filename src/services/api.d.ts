@@ -846,7 +846,7 @@ export declare function getInventoryReport(reportDate: string): Promise<{
       "Mã sản phẩm": number;
       "Tên sản phẩm": string;
       "Số lượng tồn": string;
-      "Giá nhập (trung bình)": string;
+      "Giá nhập": string;
     }>;
   };
 }>;

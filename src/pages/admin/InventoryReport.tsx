@@ -28,7 +28,7 @@ interface InventoryItem {
   "Mã sản phẩm": number;
   "Tên sản phẩm": string;
   "Số lượng tồn": string;
-  "Giá nhập (trung bình)": string;
+  "Giá nhập": string;
 }
 
 interface InventoryReportData {
@@ -160,7 +160,7 @@ export default function InventoryReport() {
 
     return reportData.data.reduce((total, item) => {
       const quantity = parseInt(item["Số lượng tồn"]) || 0;
-      const price = parseFloat(item["Giá nhập (trung bình)"]) || 0;
+      const price = parseFloat(item["Giá nhập"]) || 0;
       return total + quantity * price;
     }, 0);
   };
@@ -300,8 +300,7 @@ export default function InventoryReport() {
                             {items.map((item, itemIndex) => {
                               const quantity =
                                 parseInt(item["Số lượng tồn"]) || 0;
-                              const price =
-                                parseFloat(item["Giá nhập (trung bình)"]) || 0;
+                              const price = parseFloat(item["Giá nhập"]) || 0;
                               const totalValue = quantity * price;
                               const globalIndex =
                                 Object.values(groupedData)
@@ -352,9 +351,7 @@ export default function InventoryReport() {
                                     const qty =
                                       parseInt(item["Số lượng tồn"]) || 0;
                                     const price =
-                                      parseFloat(
-                                        item["Giá nhập (trung bình)"]
-                                      ) || 0;
+                                      parseFloat(item["Giá nhập"]) || 0;
                                     return sum + qty * price;
                                   }, 0)
                                 )}
