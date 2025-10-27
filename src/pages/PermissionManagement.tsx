@@ -46,7 +46,7 @@ export default function PermissionManagement() {
       setError(null);
 
       // Gọi API lấy tất cả roles
-      const rolesResponse = await fetch('http://localhost:8080/api/roles', {
+      const rolesResponse = await fetch('https://api.3tshop.thienduong.info/api/roles', {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`
         }
@@ -59,7 +59,7 @@ export default function PermissionManagement() {
       const rolesData = await rolesResponse.json();
       
       // Gọi API lấy tất cả permissions
-      const permissionsResponse = await fetch('http://localhost:8080/api/permissions', {
+      const permissionsResponse = await fetch('https://api.3tshop.thienduong.info/api/permissions', {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`
         }
@@ -115,7 +115,7 @@ export default function PermissionManagement() {
       if (!role) return;
 
       // Gọi API để cập nhật quyền cho vai trò
-      const response = await fetch(`http://localhost:8080/api/roles/${role.id}/permissions`, {
+      const response = await fetch(`https://api.3tshop.thienduong.info/api/roles/${role.id}/permissions`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

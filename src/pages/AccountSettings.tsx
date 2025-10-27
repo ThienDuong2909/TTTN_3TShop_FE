@@ -328,9 +328,8 @@ const togglePasswordVisibility = (field: keyof typeof showPasswords) => {
                         <Input
                         id="oldPassword"
                         type={showPasswords.old ? "text" : "password"}
-                        value={passwordForm.matKhauCu}
                         onChange={(e) => handlePasswordChange('matKhauCu', e.target.value)}
-                        placeholder="Nhập mật khẩu hiện tại"
+                        placeholder="*******"
                         className="pr-10"
                         />
                         <Button

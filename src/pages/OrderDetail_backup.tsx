@@ -100,7 +100,7 @@ export const OrderDetail = () => {
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch(`http://localhost:8080/api/orders/${orderId}/detail`);
+      const response = await fetch(`https://api.3tshop.thienduong.info/api/orders/${orderId}/detail`);
       const result = await response.json();
       
       if (!response.ok) {
