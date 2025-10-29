@@ -1,9 +1,10 @@
 import axios from "axios";
 
 // Tạo axios instance đơn giản
+const API = import.meta.env.VITE_API_BASE_URL;
 const api = axios.create({
   // baseURL: "https://api.3tshop.thienduong.info/api",
-  baseURL: "http://localhost:8080/api",
+  baseURL: API,
 
   timeout: 10000,
   headers: {
