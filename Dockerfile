@@ -5,6 +5,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+
 COPY . .
 # Nếu FE cần biết URL API, dùng biến build-time:
 #   ARG VITE_API_BASE_URL
