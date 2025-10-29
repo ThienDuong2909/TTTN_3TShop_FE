@@ -1,0 +1,172 @@
+{
+    "success": true,
+    "message": "Lấy undefined sản phẩm gợi ý thành công",
+    "data": {
+        "recommendations": {
+            "groups": [
+                {
+                    "antecedent": [
+                        2,
+                        5
+                    ],
+                    "antecedentLength": 2,
+                    "products": [
+                        {
+                            "MaSP": 7,
+                            "TenSP": "Serenity Tee 2025",
+                            "MaLoaiSP": 14,
+                            "MaNCC": 1,
+                            "MoTa": "adasdL",
+                            "TrangThai": true,
+                            "NgayTao": "2025-08-14T06:44:18.000Z",
+                            "NhaCungCap": {
+                                "MaNCC": 1,
+                                "TenNCC": "Công ty TNHH Lưu Thành",
+                                "DiaChi": "Dĩ An, BìnhDương",
+                                "SDT": "0998887767",
+                                "Email": "lvthanh@work.com"
+                            },
+                            "LoaiSP": {
+                                "MaLoaiSP": 14,
+                                "TenLoai": "Áo thun",
+                                "NgayTao": "2025-07-20T00:00:00.000Z",
+                                "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                            },
+                            "AnhSanPhams": [
+                                {
+                                    "MaAnh": 208,
+                                    "MaSP": 7,
+                                    "TenFile": "zlmdxwzonbp5e6qenxfg.png",
+                                    "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zlmdxwzonbp5e6qenxfg.png",
+                                    "AnhChinh": true,
+                                    "ThuTu": 1,
+                                    "MoTa": "Ảnh chính"
+                                },
+                                {
+                                    "MaAnh": 209,
+                                    "MaSP": 7,
+                                    "TenFile": "shknhd7gsxlnx0qm4n4x.png",
+                                    "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/shknhd7gsxlnx0qm4n4x.png",
+                                    "AnhChinh": false,
+                                    "ThuTu": 2,
+                                    "MoTa": "Ảnh phụ"
+                                },
+                                {
+                                    "MaAnh": 210,
+                                    "MaSP": 7,
+                                    "TenFile": "ea0dymvarg1ltu6nb4c7.png",
+                                    "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/ea0dymvarg1ltu6nb4c7.png",
+                                    "AnhChinh": false,
+                                    "ThuTu": 3,
+                                    "MoTa": "Ảnh phụ"
+                                },
+                                {
+                                    "MaAnh": 211,
+                                    "MaSP": 7,
+                                    "TenFile": "zydedjcffsdy5mqbxbqu.png",
+                                    "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zydedjcffsdy5mqbxbqu.png",
+                                    "AnhChinh": false,
+                                    "ThuTu": 4,
+                                    "MoTa": "Ảnh phụ"
+                                },
+                                {
+                                    "MaAnh": 212,
+                                    "MaSP": 7,
+                                    "TenFile": "wrqqsb3zj9b6wvzbphhe.png",
+                                    "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/wrqqsb3zj9b6wvzbphhe.png",
+                                    "AnhChinh": false,
+                                    "ThuTu": 5,
+                                    "MoTa": "Ảnh phụ"
+                                }
+                            ],
+                            "ChiTietSanPhams": [
+                                {
+                                    "MaCTSP": 5,
+                                    "MaKichThuoc": 1,
+                                    "MaMau": 11,
+                                    "SoLuongTon": 997,
+                                    "KichThuoc": {
+                                        "TenKichThuoc": "M"
+                                    },
+                                    "Mau": {
+                                        "TenMau": "Cam ",
+                                        "MaHex": "#f4af80"
+                                    }
+                                },
+                                {
+                                    "MaCTSP": 6,
+                                    "MaKichThuoc": 2,
+                                    "MaMau": 5,
+                                    "SoLuongTon": 1118,
+                                    "KichThuoc": {
+                                        "TenKichThuoc": "L"
+                                    },
+                                    "Mau": {
+                                        "TenMau": "Tím",
+                                        "MaHex": "#a93794"
+                                    }
+                                },
+                                {
+                                    "MaCTSP": 7,
+                                    "MaKichThuoc": 3,
+                                    "MaMau": 11,
+                                    "SoLuongTon": 1991,
+                                    "KichThuoc": {
+                                        "TenKichThuoc": "XL"
+                                    },
+                                    "Mau": {
+                                        "TenMau": "Cam ",
+                                        "MaHex": "#f4af80"
+                                    }
+                                },
+                                {
+                                    "MaCTSP": 8,
+                                    "MaKichThuoc": 4,
+                                    "MaMau": 8,
+                                    "SoLuongTon": 498,
+                                    "KichThuoc": {
+                                        "TenKichThuoc": "XXL"
+                                    },
+                                    "Mau": {
+                                        "TenMau": "Xanh",
+                                        "MaHex": "#1a128c"
+                                    }
+                                }
+                            ],
+                            "CT_DotGiamGia": [],
+                            "ThayDoiGia": [
+                                {
+                                    "Gia": "230000.00",
+                                    "NgayApDung": "2025-07-20"
+                                }
+                            ],
+                            "BinhLuan": {
+                                "avgRate": 4.7,
+                                "luotBinhLuan": 3
+                            },
+                            "_rec": {
+                                "MaSP": 7,
+                                "score": 4.173482,
+                                "confidence": 0.969697,
+                                "support": 0.64,
+                                "lift": 1.515152,
+                                "antecedent": [
+                                    2,
+                                    5
+                                ],
+                                "rule_size": 3
+                            }
+                        }
+                    ]
+                }
+            ],
+            "maxAntecedentLength": 2,
+            "totalGroups": 1
+        },
+        "params": {
+            "k": 8,
+            "exclude_incart": true,
+            "require_instock": false
+        }
+    }
+}

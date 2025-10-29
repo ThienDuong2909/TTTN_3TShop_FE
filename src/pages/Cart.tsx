@@ -1,7 +1,8 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "../components/ui/button";
+import { RecommendationModal } from "../components/RecommendationModal.tsx";
 import {
   Card,
   CardContent,
@@ -11,86 +12,166 @@ import {
 import { Input } from "../components/ui/input";
 import { Separator } from "../components/ui/separator";
 import { Badge } from "../components/ui/badge";
+import { Skeleton } from "../components/ui/skeleton";
 import { useApp } from "../contexts/AppContext";
-import {getCartItemsApi, checkStockAvailability} from '../services/api'
+import { ProductCard } from "../components/ProductCard.tsx";
+import { 
+  getCartItemsApi, 
+  checkStockAvailability, 
+  getProductRecommendations 
+} from '../services/api';
+import { mapSanPhamFromApi } from "../utils/productMapper";
 import type { Product } from "../components/ProductCard";
 import type { CartItem } from "../libs/data";
+
 export default function Cart() {
   const {
     state,
     setCartFromBackend,
     setLoading,
-    clearCartFully ,
+    clearCartFully,
+    updateCartQuantity,
+    removeFromCart,
+    getCartTotal,
+    toggleWishlist,
+    isInWishlist,
+    addToCart,
   } = useApp();
 
-  useEffect(() => {
-  const fetchCart = async () => {
-    try {
-      if (!state.user) return;
-
-      setLoading(true);
-
-      const res = await getCartItemsApi(state.user.id);
-      console
-.log("Cart items from backend:", res);
-      const groupedMap = new Map<string, CartItem>();
-
-      for (const item of res.items) {
-  const productId = item.maCTSP;
-  const color = item.mau?.hex;
-  const size = item.kichThuoc?.ten;
-  const donGia = Number(item.donGia ?? 0);
-
-  const key = `${productId}-${color}-${size}-${donGia}`;
-
-  if (!groupedMap.has(key)) {
-    groupedMap.set(key, {
-      product: {
-        id: productId,
-        name: item.sanPham?.tenSP || "Tên SP",
-        price: donGia,
-        originalPrice: undefined,
-        image: item.anhSanPham,
-        rating: 4.5,
-        reviews: 0,
-        discount: 0,
-        isNew: false,
-        isBestSeller: false,
-        category: "",
-        colors: [],
-        sizes: [],
-      },
-      quantity: item.soLuong,
-      selectedColor: color,
-      selectedSize: size,
-    });
-  } else {
-    const existing = groupedMap.get(key)!;
-    existing.quantity += item.soLuong;
-  }
-}
-
-
-      // ✅ Set chính xác giỏ hàng từ backend
-      setCartFromBackend(Array.from(groupedMap.values()));
-    } catch (err) {
-      console.error("Lỗi khi lấy giỏ hàng:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchCart();
-}, [state.user]);
-
-
-  const {  updateCartQuantity, removeFromCart, getCartTotal } =
-    useApp();
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
     code: string;
     discount: number;
   } | null>(null);
+  const [stockErrors, setStockErrors] = useState<{ [key: string]: string }>({});
+  const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
+  
+  // Recommendation states
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [productNameMap, setProductNameMap] = useState<{ [key: number]: string }>({});
+const [showRecommendations, setShowRecommendations] = useState(false);
+
+const refreshCart = async () => {
+    try {
+      if (!state.user) return;
+
+      const res = await getCartItemsApi(state.user.id);
+      const groupedMap = new Map<string, CartItem>();
+
+      for (const item of res.items) {
+        const productId = item.maCTSP;
+        const color = item.mau?.hex;
+        const size = item.kichThuoc?.ten;
+        const donGia = Number(item.donGia ?? 0);
+
+        const key = `${productId}-${color}-${size}-${donGia}`;
+
+        if (!groupedMap.has(key)) {
+          groupedMap.set(key, {
+            product: {
+              id: productId,
+              name: item.sanPham?.tenSP || "Tên SP",
+              price: donGia,
+              originalPrice: undefined,
+              image: item.anhSanPham,
+              rating: 4.5,
+              reviews: 0,
+              discount: 0,
+              isNew: false,
+              isBestSeller: false,
+              category: "",
+              colors: [],
+              sizes: [],
+            },
+            quantity: item.soLuong,
+            selectedColor: color,
+            selectedSize: size,
+          });
+        } else {
+          const existing = groupedMap.get(key)!;
+          existing.quantity += item.soLuong;
+        }
+      }
+
+      setCartFromBackend(Array.from(groupedMap.values()));
+    } catch (err) {
+      console.error("Lỗi khi refresh giỏ hàng:", err);
+    }
+  };
+
+    useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        if (!state.user) return;
+
+        setLoading(true);
+        await refreshCart();
+      } catch (err) {
+        console.error("Lỗi khi lấy giỏ hàng:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, [state.user]);
+
+  // Fetch recommendations when cart changes
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!state.cart || state.cart.length === 0) {
+        setRecommendations([]);
+        return;
+      }
+
+      try {
+
+        // Extract MaCTSP from cart items
+        const cartItemIds = state.cart.map(item => item.product.id);
+
+        // Call recommendation API
+        const response = await getProductRecommendations(cartItemIds, 8, true, false);
+        console.log("Product recommendations response:", response);
+
+        if (response.success && response.data.recommendations.groups) {
+          // Build product name map from ALL products in recommendations
+          const nameMap: { [key: number]: string } = {};
+          
+          // First, add cart items
+          state.cart.forEach(item => {
+            nameMap[item.product.id] = item.product.name;
+          });
+
+          // Then, add all products from recommendation groups to the map
+          response.data.recommendations.groups.forEach((group: any) => {
+            group.products.forEach((product: any) => {
+              if (product.MaSP) {
+                nameMap[product.MaSP] = product.TenSP;
+              }
+            });
+            // Also map MaCTSP from antecedent if available
+            group.antecedent.forEach((maCTSP: number) => {
+              // Try to find product name from cart or existing products
+              if (!nameMap[maCTSP]) {
+                // Find in cart items
+                const cartItem = state.cart.find(item => item.product.id === maCTSP);
+                if (cartItem) {
+                  nameMap[maCTSP] = cartItem.product.name;
+                }
+              }
+            });
+          });
+
+          setProductNameMap(nameMap);
+          setRecommendations(response.data.recommendations.groups);
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy gợi ý sản phẩm:", error);
+      }
+    };
+
+    fetchRecommendations();
+  }, [state.cart]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -98,43 +179,39 @@ export default function Cart() {
       currency: "VND",
     }).format(price);
   };
-const [stockErrors, setStockErrors] = useState<{ [key: string]: string }>({});
-const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
 
   const handleQuantityChange = async (maCTSP: number, newQuantity: number) => {
-  if (newQuantity < 1) return;
+    if (newQuantity < 1) return;
 
-  try {
-    const result = await checkStockAvailability(maCTSP);
-    const availableStock = result.soLuongTon;
-    const key = `${maCTSP}`;
+    try {
+      const result = await checkStockAvailability(maCTSP);
+      const availableStock = result.soLuongTon;
+      const key = `${maCTSP}`;
 
-    if (newQuantity > availableStock) {
-      setStockErrors((prev) => ({
-        ...prev,
-        [key]: `Chỉ còn ${availableStock} sản phẩm trong kho`,
-      }));
+      if (newQuantity > availableStock) {
+        setStockErrors((prev) => ({
+          ...prev,
+          [key]: `Chỉ còn ${availableStock} sản phẩm trong kho`,
+        }));
+        setStockLimits((prev) => ({ ...prev, [key]: availableStock }));
+        return;
+      }
+
+      setStockErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[key];
+        return updated;
+      });
       setStockLimits((prev) => ({ ...prev, [key]: availableStock }));
-      return;
+
+      updateCartQuantity(maCTSP, newQuantity);
+    } catch (error) {
+      console.error("Lỗi kiểm tra kho:", error);
+      alert("Không thể kiểm tra tồn kho.");
     }
-
-    // Nếu số lượng <= tồn kho thì xóa lỗi và cập nhật
-    setStockErrors((prev) => {
-      const updated = { ...prev };
-      delete updated[key];
-      return updated;
-    });
-    setStockLimits((prev) => ({ ...prev, [key]: availableStock }));
-
-    updateCartQuantity(maCTSP, newQuantity);
-  } catch (error) {
-    console.error("Lỗi kiểm tra kho:", error);
-    alert("Không thể kiểm tra tồn kho.");
-  }
-};
+  };
 
   const applyCoupon = () => {
-    // Mock coupon validation
     const validCoupons = {
       SAVE10: 10,
       WELCOME20: 20,
@@ -159,6 +236,15 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
     : 0;
   const shippingFee = subtotal >= 500000 ? 0 : 30000;
   const total = subtotal - discountAmount + shippingFee;
+
+  // Get antecedent product names
+  const getAntecedentNames = (antecedentIds: number[]) => {
+    const names = antecedentIds
+      .map(id => productNameMap[id] || `SP #${id}`)
+      .filter(Boolean);
+    
+    return names.length > 0 ? names.join(" & ") : "Sản phẩm";
+  };
 
   if (state.cart.length === 0) {
     return (
@@ -186,13 +272,31 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Giỏ hàng của bạn
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            {state.cart.length} sản phẩm trong giỏ hàng
-          </p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Giỏ hàng của bạn
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              {state.cart.length} sản phẩm trong giỏ hàng
+            </p>
+          </div>
+          
+          {/* Recommendation Button */}
+          {recommendations.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 border-brand-600 text-brand-600 hover:bg-brand-50"
+              onClick={() => setShowRecommendations(true)}
+            >
+              <Sparkles className="w-4 h-4" />
+              Gợi ý dành cho bạn
+              <Badge variant="secondary" className="bg-brand-100 text-brand-700">
+                {recommendations.reduce((acc, group) => acc + group.products.length, 0)}
+              </Badge>
+            </Button>
+          )}
         </div>
         <Link to="/">
           <Button variant="outline">
@@ -211,7 +315,6 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
             >
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row gap-4">
-                  {/* Product Image */}
                   <div className="w-full sm:w-32 h-32 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden flex-shrink-0">
                     <img
                       src={item.product.image}
@@ -220,7 +323,6 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
                     />
                   </div>
 
-                  {/* Product Details */}
                   <div className="flex-1 space-y-3">
                     <div className="flex justify-between items-start">
                       <div>
@@ -260,14 +362,12 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
                             item.product.price,
                           )
                         }
-
                         className="text-red-500 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
 
-                    {/* Price and Quantity */}
                     <div className="flex items-center justify-between">
                       <div className="space-x-2">
                         <span className="font-bold text-brand-600 dark:text-brand-400">
@@ -280,7 +380,6 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
                         )}
                       </div>
 
-                      {/* Quantity Controls */}
                       <div className="flex items-center gap-3">
                         <Button
                           variant="outline"
@@ -314,12 +413,11 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
                       </div>
                     </div>
                     {stockErrors[item.product.id] && (
-                        <p className="text-sm text-red-500 mt-1">
-                          {stockErrors[item.product.id]}
-                        </p>
-                      )}
+                      <p className="text-sm text-red-500 mt-1">
+                        {stockErrors[item.product.id]}
+                      </p>
+                    )}
 
-                    {/* Subtotal */}
                     <div className="text-right">
                       <span className="font-semibold">
                         Tổng: {formatPrice(item.product.price * item.quantity)}
@@ -331,7 +429,6 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
             </Card>
           ))}
 
-          {/* Clear Cart Button */}
           <div className="pt-4">
             <Button
               variant="outline"
@@ -351,39 +448,8 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
               <CardTitle>Tóm tắt đơn hàng</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Coupon Code */}
-              {/* <div className="space-y-2">
-                <label className="text-sm font-medium">Mã giảm giá</label>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Nhập mã giảm giá"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                  />
-                  <Button variant="outline" onClick={applyCoupon}>
-                    Áp dụng
-                  </Button>
-                </div>
-                {appliedCoupon && (
-                  <div className="flex items-center justify-between text-green-600 dark:text-green-400">
-                    <span className="text-sm">
-                      Mã {appliedCoupon.code} (-{appliedCoupon.discount}%)
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setAppliedCoupon(null)}
-                      className="h-auto p-1 text-xs"
-                    >
-                      Bỏ
-                    </Button>
-                  </div>
-                )}
-              </div> */}
-
               <Separator />
 
-              {/* Price Breakdown */}
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Tạm tính</span>
@@ -411,7 +477,6 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
 
               <Separator />
 
-              {/* Total */}
               <div className="flex justify-between text-lg font-bold">
                 <span>Tổng cộng</span>
                 <span className="text-brand-600 dark:text-brand-400">
@@ -419,7 +484,6 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
                 </span>
               </div>
 
-              {/* Free Shipping Notice */}
               {subtotal < 500000 && (
                 <div className="text-sm text-gray-600 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
                   Mua thêm {formatPrice(500000 - subtotal)} để được miễn phí vận
@@ -427,37 +491,23 @@ const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
                 </div>
               )}
 
-              {/* Checkout Button */}
               <Link to="/checkout" className="block">
                 <Button className="w-full bg-brand-600 hover:bg-brand-700">
                   Tiến hành thanh toán
                 </Button>
               </Link>
-
-              {/* Payment Methods */}
-              {/* <div className="text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                  Chúng tôi chấp nhận
-                </p>
-                <div className="flex justify-center space-x-2">
-                  <div className="bg-white border rounded px-2 py-1 text-xs font-medium">
-                    VISA
-                  </div>
-                  <div className="bg-white border rounded px-2 py-1 text-xs font-medium">
-                    MASTER
-                  </div>
-                  <div className="bg-white border rounded px-2 py-1 text-xs font-medium">
-                    COD
-                  </div>
-                  <div className="bg-white border rounded px-2 py-1 text-xs font-medium">
-                    MOMO
-                  </div>
-                </div>
-              </div> */}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <RecommendationModal
+        open={showRecommendations}
+        onOpenChange={setShowRecommendations}
+        recommendations={recommendations}
+        productNameMap={productNameMap}
+        onCartUpdate={refreshCart} 
+      />
     </div>
   );
 }

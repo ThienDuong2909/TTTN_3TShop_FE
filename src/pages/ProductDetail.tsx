@@ -515,7 +515,7 @@ export default function ProductDetail() {
           </div>
 
           {/* Benefits */}
-          <div className="space-y-3 pt-6 border-t">
+          {/* <div className="space-y-3 pt-6 border-t">
             <div className="flex items-center gap-3 text-sm">
               <Truck className="w-5 h-5 text-green-600" />
               <span>Miễn phí vận chuyển cho đơn hàng trên 500K</span>
@@ -528,7 +528,25 @@ export default function ProductDetail() {
               <RotateCcw className="w-5 h-5 text-orange-600" />
               <span>Đổi trả miễn phí trong 7 ngày</span>
             </div>
+          </div> */}
+
+          {/* Size Guide */}
+        <div className="pt-6 border-t">
+          {/* <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Hướng dẫn chọn size
+          </h3> */}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+            <img
+              src="/size.png"
+              alt="Hướng dẫn chọn size"
+              className="w-full h-auto max-w-sm mx-auto rounded-lg shadow-sm"
+            />
+            <p className="text-sm text-gray-600 dark:text-gray-300 text-center mt-3">
+              Tham khảo bảng size để chọn kích thước phù hợp nhất
+            </p>
           </div>
+        </div>
+
         </div>
       </div>
 
