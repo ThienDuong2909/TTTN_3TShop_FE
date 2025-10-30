@@ -497,7 +497,9 @@ export const usePurchaseOrderData = (currentUserId: string) => {
 
   // Download Excel file
   const downloadExcel = (excelFile: any) => {
-    const downloadUrl = `http://localhost:8080${excelFile.downloadUrl}`;
+    // const downloadUrl = `http://localhost:8080${excelFile.downloadUrl}`;
+    const downloadUrl = `https://api.3tshop.thienduong.info${excelFile.downloadUrl}`;
+
     window.open(downloadUrl, '_blank');
   };
 

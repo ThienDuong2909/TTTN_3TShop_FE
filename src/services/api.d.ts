@@ -889,3 +889,97 @@ export declare function getProfitReport(ngayBatDau: string, ngayKetThuc: string)
 }>;
 
 export declare function getProfitReportPDF(ngayBatDau: string, ngayKetThuc: string, nguoiLap: string): Promise<Blob>;
+
+export interface RecommendationProduct {
+  MaSP: number;
+  TenSP: string;
+  MaLoaiSP: number;
+  MaNCC: number;
+  MoTa: string;
+  TrangThai: boolean;
+  NgayTao: string;
+  NhaCungCap: {
+    MaNCC: number;
+    TenNCC: string;
+    DiaChi: string;
+    SDT: string;
+    Email: string;
+  };
+  LoaiSP: {
+    MaLoaiSP: number;
+    TenLoai: string;
+    NgayTao: string;
+    HinhMinhHoa: string;
+  };
+  AnhSanPhams: Array<{
+    MaAnh: number;
+    MaSP: number;
+    TenFile: string;
+    DuongDan: string;
+    AnhChinh: boolean;
+    ThuTu: number;
+    MoTa: string;
+  }>;
+  ChiTietSanPhams: Array<{
+    MaCTSP: number;
+    MaKichThuoc: number;
+    MaMau: number;
+    SoLuongTon: number;
+    KichThuoc: {
+      TenKichThuoc: string;
+    };
+    Mau: {
+      TenMau: string;
+      MaHex: string;
+    };
+  }>;
+  CT_DotGiamGia: Array<any>;
+  ThayDoiGia: Array<{
+    Gia: string;
+    NgayApDung: string;
+  }>;
+  BinhLuan?: {
+    avgRate: number;
+    luotBinhLuan: number;
+  };
+  _rec?: {
+    MaCTSP: number;
+    MaSP: number;
+    score: number;
+    confidence: number;
+    support: number;
+    lift: number;
+    antecedent: number[];
+    rule_size: number;
+  };
+}
+
+export interface RecommendationGroup {
+  antecedent: number[];
+  antecedentLength: number;
+  products: RecommendationProduct[];
+}
+
+export interface RecommendationResponse {
+  success: boolean;
+  message: string;
+  data: {
+    recommendations: {
+      groups: RecommendationGroup[];
+      maxAntecedentLength: number;
+      totalGroups: number;
+    };
+    params: {
+      k: number;
+      exclude_incart: boolean;
+      require_instock: boolean;
+    };
+  };
+}
+
+export declare function getProductRecommendations(
+  items: number[],
+  k?: number,
+  excludeIncart?: boolean,
+  requireInstock?: boolean
+): Promise<RecommendationResponse>;

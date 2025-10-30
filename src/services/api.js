@@ -14,7 +14,6 @@ const handleError = (error) => {
   return { error: true, message };
 };
 
-
 // Xử lý API response chung - kiểm tra lỗi 401 cho tất cả API calls
 const handleApiCall = async (apiCallFn) => {
   try {
@@ -41,7 +40,6 @@ const apiWrapper = {
     handleApiCall(() => api.put(url, data, config)),
   delete: async (url, config) => handleApiCall(() => api.delete(url, config)),
 };
-
 
 // Format date cho API
 const formatDateForApi = (date) => {
@@ -78,12 +76,12 @@ export const getEmployees = async () => {
           luong: item.Luong ? parseInt(item.Luong) : undefined,
           maTK: item.MaTK,
 
-          department: latestDepartment.BoPhan?.MaBoPhan?.toString() || '',
-          departmentName: latestDepartment.BoPhan?.TenBoPhan || '',
-          username: item.TaiKhoan?.Email || 'MISSING EMAIL',
-          isActive: latestDepartment.TrangThai || '',
-          createdAt: latestDepartment.NgayBatDau || '',
-          updatedAt: latestDepartment.NgayKetThuc || '',
+          department: latestDepartment.BoPhan?.MaBoPhan?.toString() || "",
+          departmentName: latestDepartment.BoPhan?.TenBoPhan || "",
+          username: item.TaiKhoan?.Email || "MISSING EMAIL",
+          isActive: latestDepartment.TrangThai || "",
+          createdAt: latestDepartment.NgayBatDau || "",
+          updatedAt: latestDepartment.NgayKetThuc || "",
           khuVucPhuTrach: item.KhuVucPhuTrach || [],
         };
         return mappedEmployee;
@@ -94,9 +92,8 @@ export const getEmployees = async () => {
       return [];
     }
   } catch (error) {
-
-    console.error('Error fetching employees:', error);
-    throw new Error('Không thể tải danh sách nhân viên');
+    console.error("Error fetching employees:", error);
+    throw new Error("Không thể tải danh sách nhân viên");
   }
 };
 
@@ -122,7 +119,7 @@ export const createEmployee = async (data) => {
       throw new Error(result.message || "Không thể tạo nhân viên");
     }
   } catch (error) {
-    console.error('Error creating employee:', error);
+    console.error("Error creating employee:", error);
     throw new Error(error.response?.data?.message || "Lỗi khi tạo nhân viên");
   }
 };
@@ -139,8 +136,10 @@ export const updateEmployee = async (employeeId, data) => {
       throw new Error(result.message || "Không thể cập nhật nhân viên");
     }
   } catch (error) {
-    console.error('Error updating employee:', error);
-    throw new Error(error.response?.data?.message || "Lỗi khi cập nhật nhân viên");
+    console.error("Error updating employee:", error);
+    throw new Error(
+      error.response?.data?.message || "Lỗi khi cập nhật nhân viên"
+    );
   }
 };
 
@@ -166,8 +165,9 @@ export const transferEmployee = async (data) => {
 // Lấy lịch sử làm việc của nhân viên
 export const getEmployeeWorkHistory = async (employeeId) => {
   try {
-
-    const response = await api.get(`/employees/${employeeId}/department-history`);
+    const response = await api.get(
+      `/employees/${employeeId}/department-history`
+    );
     const result = response.data;
 
     if (result.success && Array.isArray(result.data)) {
@@ -366,8 +366,9 @@ export const updateDepartment = async (departmentId, data) => {
 // Cập nhật trạng thái bộ phận (ẩn/hiển thị)
 export const updateDepartmentStatus = async (departmentId, status) => {
   try {
-
-    const response = await api.put(`/department/${departmentId}`, { TrangThai: status });
+    const response = await api.put(`/department/${departmentId}`, {
+      TrangThai: status,
+    });
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -404,7 +405,9 @@ export const getProducts = async (params = {}) => {
     if (category && category !== "all")
       queryParams.append("MaLoaiSP", category);
 
-    const response = await api.get(`/products/get-all-products?${queryParams.toString()}`);
+    const response = await api.get(
+      `/products/get-all-products?${queryParams.toString()}`
+    );
     const result = response.data;
 
     if (
@@ -622,7 +625,6 @@ export const updatePurchaseOrder = async (id, data) => {
       console.log("Main endpoint failed, trying alternative...");
       // Try alternative endpoint if main one fails
       try {
-
         response = await api.put(`/purchase-orders/update/${id}`, orderData);
         console.log("Alternative endpoint response:", response);
       } catch (altError) {
@@ -918,7 +920,10 @@ export const getAvailableDeliveryStaff = async (deliveryTime,address) => {
 // Cập nhật nhân viên giao hàng cho đơn hàng
 export const updateOrderDeliveryStaff = async (orderId, staffData) => {
   try {
-    const response = await api.put(`/orders/${orderId}/delivery-staff`, staffData);
+    const response = await api.put(
+      `/orders/${orderId}/delivery-staff`,
+      staffData
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1317,7 +1322,7 @@ export const submitReview = async (reviewData) => {
 export const submitMultipleReviews = async (reviewList) => {
   try {
     const response = await api.post("/binh-luan", {
-      binhLuanList: reviewList.map(review => ({
+      binhLuanList: reviewList.map((review) => ({
         maCTDonDatHang: review.maCTDonDatHang,
         moTa: review.moTa,
         soSao: review.soSao,
@@ -1447,7 +1452,10 @@ export const getReturnSlipsByStatus = async (status) => {
 // Cập nhật trạng thái phiếu trả hàng
 export const updateReturnSlipStatus = async (returnSlipId, statusData) => {
   try {
-    const response = await api.put(`/return/slip/${returnSlipId}/approve`, statusData);
+    const response = await api.put(
+      `/return/slip/${returnSlipId}/approve`,
+      statusData
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1568,7 +1576,10 @@ export const removeProductFromPromotion = async (maDot, maSP) => {
 // Thêm sản phẩm vào đợt giảm giá
 export const addProductToPromotion = async (maDot, productData) => {
   try {
-    const response = await api.post(`/promotions/${maDot}/products`, productData);
+    const response = await api.post(
+      `/promotions/${maDot}/products`,
+      productData
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1591,7 +1602,7 @@ export const validatePromotionPeriod = async (ngayBatDau, ngayKetThuc) => {
 // Get areas
 export const getAreas = async () => {
   try {
-    const response = await api.get('/areas');
+    const response = await api.get("/areas");
     const result = response.data;
 
     if (result.success && Array.isArray(result.data)) {
@@ -1716,7 +1727,7 @@ export const getProductByIdForManagement = async (productId) => {
 // Tạo sản phẩm mới
 export const createProduct = async (productData) => {
   try {
-    const response = await api.post('/products', productData);
+    const response = await api.post("/products", productData);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1854,4 +1865,31 @@ export const getProfitReportPDF = async (ngayBatDau, ngayKetThuc, nguoiLap) => {
     });
     return response.data;
   });
+};
+
+export const getProductRecommendations = async (
+  items,
+  k = 8,
+  excludeIncart = true,
+  requireInstock = false
+) => {
+  try {
+    const response = await api.post("/san-pham/recommendations", {
+      items,
+      k,
+      exclude_incart: excludeIncart,
+      require_instock: requireInstock,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy gợi ý sản phẩm:", error);
+    return {
+      success: false,
+      data: {
+        recommendations: {
+          groups: [],
+        },
+      },
+    };
+  }
 };

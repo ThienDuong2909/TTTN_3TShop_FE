@@ -1,27 +1,26 @@
-import React, { useState, useEffect } from "react";
+import {
+  CheckCircle,
+  Edit2,
+  Key,
+  Loader2,
+  Save,
+  Shield,
+  Users,
+  X,
+  XCircle,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { usePermission } from "../../components/PermissionGuard";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
 import { Separator } from "../../components/ui/separator";
-import { PERMISSIONS } from "../../utils/permissions";
-import { usePermission } from "../../components/PermissionGuard";
-import {
-  Shield,
-  Users,
-  Key,
-  CheckCircle,
-  XCircle,
-  Edit2,
-  Save,
-  X,
-  Loader2,
-} from "lucide-react";
-import { toast } from "sonner";
 
 // Interface cho Role từ API
 interface RoleFromAPI {
@@ -61,11 +60,14 @@ export default function PermissionManagement() {
       setError(null);
 
       // Gọi API lấy tất cả roles
-      const rolesResponse = await fetch("http://localhost:8080/api/roles", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const rolesResponse = await fetch(
+        "https://api.3tshop.thienduong.info/api/roles",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       if (!rolesResponse.ok) {
         throw new Error("Không thể lấy danh sách vai trò");
@@ -75,7 +77,7 @@ export default function PermissionManagement() {
 
       // Gọi API lấy tất cả permissions
       const permissionsResponse = await fetch(
-        "http://localhost:8080/api/permissions",
+        "https://api.3tshop.thienduong.info/api/permissions",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -133,7 +135,7 @@ export default function PermissionManagement() {
 
       // Gọi API để cập nhật quyền cho vai trò
       const response = await fetch(
-        `http://localhost:8080/api/roles/${role.id}/permissions`,
+        `https://api.3tshop.thienduong.info/api/roles/${role.id}/permissions`,
         {
           method: "PUT",
           headers: {

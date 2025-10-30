@@ -26,20 +26,16 @@ import {
 } from "../../components/ui/card";
 import { Separator } from "../../components/ui/separator";
 import { Label } from "../../components/ui/label";
-import { InvoiceView } from "../../components/Invoice";
 import {
-  OrderApprovalModal,
-  OrderCancelModal,
-  InvoiceModal,
-} from "../../components/admin-order-detail";
-import { toast } from "sonner";
-import {
-  updateOrderStatus,
-  getOrderDetailById,
-  getInvoiceByOrderId,
-  createInvoice,
+    createInvoice,
+    getInvoiceByOrderId,
+    getOrderDetailById, updateOrderStatus,
+
 } from "../../services/api";
 import { useApp } from "@/contexts/AppContext";
+import {toast} from "sonner";
+import {InvoiceView} from "@/components/Invoice.tsx";
+import {InvoiceModal, OrderApprovalModal, OrderCancelModal} from "@/components/admin-order-detail";
 
 interface OrderDetail {
   ThongTinDonHang: {

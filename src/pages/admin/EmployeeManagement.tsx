@@ -261,7 +261,7 @@ export const EmployeeManagement = () => {
   const fetchEmployeeRole = async (maNV: number): Promise<string | null> => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/employees/${maNV}/role`,
+        `https://api.3tshop.thienduong.info/api/employees/${maNV}/role`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -361,7 +361,7 @@ export const EmployeeManagement = () => {
 
       // Gán vai trò cho nhân viên thông qua API
       const response = await fetch(
-        `http://localhost:8080/api/employees/${permissionEmployee.maNV}/role`,
+        `https://api.3tshop.thienduong.info/api/employees/${permissionEmployee.maNV}/role`,
         {
           method: "PUT",
           headers: {
