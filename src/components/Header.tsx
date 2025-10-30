@@ -102,12 +102,11 @@ function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gradient-to-r from-brand-500 to-brand-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">T</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">
-                3TShop
-              </span>
+              <img
+                className="h-10 w-10"
+                src="../public/3tshop.png"
+                alt="Logo"
+              />
             </Link>
           </div>
 
@@ -209,12 +208,19 @@ function Header() {
                     state.user?.role === "NhanVienGiaoHang") && (
                     <>
                       <DropdownMenuItem>
-                        <Link to="/admin">Bảng điều khiển</Link>
+                        <Link
+                          to={
+                            state.user?.role === "NhanVienGiaoHang"
+                              ? "/admin/orders"
+                              : "/admin"
+                          }
+                        >
+                          Bảng điều khiển
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  
 
                   {state.user?.role === "KhachHang" && (
                     <DropdownMenuItem>

@@ -1,6 +1,6 @@
 export const mapSanPhamFromApi = (sanPham: any) => {
-  const allColors = sanPham.ChiTietSanPhams?.map((ct) => ct.Mau?.MaHex).filter(Boolean) || [];
-  const allSizes = sanPham.ChiTietSanPhams?.map((ct) => ct.KichThuoc?.TenKichThuoc).filter(Boolean) || [];
+  const allColors = sanPham.ChiTietSanPhams?.map((ct:any) => ct.Mau?.MaHex).filter(Boolean) || [];
+  const allSizes = sanPham.ChiTietSanPhams?.map((ct:any) => ct.KichThuoc?.TenKichThuoc).filter(Boolean) || [];
 
   const giaGoc = Number(sanPham.ThayDoiGia?.[0]?.Gia || 0);
   const giam = Number(sanPham.CT_DotGiamGia?.[0]?.PhanTramGiam || 0);

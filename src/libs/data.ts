@@ -329,6 +329,7 @@ export const products: Product[] = [
     category: "1-1",
     colors: ["#ffffff", "#000000", "#3b82f6"],
     sizes: ["S", "M", "L", "XL", "XXL"],
+    totalSold: 100
   },
   {
     id: 2,
@@ -343,6 +344,7 @@ export const products: Product[] = [
     category: "1-1",
     colors: ["#3b82f6", "#ffffff", "#1e293b"],
     sizes: ["S", "M", "L", "XL"],
+    totalSold: 80
   },
   {
     id: 3,
@@ -359,6 +361,7 @@ export const products: Product[] = [
     category: "1-1",
     colors: ["#dc2626", "#1e293b", "#ffffff"],
     sizes: ["M", "L", "XL", "XXL"],
+    totalSold: 100
   },
 
   // Áo thun nam
@@ -375,6 +378,7 @@ export const products: Product[] = [
     category: "1-2",
     colors: ["#000000", "#ffffff", "#dc2626", "#3b82f6"],
     sizes: ["S", "M", "L", "XL"],
+    totalSold: 100
   },
   {
     id: 5,
@@ -391,6 +395,7 @@ export const products: Product[] = [
     category: "1-2",
     colors: ["#1e293b", "#dc2626", "#ffffff"],
     sizes: ["S", "M", "L", "XL", "XXL"],
+    totalSold: 100
   },
 
   // Quần jeans nam
@@ -409,6 +414,7 @@ export const products: Product[] = [
     category: "1-3",
     colors: ["#1e293b", "#000000"],
     sizes: ["29", "30", "31", "32", "33", "34"],
+    totalSold: 100
   },
   {
     id: 7,
@@ -423,6 +429,7 @@ export const products: Product[] = [
     category: "1-3",
     colors: ["#1e293b", "#374151"],
     sizes: ["29", "30", "31", "32", "33"],
+    totalSold: 100
   },
 
   // Áo khoác nam
@@ -441,6 +448,7 @@ export const products: Product[] = [
     category: "1-4",
     colors: ["#000000", "#1e293b", "#374151"],
     sizes: ["M", "L", "XL", "XXL"],
+    totalSold: 100
   },
 
   // Váy đầm nữ
@@ -457,6 +465,7 @@ export const products: Product[] = [
     category: "2-1",
     colors: ["#ec4899", "#000000", "#f59e0b"],
     sizes: ["S", "M", "L", "XL"],
+    totalSold: 100
   },
   {
     id: 10,
@@ -473,6 +482,7 @@ export const products: Product[] = [
     category: "2-1",
     colors: ["#000000", "#dc2626", "#1e40af"],
     sizes: ["S", "M", "L"],
+    totalSold: 100
   },
 
   // Áo kiểu nữ
@@ -489,6 +499,7 @@ export const products: Product[] = [
     category: "2-2",
     colors: ["#ffffff", "#f59e0b", "#ec4899"],
     sizes: ["S", "M", "L", "XL"],
+    totalSold: 100
   },
 
   // Chân váy nữ
@@ -507,6 +518,7 @@ export const products: Product[] = [
     category: "2-3",
     colors: ["#000000", "#1e293b", "#6b7280"],
     sizes: ["S", "M", "L", "XL"],
+    totalSold: 100
   },
 
   // Áo blazer nữ
@@ -525,6 +537,7 @@ export const products: Product[] = [
     category: "2-4",
     colors: ["#000000", "#1e293b", "#ffffff"],
     sizes: ["S", "M", "L", "XL"],
+    totalSold: 100
   },
 
   // Thời trang trẻ em
@@ -541,6 +554,7 @@ export const products: Product[] = [
     category: "3-1",
     colors: ["#3b82f6", "#dc2626", "#22c55e"],
     sizes: ["2-3T", "4-5T", "6-7T", "8-9T"],
+    totalSold: 100
   },
   {
     id: 15,
@@ -557,6 +571,7 @@ export const products: Product[] = [
     category: "3-2",
     colors: ["#ec4899", "#f59e0b", "#a855f7"],
     sizes: ["2-3T", "4-5T", "6-7T"],
+    totalSold: 100
   },
 
   // Túi xách
@@ -575,6 +590,7 @@ export const products: Product[] = [
     category: "4-1",
     colors: ["#7c2d12", "#000000", "#f59e0b"],
     sizes: ["One Size"],
+    totalSold: 100
   },
   {
     id: 17,
@@ -589,6 +605,7 @@ export const products: Product[] = [
     category: "4-1",
     colors: ["#000000", "#7c2d12", "#ec4899"],
     sizes: ["One Size"],
+    totalSold: 100
   },
 
   // Giày dép
@@ -605,6 +622,7 @@ export const products: Product[] = [
     category: "4-2",
     colors: ["#ffffff", "#000000", "#ef4444", "#3b82f6"],
     sizes: ["36", "37", "38", "39", "40", "41", "42", "43"],
+    totalSold: 100
   },
   {
     id: 19,
@@ -621,6 +639,7 @@ export const products: Product[] = [
     category: "4-2",
     colors: ["#000000", "#7c2d12"],
     sizes: ["35", "36", "37", "38", "39", "40"],
+    totalSold: 100
   },
   {
     id: 20,
@@ -637,6 +656,7 @@ export const products: Product[] = [
     category: "4-2",
     colors: ["#000000", "#7c2d12"],
     sizes: ["39", "40", "41", "42", "43", "44"],
+    totalSold: 100
   },
 ];
 
@@ -818,7 +838,7 @@ export const mockStaff: User[] = [
     id: "STAFF001",
     email: "nhanvien1@fashionhub.vn",
     name: "Nguyễn Văn Nhân Viên",
-    role: "staff",
+    role: "NhanVienCuaHang",
     department: "DEPT001",
     permissions: ["view_orders", "manage_orders", "view_products"],
   },
@@ -826,7 +846,7 @@ export const mockStaff: User[] = [
     id: "STAFF002",
     email: "nhanvien2@fashionhub.vn",
     name: "Trần Thị Kho",
-    role: "staff",
+    role: "NhanVienCuaHang",
     department: "DEPT002",
     permissions: ["view_inventory", "manage_inventory", "view_suppliers"],
   },
@@ -834,7 +854,7 @@ export const mockStaff: User[] = [
     id: "ADMIN001",
     email: "admin@fashionhub.vn",
     name: "Quản Trị Viên",
-    role: "admin",
+    role: "Admin",
     permissions: ["all"],
   },
 ];

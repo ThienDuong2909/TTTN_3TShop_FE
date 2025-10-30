@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
-import { CartItem, User } from "../libs/data";
+import { CartItem, User } from "../types";
 import { Product } from "../components/ProductCard";
-import {removeFromCartApi} from '../services/api'
+import { removeFromCartApi } from "../services/api";
 import { clearCartApi } from "../services/api";
 interface AppState {
   cart: CartItem[];
@@ -21,11 +21,11 @@ type AppAction =
       size?: string;
     }
   | {
-    type: "REMOVE_FROM_CART";
-    productId: number;
-    color?: string;
-    size?: string;
-  }
+      type: "REMOVE_FROM_CART";
+      productId: number;
+      color?: string;
+      size?: string;
+    }
   | { type: "UPDATE_CART_QUANTITY"; productId: number; quantity: number }
   | { type: "CLEAR_CART" }
   | { type: "TOGGLE_WISHLIST"; productId: number }
@@ -35,7 +35,6 @@ type AppAction =
   | { type: "SET_INITIALIZED"; isInitialized: boolean }
   | { type: "LOAD_PERSISTED_STATE"; state: Partial<AppState> }
   | { type: "SET_CART_FROM_BACKEND"; cart: CartItem[] };
-  
 
 const initialState: AppState = {
   cart: [],
@@ -53,7 +52,7 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
         (item) =>
           item.product.id === action.product.id &&
           item.selectedColor === action.color &&
-          item.selectedSize === action.size,
+          item.selectedSize === action.size
       );
 
       if (existingItemIndex > -1) {
@@ -73,30 +72,28 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
     }
     case "SET_CART_FROM_BACKEND":
       return {
-    ...state,
-    cart: action.cart.map((item) => ({
-      ...item,
-      product: {
-        ...item.product,
-        price: item.product.price ?? 0, 
-      },
-    })),
-  };
-
+        ...state,
+        cart: action.cart.map((item) => ({
+          ...item,
+          product: {
+            ...item.product,
+            price: item.product.price ?? 0,
+          },
+        })),
+      };
 
     case "REMOVE_FROM_CART":
-  return {
-    ...state,
-    cart: state.cart.filter(
-      (item) =>
-        !(
-          item.product.id === action.productId &&
-          item.selectedColor === action.color &&
-          item.selectedSize === action.size
-        )
-    ),
-  };
-
+      return {
+        ...state,
+        cart: state.cart.filter(
+          (item) =>
+            !(
+              item.product.id === action.productId &&
+              item.selectedColor === action.color &&
+              item.selectedSize === action.size
+            )
+        ),
+      };
 
     case "UPDATE_CART_QUANTITY":
       return {
@@ -105,7 +102,7 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
           .map((item) =>
             item.product.id === action.productId
               ? { ...item, quantity: Math.max(0, action.quantity) }
-              : item,
+              : item
           )
           .filter((item) => item.quantity > 0),
       };
@@ -149,9 +146,14 @@ interface AppContextType {
     product: Product,
     quantity?: number,
     color?: string,
-    size?: string,
+    size?: string
   ) => void;
-  removeFromCart: (productId: number, color:string, size: string, donGia: number) => void;
+  removeFromCart: (
+    productId: number,
+    color: string,
+    size: string,
+    donGia: number
+  ) => void;
   updateCartQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
   toggleWishlist: (productId: number) => void;
@@ -164,7 +166,6 @@ interface AppContextType {
   setCartFromBackend: (cart: CartItem[]) => void;
   clearCartFully: () => Promise<void>;
 }
-
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -246,50 +247,53 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     product: Product,
     quantity = 1,
     color?: string,
-    size?: string,
+    size?: string
   ) => {
-   
     dispatch({ type: "ADD_TO_CART", product, quantity, color, size });
   };
   const setCartFromBackend = (cart: CartItem[]) => {
-  dispatch({ type: "SET_CART_FROM_BACKEND", cart });
-};
+    dispatch({ type: "SET_CART_FROM_BACKEND", cart });
+  };
 
-const clearCartFully = async () => {
-  if (!state.user) return;
-  try {
-    await clearCartApi(state.user.id);
-    dispatch({ type: "CLEAR_CART" });
-  } catch (error) {
-    console.error("Không thể xoá giỏ hàng:", error);
-    alert("Xoá tất cả sản phẩm trong giỏ hàng thất bại.");
-  }
-};
-
+  const clearCartFully = async () => {
+    if (!state.user) return;
+    try {
+      await clearCartApi(Number(state.user.id));
+      dispatch({ type: "CLEAR_CART" });
+    } catch (error) {
+      console.error("Không thể xoá giỏ hàng:", error);
+      alert("Xoá tất cả sản phẩm trong giỏ hàng thất bại.");
+    }
+  };
 
   const removeFromCart = async (
-  productId: number,
-  color?: string,
-  size?: string,
-  donGia?: number,
-) => {
-  if (!state.user) return;
+    productId: number,
+    color: string,
+    size: string,
+    donGia: number
+  ) => {
+    if (!state.user) return;
 
-  try {
-    console.log("Removing from cart:", { productId, color, size, donGia });
-    await removeFromCartApi(state.user.id, productId, color, size, donGia);
-    dispatch({
-      type: "REMOVE_FROM_CART",
-      productId,
-      color,
-      size,
-    });
-  } catch (error) {
-    console.error("Không thể xoá sản phẩm:", error);
-    alert("Xoá sản phẩm khỏi giỏ hàng thất bại.");
-  }
-};
-
+    try {
+      console.log("Removing from cart:", { productId, color, size, donGia });
+      await removeFromCartApi(
+        Number(state.user.id),
+        productId,
+        color,
+        size,
+        donGia
+      );
+      dispatch({
+        type: "REMOVE_FROM_CART",
+        productId,
+        color,
+        size,
+      });
+    } catch (error) {
+      console.error("Không thể xoá sản phẩm:", error);
+      alert("Xoá sản phẩm khỏi giỏ hàng thất bại.");
+    }
+  };
 
   const updateCartQuantity = (productId: number, quantity: number) => {
     dispatch({ type: "UPDATE_CART_QUANTITY", productId, quantity });
@@ -344,7 +348,6 @@ const clearCartFully = async () => {
     getCartItemsCount,
     isInWishlist,
     clearCartFully,
-    
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

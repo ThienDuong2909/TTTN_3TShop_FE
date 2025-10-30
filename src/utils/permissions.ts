@@ -1,4 +1,6 @@
 // Hệ thống phân quyền 3TShop - Cập nhật theo tài liệu mới
+import { fetchAllPermissionsByRole } from "../services/api";
+
 export interface Permission {
   id: string;
   name: string;
@@ -206,16 +208,32 @@ export const getRoleByName = (roleName: string): Role | null => {
   return role || null;
 };
 
-export const getPermissionsForRole = (roleName: string): string[] => {
-  const role = getRoleByName(roleName);
-  return role?.permissions || [];
+export const getPermissionsForRole = async (roleId: number) => {
+  try {
+    const data = await fetchAllPermissionsByRole(roleId);
+    if (data) {
+      if (!Array.isArray(data)) return [];
+      console.log("Fetched permissions for roleId", roleId, data);
+      let permissions : string[] = []
+      data.map((p: any) => {
+        if (p?.Ten || p?.ten || p?.key) {
+          permissions.push(p?.Ten || p?.ten || p?.key);
+        }
+      });
+      return permissions;
+    } else {
+      return [];
+    }
+  } catch (e) {
+    return [];
+  }
 };
 
 // Route permissions mapping theo tài liệu
 export const ROUTE_PERMISSIONS = {
   // Admin routes
-  '/admin': ['toanquyen', 'donhang.xem_duoc_giao', 'donhang.xem'],
-  '/admin/dashboard': ['toanquyen', 'donhang.xem_duoc_giao', 'donhang.xem'],
+  '/admin': ['toanquyen', 'donhang.xem_duoc_giao', 'donhang.xem', 'taobaocao'],
+  '/admin/dashboard': ['toanquyen', 'donhang.xem_duoc_giao', 'donhang.xem','taobaocao'],
   '/admin/products': ['sanpham.xem'],
   '/admin/add-product': ['sanpham.tao'],
   '/admin/products/:id': ['sanpham.xem'],
@@ -234,7 +252,7 @@ export const ROUTE_PERMISSIONS = {
   '/admin/colors': ['mausac.tao', 'mausac.sua', 'mausac.xoa'],
   '/admin/sizes': ['kichthuoc.tao', 'kichthuoc.sua', 'kichthuoc.xoa'],
   '/admin/permissions': ['toanquyen'],
-  '/admin/return-management': ['thongtin.xem', 'toanquyen'],
+  '/admin/return-management': ['thongtin.xem', 'toanquyen', 'trahang.duyet', 'phieuchi.tao'],
 
   // User routes
   '/profile': ['toanquyen', 'thongtin.xem'],
@@ -261,4 +279,4 @@ export const getRoutePermissions = (route: string): string[] => {
   }
 
   return [];
-}; 
+};

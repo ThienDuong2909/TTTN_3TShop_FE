@@ -76,7 +76,7 @@ export function getOrderStatistics(): Promise<any>;
 export function getOrderDetailById(orderId: string | number): Promise<any>;
 export function updateOrderStatus(orderId: number, statusData: any): Promise<any>;
 export function updateBatchOrderStatus(ordersData: any): Promise<any>;
-export function getAvailableDeliveryStaff(address: string): Promise<{
+export function getAvailableDeliveryStaff(deliveryTime: string, address: string): Promise<{
   success: boolean;
   message: string;
   data: Array<{
@@ -122,8 +122,8 @@ export function addToCartApi(data: {
   maKH: number;
   maSP: number;
   soLuong: number;
-  maHex: number;
-  tenKichThuoc: number;
+  maHex: string;
+  tenKichThuoc: string;
 }): Promise<any>;
 
 export function getCartItemsApi (maKH: string | number): Promise<any>;
@@ -160,6 +160,7 @@ export declare function getProductsByCategory(id: number): Promise<any[]>;
 
 
 export function getCurrentExchangeRate(): Promise<number>;
+
 // ...existing code...
 
 export function getBestSellerProducts(): Promise<any[]>;
@@ -273,6 +274,7 @@ export declare function changePassword(passwordData: ChangePasswordRequest): Pro
 // Permissions functions
 export function fetchMyPermissions(): Promise<string[]>;
 export function fetchAllPermissions(): Promise<Array<{ id: number; Ten: string; TenHienThi: string; NgayTao?: string }>>;
+export function fetchAllPermissionsByRole(roleId: number): Promise<Array<{ id: number; Ten: string; TenHienThi: string; NgayTao?: string }>>;
 export function fetchEmployeePermissions(nhanVienId: number): Promise<number[]>;
 export function assignPermissionsToEmployee(nhanVienId: number, permissionIds: number[]): Promise<any>;
 
@@ -768,6 +770,125 @@ export interface GetPurchaseOrdersNCCResponse {
 
 // Function declaration
 export declare function getPurchaseOrdersNCC(): Promise<GetPurchaseOrdersNCCResponse>;
+
+// ===================
+// DELIVERY AREA MANAGEMENT TYPES
+// ===================
+
+export interface KhuVuc {
+  MaKhuVuc: string; // Change to string to match actual data
+  TenKhuVuc: string;
+}
+
+export interface KhuVucGiaoHang extends KhuVuc {
+  MaNVKV: number;
+  NgayBatDau: string;
+  NgayTao?: string;
+}
+
+export interface KhuVucData {
+  MaNV?: number;
+  TenNV?: number;
+  KhuVucPhuTrach: KhuVucGiaoHang[];
+}
+
+export interface NewAreaSelection {
+  MaKhuVuc: string; // Change to string to match actual data
+  TenKhuVuc: string;
+  NgayBatDau: string;
+}
+
+export interface GetEmployeeAreasResponse {
+  success: boolean;
+  message: string;
+  data: KhuVucData;
+}
+
+export interface GetAvailableAreasResponse {
+  success: boolean;
+  message: string;
+  data: {
+    KhuVucChuaPhuTrach: KhuVuc[];
+  };
+}
+
+export interface RemoveEmployeeAreasRequest {
+  danhSachMaNVKV: string[];
+}
+
+export interface AddEmployeeAreasRequest {
+  danhSachKhuVuc: Array<{
+    MaKhuVuc: string;
+    NgayBatDau: string;
+  }>;
+}
+
+export interface EmployeeAreaApiResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
+// Function declarations
+export declare function getEmployeeAreas(employeeId: number): Promise<GetEmployeeAreasResponse>;
+export declare function getAvailableAreasForEmployee(employeeId: number): Promise<GetAvailableAreasResponse>;
+export declare function removeEmployeeAreas(areaIds: number[]): Promise<EmployeeAreaApiResponse>;
+export declare function addEmployeeAreas(employeeId: number, areaData: Array<{ MaKhuVuc: string; NgayBatDau: string }>): Promise<EmployeeAreaApiResponse>;
+
+// Inventory Report
+export declare function getInventoryReport(reportDate: string): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    ngayBaoCao: string;
+    data: Array<{
+      "Loại sản phẩm": string;
+      "Mã sản phẩm": number;
+      "Tên sản phẩm": string;
+      "Số lượng tồn": string;
+      "Giá nhập": string;
+    }>;
+  };
+}>;
+
+export declare function getInventoryReportPDF(reportDate: string, nguoiLap: string): Promise<Blob>;
+
+// Profit Report
+export declare function getProfitReport(ngayBatDau: string, ngayKetThuc: string): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    data: Array<{
+      stt: number;
+      loaiSanPham: string;
+      maSanPham: number;
+      tenSanPham: string;
+      tongTriGiaNhap: number;
+      tongTriGiaXuat: number;
+      loiNhuan: number;
+      phanTramLoiNhuan: number;
+      tongTriGiaNhapFormatted: string;
+      tongTriGiaXuatFormatted: string;
+      loiNhuanFormatted: string;
+      phanTramLoiNhuanFormatted: string;
+    }>;
+    summary: {
+      tongTriGiaNhapTotal: number;
+      tongTriGiaXuatTotal: number;
+      tongLoiNhuan: number;
+      phanTramLoiNhuanTrungBinh: number;
+      tongTriGiaNhapTotalFormatted: string;
+      tongTriGiaXuatTotalFormatted: string;
+      tongLoiNhuanFormatted: string;
+      phanTramLoiNhuanTrungBinhFormatted: string;
+      soLuongSanPham: number;
+    };
+    ngayBatDau: string;
+    ngayKetThuc: string;
+  };
+}>;
+
+export declare function getProfitReportPDF(ngayBatDau: string, ngayKetThuc: string, nguoiLap: string): Promise<Blob>;
 
 export interface RecommendationProduct {
   MaSP: number;

@@ -214,6 +214,14 @@ export const fetchAllPermissions = async () => {
     return handleError(error);
   }
 };
+export const fetchAllPermissionsByRole = async (roleId) => {
+  try {
+    const res = await api.get(`/permissions/role/${roleId}`);
+    return res.data?.data || [];
+  } catch (error) {
+    return handleError(error);
+  }
+};
 
 // (Optional) Lấy quyền của một nhân viên theo id — nếu backend hỗ trợ
 export const fetchEmployeePermissions = async (nhanVienId) => {
@@ -880,11 +888,9 @@ export const updateBatchOrderStatus = async (ordersData) => {
 };
 
 // Lấy danh sách nhân viên giao hàng có sẵn
-export const getAvailableDeliveryStaff = async (address) => {
+export const getAvailableDeliveryStaff = async (deliveryTime,address) => {
   try {
-    const response = await api.post("/employees/delivery/available", {
-      diaChi: address,
-    });
+    const response = await api.post("/employees/delivery/available", { thoigiangiao: deliveryTime, diaChi: address });
 
     // Handle the new API response structure
     if (
@@ -1765,6 +1771,100 @@ export const getPurchaseOrdersNCC = async () => {
   } catch (error) {
     return handleError(error);
   }
+};
+
+// ===================
+// DELIVERY AREA MANAGEMENT API
+// ===================
+
+// Lấy danh sách khu vực phụ trách của nhân viên
+export const getEmployeeAreas = async (employeeId) => {
+  try {
+    const response = await apiWrapper.get(`/nhan-vien/${employeeId}/khu-vuc`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Lấy danh sách khu vực chưa phụ trách của nhân viên
+export const getAvailableAreasForEmployee = async (employeeId) => {
+  try {
+    const response = await apiWrapper.get(`/nhan-vien/${employeeId}/khu-vuc-chua-phu-trach`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Xóa khu vực phụ trách của nhân viên
+export const removeEmployeeAreas = async (areaIds) => {
+  try {
+    const response = await apiWrapper.delete('/nhan-vien/khu-vuc', {
+      data: {
+        danhSachMaNVKV: areaIds,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Thêm khu vực phụ trách cho nhân viên
+export const addEmployeeAreas = async (employeeId, areaData) => {
+  try {
+    const response = await apiWrapper.post(`/nhan-vien/${employeeId}/khu-vuc`, {
+      danhSachKhuVuc: areaData,
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// ===================
+// INVENTORY REPORT API
+// ===================
+
+export const getInventoryReport = async (reportDate) => {
+  return handleApiCall(async () => {
+    const response = await api.get(`/bao-cao-ton-kho/${reportDate}/raw`);
+    return response.data;
+  });
+};
+
+export const getInventoryReportPDF = async (reportDate, nguoiLap) => {
+  return handleApiCall(async () => {
+    const response = await api.get(`/bao-cao-ton-kho/${reportDate}/pdf?nguoilap=${encodeURIComponent(nguoiLap)}`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  });
+};
+
+// Profit Report APIs
+export const getProfitReport = async (ngayBatDau, ngayKetThuc) => {
+  return handleApiCall(async () => {
+    const response = await api.post('/bao-cao-loi-nhuan', {
+      ngayBatDau,
+      ngayKetThuc
+    });
+    return response.data;
+  });
+};
+
+export const getProfitReportPDF = async (ngayBatDau, ngayKetThuc, nguoiLap) => {
+  return handleApiCall(async () => {
+    const response = await api.post('/bao-cao-loi-nhuan/pdf', {
+      ngayBatDau,
+      ngayKetThuc,
+      nguoiLap
+    }, {
+      responseType: 'blob'
+    });
+    return response.data;
+  });
 };
 
 export const getProductRecommendations = async (

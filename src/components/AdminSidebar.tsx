@@ -9,6 +9,9 @@ import {
   Shield,
   RotateCcw,
   BarChart3,
+  Shirt,
+  Import,
+  PaintBucket,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useApp } from "../contexts/AppContext";
@@ -45,13 +48,20 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
       permission: "toanquyen",
       route: "/admin",
       isDashboard: true,
+      alternativePermissions: ["taobaocao"],
     },
     {
       name: "Sản phẩm",
       id: "products",
-      icon: Package,
-      permission: "sanpham.xem",
+      icon: Shirt,
+      permission: "toanquyen",
       route: "/admin/products",
+      alternativePermissions: [
+        "sanpham.tao",
+        "sanpham.sua",
+        "sanpham.xoa",
+        "sanpham.xem",
+      ],
     },
     {
       name: "Loại sản phẩm",
@@ -75,7 +85,7 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
       icon: RotateCcw,
       permission: "toanquyen",
       route: "/admin/return-management",
-      alternativePermissions: ["thongtin.xem"],
+      alternativePermissions: ["phieuchi.tao", "trahang.duyet"],
     },
     {
       name: "Phiếu đặt hàng",
@@ -88,7 +98,7 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
     {
       name: "Phiếu nhập hàng",
       id: "goods-receipt",
-      icon: FileText,
+      icon: Import,
       permission: "nhaphang.xem",
       route: "/admin/goods-receipt",
       alternativePermissions: ["nhaphang.tao", "nhaphang.sua"],
@@ -116,22 +126,20 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
       name: "Nhân viên",
       id: "staff",
       icon: UserCheck,
-      permission: "nhanvien.xem",
+      permission: "toanquyen",
       route: "/admin/employees",
-      alternativePermissions: ["nhanvien.phancong"],
     },
     {
       name: "Bộ phận",
       id: "departments",
       icon: Building2,
-      permission: "bophan.xem",
+      permission: "toanquyen",
       route: "/admin/departments",
-      alternativePermissions: ["toanquyen"],
     },
     {
       name: "Màu sắc",
       id: "colors",
-      icon: Building2,
+      icon: PaintBucket,
       permission: "mausac.tao",
       route: "/admin/colors",
       alternativePermissions: ["mausac.sua", "mausac.xoa"],
@@ -160,11 +168,13 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
   const isItemActive = (item: NavigationItem) => {
     // Special case cho Dashboard
     if (item.isDashboard) {
-      return location.pathname === "/admin" || 
-             location.pathname === "/admin/dashboard" ||
-             activeTab === "dashboard";
+      return (
+        location.pathname === "/admin" ||
+        location.pathname === "/admin/dashboard" ||
+        activeTab === "dashboard"
+      );
     }
-    
+
     // For other items, check if current path starts with item route
     return location.pathname.startsWith(item.route) || activeTab === item.id;
   };
@@ -174,9 +184,7 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-4 pb-4 shadow-sm">
         <div className="flex h-16 shrink-0 items-center">
           <div className="flex items-center space-x-2">
-            <div className="h-7 w-7 bg-gradient-to-r from-brand-500 to-brand-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-base">F</span>
-            </div>
+            <img className="h-8 w-8" src="../public/3tshop.png" alt="Logo" />
             <div>
               <span className="text-base font-bold text-gray-900 dark:text-white">
                 Bảng điều khiển
@@ -187,7 +195,7 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
             </div>
           </div>
         </div>
-        
+
         <nav className="flex flex-1 flex-col">
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
             <li>
@@ -195,7 +203,7 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
                 {filteredNavigation.map((item) => {
                   const isActive = isItemActive(item);
                   const isDashboard = item.isDashboard;
-                  
+
                   return (
                     <li key={item.name}>
                       <button
@@ -204,12 +212,12 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
                           isDashboard
                             ? // Dashboard styling - Active giống hover, nhẹ nhàng hơn
                               isActive
-                                ? "bg-gradient-to-r from-brand-50 via-brand-100 to-blue-50 text-brand-700 border border-brand-200 font-semibold shadow-sm dark:from-brand-900/30 dark:via-brand-900/40 dark:to-blue-900/30 dark:text-brand-300 dark:border-brand-600"
-                                : "bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 text-gray-600 border border-gray-300 hover:from-brand-50 hover:via-brand-100 hover:to-blue-50 hover:border-brand-200 hover:text-brand-700 dark:from-gray-700 dark:via-gray-800 dark:to-gray-700 dark:text-gray-400 dark:border-gray-600 dark:hover:from-brand-900/30 dark:hover:to-blue-900/30 dark:hover:text-brand-300"
+                              ? "bg-gradient-to-r from-brand-50 via-brand-100 to-blue-50 text-brand-700 border border-brand-200 font-semibold shadow-sm dark:from-brand-900/30 dark:via-brand-900/40 dark:to-blue-900/30 dark:text-brand-300 dark:border-brand-600"
+                              : "bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 text-gray-600 border border-gray-300 hover:from-brand-50 hover:via-brand-100 hover:to-blue-50 hover:border-brand-200 hover:text-brand-700 dark:from-gray-700 dark:via-gray-800 dark:to-gray-700 dark:text-gray-400 dark:border-gray-600 dark:hover:from-brand-900/30 dark:hover:to-blue-900/30 dark:hover:text-brand-300"
                             : // Regular menu items
-                              isActive
-                                ? "bg-brand-50 text-brand-600 dark:bg-brand-900/50 dark:text-brand-400"
-                                : "text-gray-700 hover:text-brand-600 hover:bg-gray-50 dark:text-gray-600 dark:hover:text-brand-600 dark:hover:bg-gray-700"
+                            isActive
+                            ? "bg-brand-50 text-brand-600 dark:bg-brand-900/50 dark:text-brand-400"
+                            : "text-gray-700 hover:text-brand-600 hover:bg-gray-50 dark:text-gray-600 dark:hover:text-brand-600 dark:hover:bg-gray-700"
                         }`}
                       >
                         <item.icon
@@ -219,23 +227,25 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
                                 ? "text-brand-600 dark:text-brand-400" // Màu icon nhẹ nhàng khi active
                                 : "text-gray-500 group-hover:text-brand-600 dark:text-gray-400 dark:group-hover:text-brand-400"
                               : isActive
-                                ? "text-brand-600 dark:text-brand-400"
-                                : "text-gray-400 group-hover:text-brand-600 dark:group-hover:text-brand-400"
+                              ? "text-brand-600 dark:text-brand-400"
+                              : "text-gray-400 group-hover:text-brand-600 dark:group-hover:text-brand-400"
                           }`}
                         />
-                        
-                        <span className={`relative z-10 transition-all duration-200 ${
-                          isDashboard 
-                            ? isActive 
-                              ? "font-semibold text-brand-700 dark:text-brand-300" // Font weight vừa phải
-                              : "font-medium text-gray-600 group-hover:text-brand-700 dark:text-gray-400 dark:group-hover:text-brand-300"
-                            : isActive 
+
+                        <span
+                          className={`relative z-10 transition-all duration-200 ${
+                            isDashboard
+                              ? isActive
+                                ? "font-semibold text-brand-700 dark:text-brand-300" // Font weight vừa phải
+                                : "font-medium text-gray-600 group-hover:text-brand-700 dark:text-gray-400 dark:group-hover:text-brand-300"
+                              : isActive
                               ? "font-medium"
                               : ""
-                        }`}>
+                          }`}
+                        >
                           {item.name}
                         </span>
-                        
+
                         {/* Dashboard indicators - Nhẹ nhàng hơn */}
                         {isDashboard && (
                           <div className="ml-auto flex items-center relative z-10">
@@ -252,7 +262,7 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
                             )}
                           </div>
                         )}
-                        
+
                         {/* Active border accent - Subtle */}
                         {isDashboard && isActive && (
                           <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 rounded-r-full opacity-60 dark:bg-brand-400"></div>

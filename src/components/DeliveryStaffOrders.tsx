@@ -1,8 +1,22 @@
-import { useState, useEffect, useCallback, memo } from "react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Package,
+  Phone,
+  Search,
+} from "lucide-react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { confirmOrderDelivery, getAssignedOrders } from "../services/api";
 import AdminHeader from "./AdminHeader";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import {
   Card,
   CardContent,
@@ -11,36 +25,6 @@ import {
   CardTitle,
 } from "./ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./ui/table";
-import { Badge } from "./ui/badge";
-import {
-  Search,
-  Check,
-  CheckCircle,
-  Package,
-  ChevronLeft,
-  ChevronRight,
-  MapPin,
-  Phone,
-  User,
-  Calendar,
-  DollarSign,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-} from "lucide-react";
-import { toast } from "sonner";
-import {
-  getAssignedOrders,
-  confirmOrderDelivery,
-} from "../services/api";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -48,6 +32,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
+import { Input } from "./ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/table";
 
 // Order interfaces
 interface OrderCustomer {
@@ -321,10 +314,16 @@ export default function DeliveryStaffOrders() {
     if (!searchTerm.trim()) return true;
 
     const normalizedSearchTerm = normalizeVietnameseText(searchTerm);
-    const normalizedOrderId = normalizeVietnameseText(order.MaDDH?.toString() || "");
-    const normalizedRecipientName = normalizeVietnameseText(order.NguoiNhan || "");
+    const normalizedOrderId = normalizeVietnameseText(
+      order.MaDDH?.toString() || ""
+    );
+    const normalizedRecipientName = normalizeVietnameseText(
+      order.NguoiNhan || ""
+    );
     const normalizedPhone = normalizeVietnameseText(order.SDT || "");
-    const normalizedCustomerName = normalizeVietnameseText(order.KhachHang?.TenKH || "");
+    const normalizedCustomerName = normalizeVietnameseText(
+      order.KhachHang?.TenKH || ""
+    );
 
     return (
       normalizedOrderId.includes(normalizedSearchTerm) ||
@@ -368,7 +367,8 @@ export default function DeliveryStaffOrders() {
   });
 
   const getStatusBadge = (statusId: number) => {
-    const status = ORDER_STATUSES[statusId.toString() as keyof typeof ORDER_STATUSES];
+    const status =
+      ORDER_STATUSES[statusId.toString() as keyof typeof ORDER_STATUSES];
     if (!status) return <Badge variant="secondary">Không xác định</Badge>;
 
     switch (statusId) {
@@ -408,7 +408,10 @@ export default function DeliveryStaffOrders() {
 
   // Calculate total items in order
   const getTotalItems = (order: Order) => {
-    return order.CT_DonDatHangs?.reduce((total, item) => total + item.SoLuong, 0) || 0;
+    return (
+      order.CT_DonDatHangs?.reduce((total, item) => total + item.SoLuong, 0) ||
+      0
+    );
   };
 
   return (
@@ -419,7 +422,9 @@ export default function DeliveryStaffOrders() {
         <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Đơn hàng được phân công</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Đơn hàng được phân công
+            </h1>
             <p className="text-gray-600 mt-2">
               Quản lý các đơn hàng được phân công cho bạn giao hàng
             </p>
@@ -547,9 +552,7 @@ export default function DeliveryStaffOrders() {
                             <TableCell className="text-sm">
                               {formatDate(order.NgayTao)}
                             </TableCell>
-                            <TableCell
-                              onClick={(e) => e.stopPropagation()}
-                            >
+                            <TableCell onClick={(e) => e.stopPropagation()}>
                               <div className="flex items-center justify-center gap-2">
                                 {order.TrangThaiDH.MaTTDH === 3 && (
                                   <Button
@@ -583,7 +586,9 @@ export default function DeliveryStaffOrders() {
                     <div className="flex items-center justify-between mt-6">
                       <div className="text-sm text-muted-foreground">
                         Hiển thị{" "}
-                        {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}{" "}
+                        {(pagination.currentPage - 1) *
+                          pagination.itemsPerPage +
+                          1}{" "}
                         -{" "}
                         {Math.min(
                           pagination.currentPage * pagination.itemsPerPage,
@@ -595,7 +600,9 @@ export default function DeliveryStaffOrders() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handlePageChange(pagination.currentPage - 1)}
+                          onClick={() =>
+                            handlePageChange(pagination.currentPage - 1)
+                          }
                           disabled={pagination.currentPage === 1}
                         >
                           <ChevronLeft className="h-4 w-4" />
@@ -610,7 +617,8 @@ export default function DeliveryStaffOrders() {
                                   ? i + 1
                                   : pagination.currentPage + i - 2;
 
-                              if (pageNumber > pagination.totalPages) return null;
+                              if (pageNumber > pagination.totalPages)
+                                return null;
 
                               return (
                                 <Button
@@ -633,8 +641,12 @@ export default function DeliveryStaffOrders() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handlePageChange(pagination.currentPage + 1)}
-                          disabled={pagination.currentPage === pagination.totalPages}
+                          onClick={() =>
+                            handlePageChange(pagination.currentPage + 1)
+                          }
+                          disabled={
+                            pagination.currentPage === pagination.totalPages
+                          }
                         >
                           Sau
                           <ChevronRight className="h-4 w-4" />
@@ -655,8 +667,8 @@ export default function DeliveryStaffOrders() {
           <DialogHeader>
             <DialogTitle>Xác nhận giao hàng</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn xác nhận đã giao hàng cho đơn hàng #{orderToConfirm}? 
-              Hành động này sẽ đánh dấu đơn hàng là hoàn tất.
+              Bạn có chắc chắn muốn xác nhận đã giao hàng cho đơn hàng #
+              {orderToConfirm}? Hành động này sẽ đánh dấu đơn hàng là hoàn tất.
             </DialogDescription>
           </DialogHeader>
 
@@ -680,4 +692,4 @@ export default function DeliveryStaffOrders() {
       </Dialog>
     </div>
   );
-} 
+}
