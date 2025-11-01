@@ -45,7 +45,7 @@ function Footer() {
         {/* Company Info */}
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
-            <img className="h-28 w-28" src="../public/3tshop.png" alt="Logo" />
+            <img className="h-28 w-28" src="../../3tshop.png" alt="Logo" />
           </div>
           <p className="text-gray-600 dark:text-gray-300">
             Thời trang hiện đại, chất lượng cao với giá cả hợp lý. Mang đến
