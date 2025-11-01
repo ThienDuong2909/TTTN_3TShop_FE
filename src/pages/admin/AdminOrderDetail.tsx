@@ -16,6 +16,9 @@ import {
   Badge as BadgeIcon,
   Palette,
   Ruler,
+  Image,
+  X,
+  Download,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import {
@@ -26,6 +29,7 @@ import {
 } from "../../components/ui/card";
 import { Separator } from "../../components/ui/separator";
 import { Label } from "../../components/ui/label";
+import { Dialog, DialogContent } from "../../components/ui/dialog";
 import {
   createInvoice,
   getInvoiceByOrderId,
@@ -40,6 +44,7 @@ import {
   OrderApprovalModal,
   OrderCancelModal,
 } from "@/components/admin-order-detail";
+import { DeliveryImage } from "@/components/admin-order-detail/DeliveryImage";
 
 interface OrderDetail {
   ThongTinDonHang: {
@@ -51,6 +56,7 @@ interface OrderDetail {
     };
     TongSoLuong: number;
     TongTien: number;
+    HinhMinhChung: string | null;
   };
   ThongTinNguoiNhan: {
     HoTen: string;
@@ -125,6 +131,9 @@ export const OrderDetail = () => {
   const [showInvoiceView, setShowInvoiceView] = useState(false);
   const [invoiceNumber, setInvoiceNumber] = useState<string | null>(null);
 
+  // States for proof image view
+  const [showProofImageModal, setShowProofImageModal] = useState(false);
+
   useEffect(() => {
     console.log(
       "Checking access for user:",
@@ -179,6 +188,29 @@ export const OrderDetail = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("vi-VN");
+  };
+
+  // Handle download proof image
+  const handleDownloadProofImage = async () => {
+    if (!orderDetail?.ThongTinDonHang.HinhMinhChung) return;
+
+    try {
+      const imageUrl = orderDetail.ThongTinDonHang.HinhMinhChung;
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `hinh-minh-chung-don-${orderDetail.ThongTinDonHang.MaDDH}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("Đã tải xuống hình ảnh minh chứng");
+    } catch (error) {
+      console.error("Error downloading image:", error);
+      toast.error("Không thể tải xuống hình ảnh");
+    }
   };
 
   // Handle order approval
@@ -504,6 +536,19 @@ export const OrderDetail = () => {
                 {orderDetail.ThongTinHoaDon ? "Xem hóa đơn" : "Tạo hóa đơn"}
               </Button>
             )}
+
+          {/* Show proof image button if image exists */}
+          {orderDetail.ThongTinDonHang.HinhMinhChung && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowProofImageModal(true)}
+              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+            >
+              <Image className="w-4 h-4 mr-2" />
+              Xem hình ảnh giao hàng
+            </Button>
+          )}
         </div>
       </div>
 
@@ -935,6 +980,14 @@ export const OrderDetail = () => {
         isOpen={showInvoiceView}
         onClose={() => setShowInvoiceView(false)}
         invoiceNumber={invoiceNumber}
+      />
+
+      {/* Proof Image Modal */}
+      <DeliveryImage
+        showProofImageModal={showProofImageModal}
+        imageURL={orderDetail.ThongTinDonHang.HinhMinhChung}
+        setShowProofImageModal={setShowProofImageModal}
+        handleDownloadProofImage={handleDownloadProofImage}
       />
     </div>
   );
