@@ -184,7 +184,7 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-4 pb-4 shadow-sm">
         <div className="flex h-16 shrink-0 items-center">
           <div className="flex items-center space-x-2">
-            <img className="h-8 w-8" src="../public/3tshop.png" alt="Logo" />
+            <img className="h-8 w-8" src="../../3tshop.png" alt="Logo" />
             <div>
               <span className="text-base font-bold text-gray-900 dark:text-white">
                 Bảng điều khiển

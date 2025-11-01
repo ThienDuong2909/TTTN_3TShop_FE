@@ -27,15 +27,19 @@ import {
 import { Separator } from "../../components/ui/separator";
 import { Label } from "../../components/ui/label";
 import {
-    createInvoice,
-    getInvoiceByOrderId,
-    getOrderDetailById, updateOrderStatus,
-
+  createInvoice,
+  getInvoiceByOrderId,
+  getOrderDetailById,
+  updateOrderStatus,
 } from "../../services/api";
 import { useApp } from "@/contexts/AppContext";
-import {toast} from "sonner";
-import {InvoiceView} from "@/components/Invoice.tsx";
-import {InvoiceModal, OrderApprovalModal, OrderCancelModal} from "@/components/admin-order-detail";
+import { toast } from "sonner";
+import { InvoiceView } from "@/components/Invoice.tsx";
+import {
+  InvoiceModal,
+  OrderApprovalModal,
+  OrderCancelModal,
+} from "@/components/admin-order-detail";
 
 interface OrderDetail {
   ThongTinDonHang: {
@@ -851,7 +855,7 @@ export const OrderDetail = () => {
           </Card>
 
           {/* Order Status History */}
-          <Card className="overflow-hidden">
+          {/* <Card className="overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-[#825B32]/5 to-[#825B32]/10 py-3">
               <CardTitle className="flex items-center text-[#825B32] text-base">
                 <Clock className="w-4 h-4 mr-2" />
@@ -889,15 +893,15 @@ export const OrderDetail = () => {
                     <Truck className="w-3 h-3 text-[#825B32]" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-sm">Đang giao hàng</p>
+                    <p className="font-medium text-sm">Nhân viên giao hàng</p>
                     <p className="text-xs text-gray-500">
-                      Giao bởi {orderDetail.ThongTinXuLy.NguoiGiao.TenNV}
+                      {`${orderDetail.ThongTinXuLy.NguoiGiao.TenNV} • Mã NV: ${orderDetail.ThongTinXuLy.NguoiGiao.MaNV}`}
                     </p>
                   </div>
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
 

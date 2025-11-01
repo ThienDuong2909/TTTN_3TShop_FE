@@ -102,11 +102,7 @@ function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <img
-                className="h-10 w-10"
-                src="../public/3tshop.png"
-                alt="Logo"
-              />
+              <img className="h-10 w-10" src="../../3tshop.png" alt="Logo" />
             </Link>
           </div>
 

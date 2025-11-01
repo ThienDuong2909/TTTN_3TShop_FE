@@ -1068,23 +1068,38 @@ export default function Orders() {
 
     switch (statusId) {
       case 1:
-        return <Badge variant="secondary">{status.label}</Badge>;
+        return (
+          <Badge variant="secondary" className="text-nowrap">
+            {status.label}
+          </Badge>
+        );
       case 2:
-        return <Badge variant="default">{status.label}</Badge>;
+        return (
+          <Badge variant="default" className="text-nowrap">
+            {status.label}
+          </Badge>
+        );
       case 3:
         return (
-          <Badge variant="default" className="bg-blue-600">
+          <Badge variant="default" className="bg-blue-600 text-nowrap">
             {status.label}
           </Badge>
         );
       case 4:
         return (
-          <Badge variant="outline" className="text-green-600 border-green-600">
+          <Badge
+            variant="outline"
+            className="text-green-600 border-green-600 text-nowrap"
+          >
             {status.label}
           </Badge>
         );
       case 5:
-        return <Badge variant="destructive">{status.label}</Badge>;
+        return (
+          <Badge variant="destructive" className="text-nowrap">
+            {status.label}
+          </Badge>
+        );
       case 7:
         return (
           <Badge
@@ -1410,6 +1425,9 @@ export default function Orders() {
                                 <TableHead className="text-xs font-semibold">
                                   Trạng thái
                                 </TableHead>
+                                <TableHead className="text-xs font-semibold">
+                                  NV Giao
+                                </TableHead>
                                 <TableHead
                                   className="text-xs font-semibold cursor-pointer hover:bg-muted/50 select-none"
                                   onClick={() => handleSortChange("NgayTao")}
@@ -1475,6 +1493,22 @@ export default function Orders() {
                                   </TableCell>
                                   <TableCell className="text-xs">
                                     {getStatusBadge(order.MaTTDH)}
+                                  </TableCell>
+                                  <TableCell className="text-xs">
+                                    {order.NguoiGiao ? (
+                                      <div>
+                                        <div className="font-medium">
+                                          {order.NguoiGiao.TenNV}
+                                        </div>
+                                        <div className="text-muted-foreground text-xs">
+                                          Mã NV: {order.NguoiGiao.MaNV}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <span className="text-muted-foreground text-xs">
+                                        Chưa phân công
+                                      </span>
+                                    )}
                                   </TableCell>
                                   <TableCell className="text-xs">
                                     {formatDate(order.NgayTao)}

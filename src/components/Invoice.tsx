@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Separator } from "./ui/separator";
 import { toast } from "sonner";
 import { getInvoiceDetail } from "../services/api";
+import { QRCodeSVG } from "qrcode.react";
 
 interface InvoiceViewProps {
   isOpen: boolean;
@@ -492,6 +493,23 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
           </tbody>
         </table>
         
+        <!-- QR Code Section -->
+        <div style="text-align: center; margin: 20px 0; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">
+          <div style="font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px;">
+            Mã QR Đơn Hàng
+          </div>
+          <div style="display: inline-block; padding: 10px; background: white; border: 1px solid #ccc;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${
+              invoiceData?.ThongTinDonHang.MaDDH
+            }" alt="QR Code" style="display: block;" />
+          </div>
+          <div style="font-size: 10px; margin-top: 8px; color: #666;">
+            Quét mã để xem thông tin đơn hàng #${
+              invoiceData?.ThongTinDonHang.MaDDH
+            }
+          </div>
+        </div>
+        
         <!-- Total -->
         <div class="total-section">
           <div class="total-amount">
@@ -735,6 +753,25 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* QR Code Section */}
+          <div className="print-section flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg print:bg-transparent print:p-2 mt-4">
+            <h3 className="text-sm font-bold mb-3 uppercase tracking-wide text-gray-800">
+              Mã QR Đơn Hàng
+            </h3>
+            <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 print:shadow-none">
+              <QRCodeSVG
+                value={invoiceData.ThongTinDonHang.MaDDH.toString()}
+                size={120}
+                level="H"
+                className="h-32 w-32"
+              />
+            </div>
+            <p className="text-xs text-gray-600 mt-2 text-center">
+              Quét mã để xem thông tin đơn hàng #
+              {invoiceData.ThongTinDonHang.MaDDH}
+            </p>
           </div>
 
           <Separator className="my-3 print:my-2 print-hidden" />
