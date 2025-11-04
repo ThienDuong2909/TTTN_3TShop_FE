@@ -271,6 +271,10 @@ export default function Orders() {
               aValue = a.NguoiNhan || "";
               bValue = b.NguoiNhan || "";
               break;
+            case "NguoiGiao":
+              aValue = a.NguoiGiao?.MaNV || 0;
+              bValue = b.NguoiGiao?.MaNV || 0;
+              break;
             case "SoLuong":
               aValue =
                 a.CT_DonDatHangs?.reduce(
@@ -1397,11 +1401,11 @@ export default function Orders() {
                                 </TableHead>
                                 <TableHead
                                   className="text-xs font-semibold cursor-pointer hover:bg-muted/50 select-none"
-                                  onClick={() => handleSortChange("KhachHang")}
+                                  onClick={() => handleSortChange("NguoiNhan")}
                                 >
                                   <div className="flex items-center gap-1">
                                     Người nhận
-                                    {renderSortIcon("KhachHang")}
+                                    {renderSortIcon("NguoiNhan")}
                                   </div>
                                 </TableHead>
                                 <TableHead
@@ -1425,8 +1429,14 @@ export default function Orders() {
                                 <TableHead className="text-xs font-semibold">
                                   Trạng thái
                                 </TableHead>
-                                <TableHead className="text-xs font-semibold">
-                                  NV Giao
+                                <TableHead
+                                  className="text-xs font-semibold cursor-pointer hover:bg-muted/50 select-none"
+                                  onClick={() => handleSortChange("NguoiGiao")}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    NV Giao
+                                    {renderSortIcon("NguoiGiao")}
+                                  </div>
                                 </TableHead>
                                 <TableHead
                                   className="text-xs font-semibold cursor-pointer hover:bg-muted/50 select-none"
@@ -1500,7 +1510,7 @@ export default function Orders() {
                                         <div className="font-medium">
                                           {order.NguoiGiao.TenNV}
                                         </div>
-                                        <div className="text-muted-foreground text-xs">
+                                        <div className="text-muted-foreground text-xsc">
                                           Mã NV: {order.NguoiGiao.MaNV}
                                         </div>
                                       </div>
