@@ -24,6 +24,7 @@ import { formatDate } from "@/lib/utils";
 // Khai báo kiểu cho import.meta.env
 declare global {
   interface ImportMetaEnv {
+    VITE_API_BASE_URL: any;
     readonly VITE_OPENAI_API_KEY: string;
   }
 
