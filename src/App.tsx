@@ -44,6 +44,7 @@ import Colors from "./pages/admin/ColorManagement";
 import PermissionManagement from "./pages/admin/PermissionManagement";
 import ReturnManagement from "./pages/admin/ReturnManagement";
 import DiscountManagement from "./pages/admin/DiscountManagement";
+import FPGrowthConfig from "./pages/admin/FPGrowthConfig";
 import AdminLayout from "./layouts/AdminLayout";
 import UserAccountLayout from "./layouts/UserAccountLayout";
 import CategoryPage from "./pages/user/CategoryPage";
@@ -375,6 +376,16 @@ function App() {
               <ProtectedRoute requiredPermissions={["toanquyen"]}>
                 <AdminLayout>
                   <PermissionManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/fpgrowth-config"
+            element={
+              <ProtectedRoute requiredPermissions={["toanquyen"]}>
+                <AdminLayout>
+                  <FPGrowthConfig />
                 </AdminLayout>
               </ProtectedRoute>
             }

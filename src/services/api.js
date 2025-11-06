@@ -10,8 +10,8 @@ const handleError = (error) => {
   const message =
     error.response?.data?.message || error.message || "Có lỗi xảy ra";
   console.error("API Error:", message);
-  // Return error object instead of throwing to prevent page reload
-  return { error: true, message };
+  // Return error object with success: false to be consistent
+  return { success: false, error: true, message };
 };
 
 // Xử lý API response chung - kiểm tra lỗi 401 cho tất cả API calls
@@ -888,9 +888,12 @@ export const updateBatchOrderStatus = async (ordersData) => {
 };
 
 // Lấy danh sách nhân viên giao hàng có sẵn
-export const getAvailableDeliveryStaff = async (deliveryTime,address) => {
+export const getAvailableDeliveryStaff = async (deliveryTime, address) => {
   try {
-    const response = await api.post("/employees/delivery/available", { thoigiangiao: deliveryTime, diaChi: address });
+    const response = await api.post("/employees/delivery/available", {
+      thoigiangiao: deliveryTime,
+      diaChi: address,
+    });
 
     // Handle the new API response structure
     if (
@@ -1790,7 +1793,9 @@ export const getEmployeeAreas = async (employeeId) => {
 // Lấy danh sách khu vực chưa phụ trách của nhân viên
 export const getAvailableAreasForEmployee = async (employeeId) => {
   try {
-    const response = await apiWrapper.get(`/nhan-vien/${employeeId}/khu-vuc-chua-phu-trach`);
+    const response = await apiWrapper.get(
+      `/nhan-vien/${employeeId}/khu-vuc-chua-phu-trach`
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -1800,7 +1805,7 @@ export const getAvailableAreasForEmployee = async (employeeId) => {
 // Xóa khu vực phụ trách của nhân viên
 export const removeEmployeeAreas = async (areaIds) => {
   try {
-    const response = await apiWrapper.delete('/nhan-vien/khu-vuc', {
+    const response = await apiWrapper.delete("/nhan-vien/khu-vuc", {
       data: {
         danhSachMaNVKV: areaIds,
       },
@@ -1836,9 +1841,14 @@ export const getInventoryReport = async (reportDate) => {
 
 export const getInventoryReportPDF = async (reportDate, nguoiLap) => {
   return handleApiCall(async () => {
-    const response = await api.get(`/bao-cao-ton-kho/${reportDate}/pdf?nguoilap=${encodeURIComponent(nguoiLap)}`, {
-      responseType: 'blob'
-    });
+    const response = await api.get(
+      `/bao-cao-ton-kho/${reportDate}/pdf?nguoilap=${encodeURIComponent(
+        nguoiLap
+      )}`,
+      {
+        responseType: "blob",
+      }
+    );
     return response.data;
   });
 };
@@ -1846,9 +1856,9 @@ export const getInventoryReportPDF = async (reportDate, nguoiLap) => {
 // Profit Report APIs
 export const getProfitReport = async (ngayBatDau, ngayKetThuc) => {
   return handleApiCall(async () => {
-    const response = await api.post('/bao-cao-loi-nhuan', {
+    const response = await api.post("/bao-cao-loi-nhuan", {
       ngayBatDau,
-      ngayKetThuc
+      ngayKetThuc,
     });
     return response.data;
   });
@@ -1856,13 +1866,17 @@ export const getProfitReport = async (ngayBatDau, ngayKetThuc) => {
 
 export const getProfitReportPDF = async (ngayBatDau, ngayKetThuc, nguoiLap) => {
   return handleApiCall(async () => {
-    const response = await api.post('/bao-cao-loi-nhuan/pdf', {
-      ngayBatDau,
-      ngayKetThuc,
-      nguoiLap
-    }, {
-      responseType: 'blob'
-    });
+    const response = await api.post(
+      "/bao-cao-loi-nhuan/pdf",
+      {
+        ngayBatDau,
+        ngayKetThuc,
+        nguoiLap,
+      },
+      {
+        responseType: "blob",
+      }
+    );
     return response.data;
   });
 };
@@ -1891,5 +1905,40 @@ export const getProductRecommendations = async (
         },
       },
     };
+  }
+};
+
+// ===================
+// FP-GROWTH CONFIG API
+// ===================
+
+// Lấy cấu hình FP-Growth
+export const getFPGrowthConfig = async () => {
+  try {
+    const response = await apiWrapper.get("/fpgrowth/config");
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+// Cập nhật cấu hình FP-Growth
+export const updateFPGrowthConfig = async (configData) => {
+  try {
+    const response = await apiWrapper.post("/fpgrowth/config", configData);
+    console.log("Raw update response:", response);
+    // Backend có thể trả về response.data hoặc response.data.data
+    const data = response.data?.data || response.data;
+    return {
+      success: true,
+      data: data,
+      message: response.data?.message || "Cập nhật cấu hình thành công",
+    };
+  } catch (error) {
+    console.error("Update FP-Growth config error:", error);
+    return handleError(error);
   }
 };
