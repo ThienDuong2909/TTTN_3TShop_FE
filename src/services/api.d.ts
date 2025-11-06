@@ -983,3 +983,53 @@ export declare function getProductRecommendations(
   excludeIncart?: boolean,
   requireInstock?: boolean
 ): Promise<RecommendationResponse>;
+
+// ===================
+// FP-GROWTH CONFIG API
+// ===================
+
+export interface FPGrowthConfigData {
+  min_sup: number;
+  min_conf: number;
+  transactions?: number;
+  rules?: number;
+}
+
+export interface FPGrowthConfig {
+  success: boolean;
+  message: string;
+  data: {
+    success: boolean;
+    message: string;
+    data: FPGrowthConfigData;
+  };
+}
+
+export interface FPGrowthUpdateData {
+  old_config: {
+    min_sup: number;
+    min_conf: number;
+  };
+  new_config: {
+    min_sup: number;
+    min_conf: number;
+  };
+  transactions: number;
+  rules: number;
+}
+
+export interface FPGrowthConfigResponse {
+  success: boolean;
+  message: string;
+  data: FPGrowthConfigData;
+}
+
+export interface FPGrowthUpdateResponse {
+  success: boolean;
+  message: string;
+  data: FPGrowthUpdateData;
+}
+
+export declare function getFPGrowthConfig(): Promise<FPGrowthConfig>;
+
+export declare function updateFPGrowthConfig(configData: { min_sup: number; min_conf: number }): Promise<FPGrowthUpdateResponse>;

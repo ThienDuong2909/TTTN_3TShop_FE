@@ -25,6 +25,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     if (path.includes("/admin/staff")) return "staff";
     if (path.includes("/admin/departments")) return "departments";
     if (path.includes("/admin/return-management")) return "return-management";
+    if (path.includes("/admin/fpgrowth-config")) return "fpgrowth-config";
     return "overview";
   });
 
@@ -59,6 +60,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       setActiveTab("departments");
     } else if (path.includes("return-management")) {
       setActiveTab("return-management");
+    } else if (path.includes("/admin/fpgrowth-config")) {
+      setActiveTab("fpgrowth-config");
     } else {
       setActiveTab("overview");
     }

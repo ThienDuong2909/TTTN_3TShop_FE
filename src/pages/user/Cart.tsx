@@ -9,9 +9,9 @@ import {
 } from "@/services/api";
 import { CartItem } from "@/types/cart-item.type";
 import { Separator } from "@radix-ui/react-dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
-  Badge,
   Minus,
   Plus,
   ShoppingBag,

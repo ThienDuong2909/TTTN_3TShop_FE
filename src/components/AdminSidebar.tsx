@@ -12,6 +12,7 @@ import {
   Shirt,
   Import,
   PaintBucket,
+  Settings2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useApp } from "../contexts/AppContext";
@@ -20,7 +21,6 @@ import { hasPermission } from "../utils/permissions";
 
 interface AdminSidebarProps {
   activeTab: string;
-  setActiveTab: (tab: string) => void;
 }
 
 interface NavigationItem {
@@ -150,6 +150,13 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
       icon: Shield,
       permission: "toanquyen",
       route: "/admin/permissions",
+    },
+    {
+      name: "Cấu hình FP-Growth",
+      id: "fpgrowth-config",
+      icon: Settings2,
+      permission: "toanquyen",
+      route: "/admin/fpgrowth-config",
     },
   ];
 
