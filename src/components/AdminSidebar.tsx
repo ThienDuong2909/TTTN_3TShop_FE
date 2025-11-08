@@ -190,6 +190,7 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
     },
   ];
 
+
   const filteredNavigationGroups = navigationGroups
     .map((group) => ({
       ...group,
