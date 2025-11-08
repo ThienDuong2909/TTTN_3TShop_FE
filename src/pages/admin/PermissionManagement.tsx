@@ -21,6 +21,7 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import { Separator } from "../../components/ui/separator";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 // Interface cho Role từ API
 interface RoleFromAPI {
@@ -60,14 +61,11 @@ export default function PermissionManagement() {
       setError(null);
 
       // Gọi API lấy tất cả roles
-      const rolesResponse = await fetch(
-        "https://api.3tshop.thienduong.info/api/roles",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const rolesResponse = await fetch(`${API}/roles`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
       if (!rolesResponse.ok) {
         throw new Error("Không thể lấy danh sách vai trò");
@@ -76,14 +74,11 @@ export default function PermissionManagement() {
       const rolesData = await rolesResponse.json();
 
       // Gọi API lấy tất cả permissions
-      const permissionsResponse = await fetch(
-        "https://api.3tshop.thienduong.info/api/permissions",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const permissionsResponse = await fetch(`${API}/permissions`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
       if (!permissionsResponse.ok) {
         throw new Error("Không thể lấy danh sách quyền hạn");
@@ -134,19 +129,16 @@ export default function PermissionManagement() {
       if (!role) return;
 
       // Gọi API để cập nhật quyền cho vai trò
-      const response = await fetch(
-        `https://api.3tshop.thienduong.info/api/roles/${role.id}/permissions`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            permissions: editedPermissions,
-          }),
-        }
-      );
+      const response = await fetch(`${API}/roles/${role.id}/permissions`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          permissions: editedPermissions,
+        }),
+      });
 
       if (response.ok) {
         const result = await response.json();
