@@ -165,6 +165,8 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
     const hasAlternativePermission = item.alternativePermissions?.some((perm) =>
       hasPermission(userPermissions, perm)
     );
+
+    
     return hasMainPermission || hasAlternativePermission;
   });
 
