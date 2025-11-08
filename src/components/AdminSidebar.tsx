@@ -182,11 +182,16 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
       ],
     },
     {
-      name: "Cấu hình FP-Growth",
-      id: "fpgrowth-config",
-      icon: Settings2,
-      permission: "toanquyen",
-      route: "/admin/fpgrowth-config",
+      title: "Chức năng nâng cao",
+      items: [
+        {
+          name: "Cấu hình FP-Growth",
+          id: "fpgrowth-config",
+          icon: Settings2,
+          permission: "toanquyen",
+          route: "/admin/fpgrowth-config",
+        },
+      ],
     },
   ];
 
