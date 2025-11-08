@@ -195,7 +195,6 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
     },
   ];
 
-
   const filteredNavigationGroups = navigationGroups
     .map((group) => ({
       ...group,
@@ -252,7 +251,7 @@ export default function AdminSidebar({ activeTab }: AdminSidebarProps) {
         </div>
 
         <nav className="flex flex-1 flex-col">
-          <ul role="list" className="flex flex-1 flex-col gap-y-7">
+          <ul role="list" className="flex flex-1 flex-col gap-y-3">
             {filteredNavigationGroups.map((group) => (
               <li key={group.title}>
                 {/* Group Title */}
