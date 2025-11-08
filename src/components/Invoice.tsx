@@ -148,9 +148,18 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
   };
 
   const handlePrint = () => {
+    // If no data, nothing to print
+    if (!invoiceData) return;
+
     // Create a clean print-only element
     const printElement = document.createElement("div");
     printElement.id = "print-only-invoice";
+
+    const qrValue = invoiceData.ThongTinDonHang.MaDDH?.toString() ?? "";
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
+      qrValue
+    )}`;
+
     printElement.innerHTML = `
       <style>
         @media print {
@@ -426,13 +435,13 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
             <div class="info-row">
               <span class="info-label">Số điện thoại:</span>
               <span class="info-value">${
-                invoiceData?.ThongTinKhachHang.SDT
+                invoiceData?.ThongTinKhachHang.SDT || "-"
               }</span>
             </div>
             <div class="info-row">
               <span class="info-label">Địa chỉ:</span>
               <span class="info-value">${
-                invoiceData?.ThongTinKhachHang.DiaChi
+                invoiceData?.ThongTinKhachHang.DiaChi || "-"
               }</span>
             </div>
           </div>
@@ -494,14 +503,12 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
         </table>
         
         <!-- QR Code Section -->
-        <div style="text-align: center; margin: 20px 0; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">
+        <div style="text-align: center; margin: 20px 0; padding: 15px; background-color: #f9f9f9;">
           <div style="font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px;">
             Mã QR Đơn Hàng
           </div>
-          <div style="display: inline-block; padding: 10px; background: white; border: 1px solid #ccc;">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${
-              invoiceData?.ThongTinDonHang.MaDDH
-            }" alt="QR Code" style="display: block;" />
+            <div style="display: inline-block; padding: 10px; background: white">
+            <img id="print-qr-image" src="${qrSrc}" alt="QR Code" style="display: block;" />
           </div>
           <div style="font-size: 10px; margin-top: 8px; color: #666;">
             Quét mã để xem thông tin đơn hàng #${
@@ -551,13 +558,63 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({
     // Show print element and hide everything else for printing
     printElement.style.display = "block";
 
-    // Print
-    window.print();
+    // Ensure QR image is loaded before printing. Some browsers capture the print snapshot
+    // before external images finish loading which causes the QR to be missing.
+    const img = new Image();
+    let printed = false;
+    let cleanupCalled = false;
+    let fallbackTimer: number | null = null;
 
-    // Clean up
-    setTimeout(() => {
-      document.body.removeChild(printElement);
-    }, 1000);
+    const cleanup = () => {
+      if (cleanupCalled) return;
+      cleanupCalled = true;
+      try {
+        if (document.body.contains(printElement)) {
+          document.body.removeChild(printElement);
+        }
+      } catch (e) {
+        // ignore
+      }
+      if (fallbackTimer) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+      window.removeEventListener("afterprint", cleanup);
+    };
+
+    const doPrint = () => {
+      if (printed) return;
+      printed = true;
+      // Use a short timeout to allow the browser to reflow with the loaded image
+      setTimeout(() => {
+        window.print();
+      }, 50);
+    };
+
+    // If the browser supports afterprint, cleanup afterwards
+    window.addEventListener("afterprint", cleanup);
+
+    img.onload = () => {
+      doPrint();
+    };
+    img.onerror = () => {
+      // If load fails, still attempt to print after fallback timeout
+      doPrint();
+    };
+
+    // Fallback: if image hasn't loaded within 2s, proceed to print anyway
+    fallbackTimer = window.setTimeout(() => {
+      doPrint();
+    }, 2000);
+
+    // Start loading
+    img.src = qrSrc;
+
+    // Also set src on the inline image already in the printElement (redundant but safe)
+    const inlineImg = document.getElementById(
+      "print-qr-image"
+    ) as HTMLImageElement | null;
+    if (inlineImg) inlineImg.src = qrSrc;
   };
 
   // Loading state
