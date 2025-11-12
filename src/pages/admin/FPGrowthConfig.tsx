@@ -2,25 +2,35 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
   Settings2,
-  Activity,
   TrendingUp,
   Database,
-  Sparkles,
   Save,
   RefreshCw,
   Info,
   AlertTriangle,
   CheckCircle2,
-  Zap,
+  Eye,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
 import AdminHeader from "../../components/AdminHeader";
+import FPGrowthRulesModal from "../../components/FPGrowthRulesModal";
 import {
   getFPGrowthConfig,
   updateFPGrowthConfig,
+  refreshFPGrowthCache,
 } from "../../services/api";
 
 interface ConfigState {
@@ -46,6 +56,10 @@ export default function FPGrowthConfig() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showRefreshDialog, setShowRefreshDialog] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadConfig();
@@ -89,7 +103,7 @@ export default function FPGrowthConfig() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveClick = () => {
     // Validation
     if (config.min_sup < 0 || config.min_sup > 1) {
       toast.error("MIN_SUP phải nằm trong khoảng 0 đến 1");
@@ -99,7 +113,13 @@ export default function FPGrowthConfig() {
       toast.error("MIN_CONF phải nằm trong khoảng 0 đến 1");
       return;
     }
+    
+    // Show confirmation dialog
+    setShowConfirmDialog(true);
+  };
 
+  const handleSave = async () => {
+    setShowConfirmDialog(false);
     setSaving(true);
     try {
       const response = await updateFPGrowthConfig({
@@ -137,6 +157,31 @@ export default function FPGrowthConfig() {
     setHasChanges(false);
   };
 
+  const handleRefreshClick = () => {
+    setShowRefreshDialog(true);
+  };
+
+  const handleRefreshCache = async () => {
+    setRefreshing(true);
+    setShowRefreshDialog(false);
+    
+    try {
+      const result = await refreshFPGrowthCache();
+      if (result.success) {
+        toast.success("Đã làm mới cache thành công!");
+        // Reload config after refresh
+        await loadConfig();
+      } else {
+        toast.error(result.message || "Không thể làm mới cache");
+      }
+    } catch (error) {
+      console.error("Error refreshing cache:", error);
+      toast.error("Có lỗi xảy ra khi làm mới cache");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const getSupValueColor = (value: number) => {
     if (value >= 0.5) return "text-emerald-600 dark:text-emerald-400";
     if (value >= 0.3) return "text-amber-600 dark:text-amber-400";
@@ -155,81 +200,45 @@ export default function FPGrowthConfig() {
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header Section with Futuristic Design */}
-        <div className="mb-8">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-brand-600/10 via-purple-600/10 to-blue-600/10 rounded-3xl blur-3xl"></div>
-            <Card className="relative border-2 border-brand-200/50 dark:border-brand-800/50 shadow-2xl shadow-brand-500/10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl">
-              <CardHeader className="pb-6">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-brand-500 to-purple-500 rounded-lg blur-lg opacity-50 animate-pulse"></div>
-                        <div className="relative bg-gradient-to-br from-brand-600 to-purple-600 p-3 rounded-lg">
-                          <Settings2 className="h-6 w-6 text-white" />
-                        </div>
-                      </div>
-                      <div>
-                        <CardTitle className="text-3xl font-bold bg-gradient-to-r from-brand-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
-                          Cấu hình thuật toán FP-Growth
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Điều chỉnh tham số khai phá luật kết hợp
-                        </p>
-                      </div>
-                    </div>
+        
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-start">
+          {/* Main Configuration Panel */}
+          <div className="lg:col-span-2">
+            {/* Combined MIN_SUP & MIN_CONF Configuration */}
+            <Card className="border-2 border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm h-full flex flex-col">
+              <CardHeader className="border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-brand-50/50 via-purple-50/30 to-blue-50/30 dark:from-brand-900/20 dark:via-purple-900/20 dark:to-blue-900/10">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-brand-500 via-purple-500 to-blue-500 shadow-lg shadow-brand-500/50">
+                    <Settings2 className="h-6 w-6 text-white" />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/20">
-                      <Activity className="h-4 w-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
-                      <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                        Active
+                  <div>
+                    <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                      Cấu hình tham số FP-Growth
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Điều chỉnh các ngưỡng để tối ưu khai phá luật kết hợp
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-6 flex-1">
+                {/* Input Controls - Side by Side */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* MIN_SUP Control */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor="min-sup"
+                        className="text-sm font-semibold flex items-center gap-2"
+                      >
+                        <Database className="h-4 w-4 text-brand-600" />
+                        Minimum Support (MIN_SUP)
+                      </Label>
+                      <span className={`text-xl font-bold ${getSupValueColor(config.min_sup || 0)}`}>
+                        {((config.min_sup || 0) * 100).toFixed(1)}%
                       </span>
                     </div>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Configuration Panel */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* MIN_SUP Configuration */}
-            <Card className="border-2 border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
-              <CardHeader className="border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-brand-50/50 to-purple-50/30 dark:from-brand-900/20 dark:to-purple-900/10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 shadow-lg shadow-brand-500/50">
-                      <Database className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                        Minimum Support (MIN_SUP)
-                      </CardTitle>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Ngưỡng hỗ trợ tối thiểu
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-2xl font-bold ${getSupValueColor(config.min_sup || 0)}`}>
-                      {((config.min_sup || 0) * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="min-sup"
-                      className="text-sm font-semibold flex items-center gap-2"
-                    >
-                      <Zap className="h-4 w-4 text-brand-600" />
-                      Giá trị MIN_SUP (0.0 - 1.0)
-                    </Label>
                     <div className="relative">
                       <Input
                         id="min-sup"
@@ -248,87 +257,37 @@ export default function FPGrowthConfig() {
                         {((config.min_sup || 0) * 100).toFixed(1)}%
                       </div>
                     </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>0%</span>
+                        <span>50%</span>
+                        <span>100%</span>
+                      </div>
+                      <div className="h-3 bg-gradient-to-r from-red-200 via-amber-200 to-emerald-200 dark:from-red-900/30 dark:via-amber-900/30 dark:to-emerald-900/30 rounded-full relative overflow-hidden">
+                        <div
+                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-brand-500 to-purple-500 rounded-full transition-all duration-300 shadow-lg shadow-brand-500/50"
+                          style={{ width: `${(config.min_sup || 0) * 100}%` }}
+                        >
+                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-brand-500 shadow-lg animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>0%</span>
-                      <span>50%</span>
-                      <span>100%</span>
-                    </div>
-                    <div className="h-3 bg-gradient-to-r from-red-200 via-amber-200 to-emerald-200 dark:from-red-900/30 dark:via-amber-900/30 dark:to-emerald-900/30 rounded-full relative overflow-hidden">
-                      <div
-                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-brand-500 to-purple-500 rounded-full transition-all duration-300 shadow-lg shadow-brand-500/50"
-                        style={{ width: `${(config.min_sup || 0) * 100}%` }}
+                  {/* MIN_CONF Control */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor="min-conf"
+                        className="text-sm font-semibold flex items-center gap-2"
                       >
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-brand-500 shadow-lg animate-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200/50 dark:border-blue-800/50">
-                  <div className="flex items-start gap-3">
-                    <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                    <div className="space-y-1 text-sm">
-                      <p className="font-medium text-blue-900 dark:text-blue-100">
-                        Ý nghĩa của MIN_SUP:
-                      </p>
-                      <p className="text-blue-700 dark:text-blue-300">
-                        Xác định tần suất xuất hiện tối thiểu của một tập mục trong cơ sở dữ
-                        liệu. Giá trị cao hơn sẽ lọc các mẫu ít phổ biến, tăng hiệu suất nhưng có
-                        thể bỏ lỡ các mẫu tiềm năng.
-                      </p>
-                      <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
-                        <div className="p-2 rounded bg-white/50 dark:bg-gray-800/50">
-                          <span className="font-semibold">Giá trị thấp (&lt;0.3):</span> Nhiều mẫu
-                          hơn, xử lý chậm
-                        </div>
-                        <div className="p-2 rounded bg-white/50 dark:bg-gray-800/50">
-                          <span className="font-semibold">Giá trị cao (&gt;0.5):</span> Ít mẫu,
-                          xử lý nhanh
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* MIN_CONF Configuration */}
-            <Card className="border-2 border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
-              <CardHeader className="border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-purple-50/50 to-blue-50/30 dark:from-purple-900/20 dark:to-blue-900/10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/50">
-                      <TrendingUp className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                        <TrendingUp className="h-4 w-4 text-purple-600" />
                         Minimum Confidence (MIN_CONF)
-                      </CardTitle>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Ngưỡng độ tin cậy tối thiểu
-                      </p>
+                      </Label>
+                      <span className={`text-xl font-bold ${getConfValueColor(config.min_conf || 0)}`}>
+                        {((config.min_conf || 0) * 100).toFixed(1)}%
+                      </span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-2xl font-bold ${getConfValueColor(config.min_conf || 0)}`}>
-                      {((config.min_conf || 0) * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="min-conf"
-                      className="text-sm font-semibold flex items-center gap-2"
-                    >
-                      <Sparkles className="h-4 w-4 text-purple-600" />
-                      Giá trị MIN_CONF (0.0 - 1.0)
-                    </Label>
                     <div className="relative">
                       <Input
                         id="min-conf"
@@ -347,44 +306,62 @@ export default function FPGrowthConfig() {
                         {((config.min_conf || 0) * 100).toFixed(1)}%
                       </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>0%</span>
-                      <span>50%</span>
-                      <span>100%</span>
-                    </div>
-                    <div className="h-3 bg-gradient-to-r from-red-200 via-amber-200 to-emerald-200 dark:from-red-900/30 dark:via-amber-900/30 dark:to-emerald-900/30 rounded-full relative overflow-hidden">
-                      <div
-                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-300 shadow-lg shadow-purple-500/50"
-                        style={{ width: `${(config.min_conf || 0) * 100}%` }}
-                      >
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-purple-500 shadow-lg animate-pulse"></div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>0%</span>
+                        <span>50%</span>
+                        <span>100%</span>
+                      </div>
+                      <div className="h-3 bg-gradient-to-r from-red-200 via-amber-200 to-emerald-200 dark:from-red-900/30 dark:via-amber-900/30 dark:to-emerald-900/30 rounded-full relative overflow-hidden">
+                        <div
+                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-300 shadow-lg shadow-purple-500/50"
+                          style={{ width: `${(config.min_conf || 0) * 100}%` }}
+                        >
+                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-purple-500 shadow-lg animate-pulse"></div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-lg bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200/50 dark:border-purple-800/50">
+                {/* Combined Explanation */}
+                <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-pink-900/20 border border-blue-200/50 dark:border-blue-800/50">
                   <div className="flex items-start gap-3">
-                    <Info className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
-                    <div className="space-y-1 text-sm">
-                      <p className="font-medium text-purple-900 dark:text-purple-100">
-                        Ý nghĩa của MIN_CONF:
-                      </p>
-                      <p className="text-purple-700 dark:text-purple-300">
-                        Đo lường độ tin cậy của luật kết hợp. Giá trị cao hơn đảm bảo các luật có
-                        độ chính xác cao hơn, nhưng có thể giảm số lượng luật được tìm ra.
-                      </p>
-                      <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
-                        <div className="p-2 rounded bg-white/50 dark:bg-gray-800/50">
-                          <span className="font-semibold">Giá trị thấp (&lt;0.5):</span> Nhiều
-                          luật, độ tin cậy thấp
+                    <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <p className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                          📊 Minimum Support (MIN_SUP):
+                        </p>
+                        <p className="text-blue-700 dark:text-blue-300 mb-2">
+                          Xác định tần suất xuất hiện tối thiểu của một tập mục trong cơ sở dữ liệu. 
+                          Giá trị cao hơn sẽ lọc các mẫu ít phổ biến, tăng hiệu suất nhưng có thể bỏ lỡ các mẫu tiềm năng.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="p-2 rounded bg-white/50 dark:bg-gray-800/50">
+                            <span className="font-semibold">Giá trị thấp (&lt;0.3):</span> Nhiều mẫu hơn, xử lý chậm
+                          </div>
+                          <div className="p-2 rounded bg-white/50 dark:bg-gray-800/50">
+                            <span className="font-semibold">Giá trị cao (&gt;0.5):</span> Ít mẫu, xử lý nhanh
+                          </div>
                         </div>
-                        <div className="p-2 rounded bg-white/50 dark:bg-gray-800/50">
-                          <span className="font-semibold">Giá trị cao (&gt;0.7):</span> Ít luật,
-                          độ tin cậy cao
+                      </div>
+                      
+                      <div className="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
+                        <p className="font-semibold text-purple-900 dark:text-purple-100 mb-1">
+                          🎯 Minimum Confidence (MIN_CONF):
+                        </p>
+                        <p className="text-purple-700 dark:text-purple-300 mb-2">
+                          Đo lường độ tin cậy của luật kết hợp. Giá trị cao hơn đảm bảo các luật có 
+                          độ chính xác cao hơn, nhưng có thể giảm số lượng luật được tìm ra.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="p-2 rounded bg-white/50 dark:bg-gray-800/50">
+                            <span className="font-semibold">Giá trị thấp (&lt;0.5):</span> Nhiều luật, độ tin cậy thấp
+                          </div>
+                          <div className="p-2 rounded bg-white/50 dark:bg-gray-800/50">
+                            <span className="font-semibold">Giá trị cao (&gt;0.7):</span> Ít luật, độ tin cậy cao
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -395,62 +372,71 @@ export default function FPGrowthConfig() {
           </div>
 
           {/* Sidebar - Status & Actions */}
-          <div className="space-y-6">
+          <div className="flex flex-col gap-4 h-full">
             {/* Current Status Card */}
-            <Card className="border-2 border-gray-200/50 dark:border-gray-700/50 shadow-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-emerald-50/50 to-green-50/30 dark:from-emerald-900/20 dark:to-green-900/10 border-b border-gray-200/50 dark:border-gray-700/50">
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+            <Card className="border-2 border-gray-200/50 dark:border-gray-700/50 shadow-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm flex-1 flex flex-col">
+              <CardHeader className="bg-gradient-to-r from-emerald-50/50 to-green-50/30 dark:from-emerald-900/20 dark:to-green-900/10 border-b border-gray-200/50 dark:border-gray-700/50 py-3 px-4">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                   Trạng thái hiện tại
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-brand-50 to-brand-100/50 dark:from-brand-900/30 dark:to-brand-800/20 border border-brand-200/50 dark:border-brand-800/50">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <CardContent className="pt-4 space-y-3 flex-1 flex flex-col justify-between px-4 pb-4">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-gradient-to-r from-brand-50 to-brand-100/50 dark:from-brand-900/30 dark:to-brand-800/20 border border-brand-200/50 dark:border-brand-800/50">
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       MIN_SUP
                     </span>
-                    <span className="text-lg font-bold text-brand-600 dark:text-brand-400">
+                    <span className="text-base font-bold text-brand-600 dark:text-brand-400">
                       {((originalConfig.min_sup || 0) * 100).toFixed(1)}%
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-900/30 dark:to-purple-800/20 border border-purple-200/50 dark:border-purple-800/50">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-900/30 dark:to-purple-800/20 border border-purple-200/50 dark:border-purple-800/50">
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       MIN_CONF
                     </span>
-                    <span className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                    <span className="text-base font-bold text-purple-600 dark:text-purple-400">
                       {((originalConfig.min_conf || 0) * 100).toFixed(1)}%
                     </span>
                   </div>
                   
                   {/* Display transactions and rules info */}
                   {originalConfig.transactions !== undefined && originalConfig.transactions > 0 && (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-blue-50 to-cyan-100/50 dark:from-blue-900/30 dark:to-cyan-800/20 border border-blue-200/50 dark:border-blue-800/50">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-gradient-to-r from-blue-50 to-cyan-100/50 dark:from-blue-900/30 dark:to-cyan-800/20 border border-blue-200/50 dark:border-blue-800/50">
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                         Transactions
                       </span>
-                      <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      <span className="text-base font-bold text-blue-600 dark:text-blue-400">
                         {originalConfig.transactions || 0}
                       </span>
                     </div>
                   )}
                   
                   {originalConfig.rules !== undefined && originalConfig.rules >= 0 && (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-emerald-50 to-green-100/50 dark:from-emerald-900/30 dark:to-green-800/20 border border-emerald-200/50 dark:border-emerald-800/50">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <button
+                      onClick={() => setShowRulesModal(true)}
+                      className="w-full flex items-center justify-between p-2.5 rounded-lg bg-gradient-to-r from-emerald-50 to-green-100/50 dark:from-emerald-900/30 dark:to-green-800/20 border border-emerald-200/50 dark:border-emerald-800/50 hover:from-emerald-100 hover:to-green-200/50 dark:hover:from-emerald-800/40 dark:hover:to-green-700/30 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-200 cursor-pointer group hover:shadow-md"
+                    >
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                         Rules Found
+                        <Eye className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
                       </span>
-                      <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                        {originalConfig.rules || 0}
-                      </span>
-                    </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-emerald-600/70 dark:text-emerald-400/70 opacity-0 group-hover:opacity-100 transition-opacity">
+                          Xem chi tiết
+                        </span>
+                        <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                          {originalConfig.rules || 0}
+                        </span>
+                      </div>
+                    </button>
                   )}
                 </div>
 
                 {hasChanges && (
-                  <div className="p-3 rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200/50 dark:border-amber-800/50 animate-pulse">
+                  <div className="p-2.5 rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200/50 dark:border-amber-800/50 animate-pulse">
                     <div className="flex items-start gap-2">
-                      <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                       <p className="text-xs font-medium text-amber-800 dark:text-amber-200">
                         Có thay đổi chưa lưu
                       </p>
@@ -461,27 +447,27 @@ export default function FPGrowthConfig() {
             </Card>
 
             {/* Action Buttons */}
-            <Card className="border-2 border-gray-200/50 dark:border-gray-700/50 shadow-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-700/50 border-b border-gray-200/50 dark:border-gray-700/50">
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <Settings2 className="h-5 w-5 text-gray-600" />
+            <Card className="border-2 border-gray-200/50 dark:border-gray-700/50 shadow-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm flex flex-col">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-700/50 border-b border-gray-200/50 dark:border-gray-700/50 py-3 px-4">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <Settings2 className="h-4 w-4 text-gray-600" />
                   Thao tác
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-6 space-y-3">
+              <CardContent className="pt-4 space-y-2.5 px-4 pb-4">
                 <Button
-                  onClick={handleSave}
+                  onClick={handleSaveClick}
                   disabled={loading || saving || !hasChanges}
-                  className="w-full h-12 text-base font-semibold bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="w-full h-10 text-sm font-semibold bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   {saving ? (
                     <>
-                      <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                       Đang lưu...
                     </>
                   ) : (
                     <>
-                      <Save className="mr-2 h-5 w-5" />
+                      <Save className="mr-2 h-4 w-4" />
                       Lưu cấu hình
                     </>
                   )}
@@ -490,54 +476,164 @@ export default function FPGrowthConfig() {
                   onClick={handleReset}
                   disabled={loading || saving || !hasChanges}
                   variant="outline"
-                  className="w-full h-12 text-base font-semibold border-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="w-full h-10 text-sm font-semibold border-2 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
-                  <RefreshCw className="mr-2 h-5 w-5" />
+                  <RefreshCw className="mr-2 h-4 w-4" />
                   Khôi phục
                 </Button>
                 <Button
-                  onClick={loadConfig}
-                  disabled={loading || saving}
+                  onClick={handleRefreshClick}
+                  disabled={loading || saving || refreshing}
                   variant="ghost"
-                  className="w-full h-12 text-base font-semibold"
+                  className="w-full h-10 text-sm font-semibold"
                 >
-                  <RefreshCw className={`mr-2 h-5 w-5 ${loading ? "animate-spin" : ""}`} />
-                  Tải lại
+                  <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                  {refreshing ? "Đang làm mới..." : "Làm mới cache"}
                 </Button>
               </CardContent>
             </Card>
 
             {/* Info Card */}
-            <Card className="border-2 border-blue-200/50 dark:border-blue-800/50 shadow-xl bg-gradient-to-br from-blue-50/80 to-cyan-50/50 dark:from-blue-900/20 dark:to-cyan-900/10 backdrop-blur-sm">
-              <CardContent className="pt-6">
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-start gap-2">
-                    <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-blue-800 dark:text-blue-200">
-                      <span className="font-semibold">FP-Growth</span> là thuật toán khai phá luật
-                      kết hợp hiệu quả, giúp phát hiện các mẫu mua hàng thường xuyên.
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Database className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-blue-800 dark:text-blue-200">
-                      Điều chỉnh các tham số này sẽ ảnh hưởng trực tiếp đến chất lượng và số lượng
-                      luật kết hợp được phát hiện.
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-blue-800 dark:text-blue-200">
-                      Các giá trị được đề xuất: <span className="font-semibold">MIN_SUP: 0.3-0.5</span>,{" "}
-                      <span className="font-semibold">MIN_CONF: 0.6-0.8</span>
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            
           </div>
         </div>
       </div>
+
+      {/* Rules Modal */}
+      <FPGrowthRulesModal open={showRulesModal} onOpenChange={setShowRulesModal} />
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-xl">
+              <AlertTriangle className="h-6 w-6 text-amber-600" />
+              Xác nhận lưu cấu hình
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3 pt-2">
+              <p className="text-base text-gray-700 dark:text-gray-300">
+                Khi bạn lưu cấu hình, hệ thống sẽ <strong className="text-brand-600 dark:text-brand-400">chạy lại thuật toán FP-Growth</strong> với các tham số mới:
+              </p>
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
+                    <span className="text-gray-700 dark:text-gray-300">
+                      <strong>MIN_SUP:</strong> {((config.min_sup || 0) * 100).toFixed(1)}%
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
+                    <span className="text-gray-700 dark:text-gray-300">
+                      <strong>MIN_CONF:</strong> {((config.min_conf || 0) * 100).toFixed(1)}%
+                    </span>
+                  </li>
+                </ul>
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                <p className="text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2">
+                  <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span>
+                    <strong>Lưu ý:</strong> Quá trình này có thể mất vài phút tùy thuộc vào số lượng giao dịch. 
+                    Vui lòng không đóng trang trong khi xử lý.
+                  </span>
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <AlertDialogCancel 
+              disabled={saving}
+              className="mt-0"
+            >
+              Hủy bỏ
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-700 hover:to-purple-700"
+            >
+              {saving ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Xác nhận lưu
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Refresh Cache Dialog */}
+      <AlertDialog open={showRefreshDialog} onOpenChange={setShowRefreshDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-xl">
+              <RefreshCw className="h-6 w-6 text-blue-600" />
+              Xác nhận làm mới cache
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3 pt-2">
+              <p className="text-base text-gray-700 dark:text-gray-300">
+                Hành động này sẽ <strong className="text-blue-600 dark:text-blue-400">làm mới dữ liệu cache</strong> từ cơ sở dữ liệu:
+              </p>
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
+                    <span>Tải lại dữ liệu cấu hình FP-Growth từ database</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
+                    <span>Cập nhật cache với thông tin mới nhất</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
+                    <span>Đồng bộ hóa dữ liệu giữa server và client</span>
+                  </li>
+                </ul>
+              </div>
+              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                <p className="text-sm text-green-800 dark:text-green-200 flex items-start gap-2">
+                  <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span>
+                    Thao tác này sẽ không thay đổi cấu hình hiện tại, chỉ làm mới dữ liệu từ nguồn.
+                  </span>
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <AlertDialogCancel 
+              disabled={refreshing}
+              className="mt-0"
+            >
+              Hủy bỏ
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRefreshCache}
+              disabled={refreshing}
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+            >
+              {refreshing ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Đang làm mới...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Xác nhận làm mới
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

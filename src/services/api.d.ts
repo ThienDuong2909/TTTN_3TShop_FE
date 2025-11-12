@@ -977,6 +977,12 @@ export interface RecommendationResponse {
   };
 }
 
+export declare function refreshFPGrowthCache(): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}>;
+
 export declare function getProductRecommendations(
   items: number[],
   k?: number,
@@ -1033,3 +1039,38 @@ export interface FPGrowthUpdateResponse {
 export declare function getFPGrowthConfig(): Promise<FPGrowthConfig>;
 
 export declare function updateFPGrowthConfig(configData: { min_sup: number; min_conf: number }): Promise<FPGrowthUpdateResponse>;
+
+// FP-Growth Rules
+export interface FPGrowthRule {
+  rule_id: number;
+  antecedent_ids: number[];
+  consequent_id: number;
+  itemset: number[];
+  support: number;
+  confidence: number;
+  lift: number;
+  antecedent_products: any[];
+  consequent_product: any;
+  interpretation: string;
+}
+
+export interface FPGrowthRulesResponse {
+  success: boolean;
+  message: string;
+  data: {
+    model_info: {
+      id: number;
+      transactions: number;
+      min_sup: number;
+      min_conf: number;
+      total_rules: number;
+      created_at: string;
+    };
+    rules: FPGrowthRule[];
+    total: number;
+    limit: number;
+    offset: number;
+  };
+}
+
+export declare function getFPGrowthRules(params?: { limit?: number; offset?: number }): Promise<FPGrowthRulesResponse>;
