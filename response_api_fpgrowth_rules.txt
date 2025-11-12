@@ -1,0 +1,2935 @@
+{
+    "success": true,
+    "message": "Lấy danh sách rules thành công",
+    "data": {
+        "model_info": {
+            "id": 17,
+            "transactions": 50,
+            "min_sup": 0.4,
+            "min_conf": 0.8,
+            "total_rules": 9,
+            "created_at": "2025-11-08T21:14:05.000Z"
+        },
+        "rules": [
+            {
+                "rule_id": 184,
+                "antecedent_ids": [
+                    7
+                ],
+                "consequent_id": 5,
+                "itemset": [
+                    5,
+                    7
+                ],
+                "support": 0.64,
+                "confidence": 1,
+                "lift": 1.47059,
+                "antecedent_products": [
+                    {
+                        "MaSP": 7,
+                        "TenSP": "Serenity Tee 2025",
+                        "MaLoaiSP": 14,
+                        "MaNCC": 1,
+                        "MoTa": "❗Lưu ý:L | XL | XXL",
+                        "TrangThai": true,
+                        "NgayTao": "2025-08-14T06:44:18.000Z",
+                        "NhaCungCap": {
+                            "MaNCC": 1,
+                            "TenNCC": "Công ty TNHH Lưu Thành",
+                            "DiaChi": "Dĩ An, BìnhDương",
+                            "SDT": "0998887767",
+                            "Email": "lvthanh@work.com"
+                        },
+                        "LoaiSP": {
+                            "MaLoaiSP": 14,
+                            "TenLoai": "Áo thun",
+                            "NgayTao": "2025-07-20T00:00:00.000Z",
+                            "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                        },
+                        "AnhSanPhams": [
+                            {
+                                "MaAnh": 208,
+                                "MaSP": 7,
+                                "TenFile": "zlmdxwzonbp5e6qenxfg.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zlmdxwzonbp5e6qenxfg.png",
+                                "AnhChinh": true,
+                                "ThuTu": 1,
+                                "MoTa": "Ảnh chính"
+                            },
+                            {
+                                "MaAnh": 209,
+                                "MaSP": 7,
+                                "TenFile": "shknhd7gsxlnx0qm4n4x.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/shknhd7gsxlnx0qm4n4x.png",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 210,
+                                "MaSP": 7,
+                                "TenFile": "ea0dymvarg1ltu6nb4c7.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/ea0dymvarg1ltu6nb4c7.png",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 211,
+                                "MaSP": 7,
+                                "TenFile": "zydedjcffsdy5mqbxbqu.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zydedjcffsdy5mqbxbqu.png",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 212,
+                                "MaSP": 7,
+                                "TenFile": "wrqqsb3zj9b6wvzbphhe.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/wrqqsb3zj9b6wvzbphhe.png",
+                                "AnhChinh": false,
+                                "ThuTu": 5,
+                                "MoTa": "Ảnh phụ"
+                            }
+                        ],
+                        "ChiTietSanPhams": [
+                            {
+                                "MaCTSP": 5,
+                                "MaKichThuoc": 1,
+                                "MaMau": 11,
+                                "SoLuongTon": 997,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "M"
+                                },
+                                "Mau": {
+                                    "TenMau": "Cam ",
+                                    "MaHex": "#f4af80"
+                                }
+                            },
+                            {
+                                "MaCTSP": 6,
+                                "MaKichThuoc": 2,
+                                "MaMau": 5,
+                                "SoLuongTon": 1118,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Tím",
+                                    "MaHex": "#a93794"
+                                }
+                            },
+                            {
+                                "MaCTSP": 7,
+                                "MaKichThuoc": 3,
+                                "MaMau": 11,
+                                "SoLuongTon": 1991,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Cam ",
+                                    "MaHex": "#f4af80"
+                                }
+                            },
+                            {
+                                "MaCTSP": 8,
+                                "MaKichThuoc": 4,
+                                "MaMau": 8,
+                                "SoLuongTon": 498,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XXL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Xanh",
+                                    "MaHex": "#1a128c"
+                                }
+                            }
+                        ],
+                        "CT_DotGiamGia": [],
+                        "ThayDoiGia": [
+                            {
+                                "Gia": "230000.00",
+                                "NgayApDung": "2025-07-20"
+                            }
+                        ]
+                    }
+                ],
+                "consequent_product": {
+                    "MaSP": 5,
+                    "TenSP": "SWE VISION L/S TEE - BROWN",
+                    "MaLoaiSP": 14,
+                    "MaNCC": 1,
+                    "MoTa": "| SWEgiữ form áo.\nNOW AVAILABLE ONLINE & IN - STORE",
+                    "TrangThai": true,
+                    "NgayTao": "2025-08-12T06:44:18.000Z",
+                    "NhaCungCap": {
+                        "MaNCC": 1,
+                        "TenNCC": "Công ty TNHH Lưu Thành",
+                        "DiaChi": "Dĩ An, BìnhDương",
+                        "SDT": "0998887767",
+                        "Email": "lvthanh@work.com"
+                    },
+                    "LoaiSP": {
+                        "MaLoaiSP": 14,
+                        "TenLoai": "Áo thun",
+                        "NgayTao": "2025-07-20T00:00:00.000Z",
+                        "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                    },
+                    "AnhSanPhams": [
+                        {
+                            "MaAnh": 219,
+                            "MaSP": 5,
+                            "TenFile": "myf4or3khuxjzq900xpr.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108768/myf4or3khuxjzq900xpr.jpg",
+                            "AnhChinh": true,
+                            "ThuTu": 1,
+                            "MoTa": "Ảnh chính"
+                        },
+                        {
+                            "MaAnh": 220,
+                            "MaSP": 5,
+                            "TenFile": "umzjxk5mns6uwuircoig.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108768/umzjxk5mns6uwuircoig.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 221,
+                            "MaSP": 5,
+                            "TenFile": "eskfsq2ho1ebr2vpl8wr.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108767/eskfsq2ho1ebr2vpl8wr.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 222,
+                            "MaSP": 5,
+                            "TenFile": "iudoxoyhfiggwiwkoblc.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108767/iudoxoyhfiggwiwkoblc.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        }
+                    ],
+                    "ChiTietSanPhams": [
+                        {
+                            "MaCTSP": 3,
+                            "MaKichThuoc": 2,
+                            "MaMau": 1,
+                            "SoLuongTon": 4485,
+                            "KichThuoc": {
+                                "TenKichThuoc": "L"
+                            },
+                            "Mau": {
+                                "TenMau": "Đỏ",
+                                "MaHex": "#fc3b3b"
+                            }
+                        },
+                        {
+                            "MaCTSP": 17,
+                            "MaKichThuoc": 2,
+                            "MaMau": 5,
+                            "SoLuongTon": 1300,
+                            "KichThuoc": {
+                                "TenKichThuoc": "L"
+                            },
+                            "Mau": {
+                                "TenMau": "Tím",
+                                "MaHex": "#a93794"
+                            }
+                        }
+                    ],
+                    "CT_DotGiamGia": [
+                        {
+                            "PhanTramGiam": "10.00",
+                            "DotGiamGium": {
+                                "NgayBatDau": "2025-09-06",
+                                "NgayKetThuc": "2025-11-08",
+                                "MoTa": "Xả kho cuối năm"
+                            }
+                        }
+                    ],
+                    "ThayDoiGia": [
+                        {
+                            "Gia": "500000.00",
+                            "NgayApDung": "2025-08-01"
+                        }
+                    ]
+                },
+                "interpretation": "Khách hàng mua \"Serenity Tee 2025\" thì có 100.0% khả năng sẽ mua \"SWE VISION L/S TEE - BROWN\" (xuất hiện cùng nhau trong 64.0% đơn hàng, lift = 1.47)"
+            },
+            {
+                "rule_id": 185,
+                "antecedent_ids": [
+                    2,
+                    7
+                ],
+                "consequent_id": 5,
+                "itemset": [
+                    2,
+                    5,
+                    7
+                ],
+                "support": 0.64,
+                "confidence": 1,
+                "lift": 1.47059,
+                "antecedent_products": [
+                    {
+                        "MaSP": 2,
+                        "TenSP": "Áo thun nam",
+                        "MaLoaiSP": 14,
+                        "MaNCC": 1,
+                        "MoTa": "Áo thun nam chất liệu cotton",
+                        "TrangThai": true,
+                        "NgayTao": "2025-08-10T06:44:18.000Z",
+                        "NhaCungCap": {
+                            "MaNCC": 1,
+                            "TenNCC": "Công ty TNHH Lưu Thành",
+                            "DiaChi": "Dĩ An, BìnhDương",
+                            "SDT": "0998887767",
+                            "Email": "lvthanh@work.com"
+                        },
+                        "LoaiSP": {
+                            "MaLoaiSP": 14,
+                            "TenLoai": "Áo thun",
+                            "NgayTao": "2025-07-20T00:00:00.000Z",
+                            "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                        },
+                        "AnhSanPhams": [
+                            {
+                                "MaAnh": 96,
+                                "MaSP": 2,
+                                "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 97,
+                                "MaSP": 2,
+                                "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 98,
+                                "MaSP": 2,
+                                "TenFile": "vtz3dh1kzap70zya0w56.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802242/vtz3dh1kzap70zya0w56.jpg",
+                                "AnhChinh": true,
+                                "ThuTu": 1,
+                                "MoTa": "Ảnh chính"
+                            },
+                            {
+                                "MaAnh": 99,
+                                "MaSP": 2,
+                                "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 100,
+                                "MaSP": 2,
+                                "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 101,
+                                "MaSP": 2,
+                                "TenFile": "vmf4moya4e443ardexh1.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 5,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 102,
+                                "MaSP": 2,
+                                "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 103,
+                                "MaSP": 2,
+                                "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 104,
+                                "MaSP": 2,
+                                "TenFile": "vmf4moya4e443ardexh1.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 5,
+                                "MoTa": "Ảnh phụ"
+                            }
+                        ],
+                        "ChiTietSanPhams": [
+                            {
+                                "MaCTSP": 1,
+                                "MaKichThuoc": 2,
+                                "MaMau": 1,
+                                "SoLuongTon": 1188,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Đỏ",
+                                    "MaHex": "#fc3b3b"
+                                }
+                            },
+                            {
+                                "MaCTSP": 2,
+                                "MaKichThuoc": 3,
+                                "MaMau": 2,
+                                "SoLuongTon": 987,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Xanh",
+                                    "MaHex": "#7188fe"
+                                }
+                            },
+                            {
+                                "MaCTSP": 26,
+                                "MaKichThuoc": 4,
+                                "MaMau": 7,
+                                "SoLuongTon": 100,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XXL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Xám ",
+                                    "MaHex": "#d1d1d1"
+                                }
+                            },
+                            {
+                                "MaCTSP": 34,
+                                "MaKichThuoc": 4,
+                                "MaMau": 12,
+                                "SoLuongTon": 996,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XXL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Xanh san hô",
+                                    "MaHex": "#4ea0df"
+                                }
+                            }
+                        ],
+                        "CT_DotGiamGia": [],
+                        "ThayDoiGia": [
+                            {
+                                "Gia": "250000.00",
+                                "NgayApDung": "2025-08-01"
+                            }
+                        ]
+                    },
+                    {
+                        "MaSP": 7,
+                        "TenSP": "Serenity Tee 2025",
+                        "MaLoaiSP": 14,
+                        "MaNCC": 1,
+                        "MoTa": "❗Lưu ý: KHÔNG SSize: M | L | XL | XXL",
+                        "TrangThai": true,
+                        "NgayTao": "2025-08-14T06:44:18.000Z",
+                        "NhaCungCap": {
+                            "MaNCC": 1,
+                            "TenNCC": "Công ty TNHH Lưu Thành",
+                            "DiaChi": "Dĩ An, BìnhDương",
+                            "SDT": "0998887767",
+                            "Email": "lvthanh@work.com"
+                        },
+                        "LoaiSP": {
+                            "MaLoaiSP": 14,
+                            "TenLoai": "Áo thun",
+                            "NgayTao": "2025-07-20T00:00:00.000Z",
+                            "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                        },
+                        "AnhSanPhams": [
+                            {
+                                "MaAnh": 208,
+                                "MaSP": 7,
+                                "TenFile": "zlmdxwzonbp5e6qenxfg.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zlmdxwzonbp5e6qenxfg.png",
+                                "AnhChinh": true,
+                                "ThuTu": 1,
+                                "MoTa": "Ảnh chính"
+                            },
+                            {
+                                "MaAnh": 209,
+                                "MaSP": 7,
+                                "TenFile": "shknhd7gsxlnx0qm4n4x.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/shknhd7gsxlnx0qm4n4x.png",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 210,
+                                "MaSP": 7,
+                                "TenFile": "ea0dymvarg1ltu6nb4c7.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/ea0dymvarg1ltu6nb4c7.png",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 211,
+                                "MaSP": 7,
+                                "TenFile": "zydedjcffsdy5mqbxbqu.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zydedjcffsdy5mqbxbqu.png",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 212,
+                                "MaSP": 7,
+                                "TenFile": "wrqqsb3zj9b6wvzbphhe.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/wrqqsb3zj9b6wvzbphhe.png",
+                                "AnhChinh": false,
+                                "ThuTu": 5,
+                                "MoTa": "Ảnh phụ"
+                            }
+                        ],
+                        "ChiTietSanPhams": [
+                            {
+                                "MaCTSP": 5,
+                                "MaKichThuoc": 1,
+                                "MaMau": 11,
+                                "SoLuongTon": 997,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "M"
+                                },
+                                "Mau": {
+                                    "TenMau": "Cam ",
+                                    "MaHex": "#f4af80"
+                                }
+                            },
+                            {
+                                "MaCTSP": 6,
+                                "MaKichThuoc": 2,
+                                "MaMau": 5,
+                                "SoLuongTon": 1118,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Tím",
+                                    "MaHex": "#a93794"
+                                }
+                            },
+                            {
+                                "MaCTSP": 7,
+                                "MaKichThuoc": 3,
+                                "MaMau": 11,
+                                "SoLuongTon": 1991,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Cam ",
+                                    "MaHex": "#f4af80"
+                                }
+                            },
+                            {
+                                "MaCTSP": 8,
+                                "MaKichThuoc": 4,
+                                "MaMau": 8,
+                                "SoLuongTon": 498,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XXL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Xanh",
+                                    "MaHex": "#1a128c"
+                                }
+                            }
+                        ],
+                        "CT_DotGiamGia": [],
+                        "ThayDoiGia": [
+                            {
+                                "Gia": "230000.00",
+                                "NgayApDung": "2025-07-20"
+                            }
+                        ]
+                    }
+                ],
+                "consequent_product": {
+                    "MaSP": 5,
+                    "TenSP": "SWE VISION L/S TEE - BROWN",
+                    "MaLoaiSP": 14,
+                    "MaNCC": 1,
+                    "MoTa": "| SWE® | VISION L/S TEE\nCOLOR: BROWN\nMATERIAL: 35% COTTON - 65% POLYESTER\nS\ áo.\nNOW AVAILABLE ONLINE & IN - STORE",
+                    "TrangThai": true,
+                    "NgayTao": "2025-08-12T06:44:18.000Z",
+                    "NhaCungCap": {
+                        "MaNCC": 1,
+                        "TenNCC": "Công ty TNHH Lưu Thành",
+                        "DiaChi": "Dĩ An, BìnhDương",
+                        "SDT": "0998887767",
+                        "Email": "lvthanh@work.com"
+                    },
+                    "LoaiSP": {
+                        "MaLoaiSP": 14,
+                        "TenLoai": "Áo thun",
+                        "NgayTao": "2025-07-20T00:00:00.000Z",
+                        "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                    },
+                    "AnhSanPhams": [
+                        {
+                            "MaAnh": 219,
+                            "MaSP": 5,
+                            "TenFile": "myf4or3khuxjzq900xpr.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108768/myf4or3khuxjzq900xpr.jpg",
+                            "AnhChinh": true,
+                            "ThuTu": 1,
+                            "MoTa": "Ảnh chính"
+                        },
+                        {
+                            "MaAnh": 220,
+                            "MaSP": 5,
+                            "TenFile": "umzjxk5mns6uwuircoig.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108768/umzjxk5mns6uwuircoig.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 221,
+                            "MaSP": 5,
+                            "TenFile": "eskfsq2ho1ebr2vpl8wr.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108767/eskfsq2ho1ebr2vpl8wr.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 222,
+                            "MaSP": 5,
+                            "TenFile": "iudoxoyhfiggwiwkoblc.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108767/iudoxoyhfiggwiwkoblc.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        }
+                    ],
+                    "ChiTietSanPhams": [
+                        {
+                            "MaCTSP": 3,
+                            "MaKichThuoc": 2,
+                            "MaMau": 1,
+                            "SoLuongTon": 4485,
+                            "KichThuoc": {
+                                "TenKichThuoc": "L"
+                            },
+                            "Mau": {
+                                "TenMau": "Đỏ",
+                                "MaHex": "#fc3b3b"
+                            }
+                        },
+                        {
+                            "MaCTSP": 17,
+                            "MaKichThuoc": 2,
+                            "MaMau": 5,
+                            "SoLuongTon": 1300,
+                            "KichThuoc": {
+                                "TenKichThuoc": "L"
+                            },
+                            "Mau": {
+                                "TenMau": "Tím",
+                                "MaHex": "#a93794"
+                            }
+                        }
+                    ],
+                    "CT_DotGiamGia": [
+                        {
+                            "PhanTramGiam": "10.00",
+                            "DotGiamGium": {
+                                "NgayBatDau": "2025-09-06",
+                                "NgayKetThuc": "2025-11-08",
+                                "MoTa": "Xả kho cuối năm"
+                            }
+                        }
+                    ],
+                    "ThayDoiGia": [
+                        {
+                            "Gia": "500000.00",
+                            "NgayApDung": "2025-08-01"
+                        }
+                    ]
+                },
+                "interpretation": "Khách hàng mua \"Áo thun nam\", \"Serenity Tee 2025\" thì có 100.0% khả năng sẽ mua \"SWE VISION L/S TEE - BROWN\" (xuất hiện cùng nhau trong 64.0% đơn hàng, lift = 1.47)"
+            },
+            {
+                "rule_id": 188,
+                "antecedent_ids": [
+                    7
+                ],
+                "consequent_id": 2,
+                "itemset": [
+                    2,
+                    7
+                ],
+                "support": 0.64,
+                "confidence": 1,
+                "lift": 1.11111,
+                "antecedent_products": [
+                    {
+                        "MaSP": 7,
+                        "TenSP": "Serenity Tee 2025",
+                        "MaLoaiSP": 14,
+                        "MaNCC": 1,
+                        "MoTa": "❗Lưu ý: KHÔNG SỬ DỤNG MÁY SẤY CHO ÁO COTTON để tránh tình trạng co rútễ dàng mix & match thả ga sáng tạo nhiều outfit\n\n• Size: M | L | XL | XXL",
+                        "TrangThai": true,
+                        "NgayTao": "2025-08-14T06:44:18.000Z",
+                        "NhaCungCap": {
+                            "MaNCC": 1,
+                            "TenNCC": "Công ty TNHH Lưu Thành",
+                            "DiaChi": "Dĩ An, BìnhDương",
+                            "SDT": "0998887767",
+                            "Email": "lvthanh@work.com"
+                        },
+                        "LoaiSP": {
+                            "MaLoaiSP": 14,
+                            "TenLoai": "Áo thun",
+                            "NgayTao": "2025-07-20T00:00:00.000Z",
+                            "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                        },
+                        "AnhSanPhams": [
+                            {
+                                "MaAnh": 208,
+                                "MaSP": 7,
+                                "TenFile": "zlmdxwzonbp5e6qenxfg.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zlmdxwzonbp5e6qenxfg.png",
+                                "AnhChinh": true,
+                                "ThuTu": 1,
+                                "MoTa": "Ảnh chính"
+                            },
+                            {
+                                "MaAnh": 209,
+                                "MaSP": 7,
+                                "TenFile": "shknhd7gsxlnx0qm4n4x.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/shknhd7gsxlnx0qm4n4x.png",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 210,
+                                "MaSP": 7,
+                                "TenFile": "ea0dymvarg1ltu6nb4c7.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/ea0dymvarg1ltu6nb4c7.png",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 211,
+                                "MaSP": 7,
+                                "TenFile": "zydedjcffsdy5mqbxbqu.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zydedjcffsdy5mqbxbqu.png",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 212,
+                                "MaSP": 7,
+                                "TenFile": "wrqqsb3zj9b6wvzbphhe.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/wrqqsb3zj9b6wvzbphhe.png",
+                                "AnhChinh": false,
+                                "ThuTu": 5,
+                                "MoTa": "Ảnh phụ"
+                            }
+                        ],
+                        "ChiTietSanPhams": [
+                            {
+                                "MaCTSP": 5,
+                                "MaKichThuoc": 1,
+                                "MaMau": 11,
+                                "SoLuongTon": 997,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "M"
+                                },
+                                "Mau": {
+                                    "TenMau": "Cam ",
+                                    "MaHex": "#f4af80"
+                                }
+                            },
+                            {
+                                "MaCTSP": 6,
+                                "MaKichThuoc": 2,
+                                "MaMau": 5,
+                                "SoLuongTon": 1118,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Tím",
+                                    "MaHex": "#a93794"
+                                }
+                            },
+                            {
+                                "MaCTSP": 7,
+                                "MaKichThuoc": 3,
+                                "MaMau": 11,
+                                "SoLuongTon": 1991,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Cam ",
+                                    "MaHex": "#f4af80"
+                                }
+                            },
+                            {
+                                "MaCTSP": 8,
+                                "MaKichThuoc": 4,
+                                "MaMau": 8,
+                                "SoLuongTon": 498,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XXL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Xanh",
+                                    "MaHex": "#1a128c"
+                                }
+                            }
+                        ],
+                        "CT_DotGiamGia": [],
+                        "ThayDoiGia": [
+                            {
+                                "Gia": "230000.00",
+                                "NgayApDung": "2025-07-20"
+                            }
+                        ]
+                    }
+                ],
+                "consequent_product": {
+                    "MaSP": 2,
+                    "TenSP": "Áo thun nam",
+                    "MaLoaiSP": 14,
+                    "MaNCC": 1,
+                    "MoTa": "Áo thun nam chất liệu cotton",
+                    "TrangThai": true,
+                    "NgayTao": "2025-08-10T06:44:18.000Z",
+                    "NhaCungCap": {
+                        "MaNCC": 1,
+                        "TenNCC": "Công ty TNHH Lưu Thành",
+                        "DiaChi": "Dĩ An, BìnhDương",
+                        "SDT": "0998887767",
+                        "Email": "lvthanh@work.com"
+                    },
+                    "LoaiSP": {
+                        "MaLoaiSP": 14,
+                        "TenLoai": "Áo thun",
+                        "NgayTao": "2025-07-20T00:00:00.000Z",
+                        "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                    },
+                    "AnhSanPhams": [
+                        {
+                            "MaAnh": 96,
+                            "MaSP": 2,
+                            "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 97,
+                            "MaSP": 2,
+                            "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 98,
+                            "MaSP": 2,
+                            "TenFile": "vtz3dh1kzap70zya0w56.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802242/vtz3dh1kzap70zya0w56.jpg",
+                            "AnhChinh": true,
+                            "ThuTu": 1,
+                            "MoTa": "Ảnh chính"
+                        },
+                        {
+                            "MaAnh": 99,
+                            "MaSP": 2,
+                            "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 100,
+                            "MaSP": 2,
+                            "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 101,
+                            "MaSP": 2,
+                            "TenFile": "vmf4moya4e443ardexh1.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 5,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 102,
+                            "MaSP": 2,
+                            "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 103,
+                            "MaSP": 2,
+                            "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 104,
+                            "MaSP": 2,
+                            "TenFile": "vmf4moya4e443ardexh1.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 5,
+                            "MoTa": "Ảnh phụ"
+                        }
+                    ],
+                    "ChiTietSanPhams": [
+                        {
+                            "MaCTSP": 1,
+                            "MaKichThuoc": 2,
+                            "MaMau": 1,
+                            "SoLuongTon": 1188,
+                            "KichThuoc": {
+                                "TenKichThuoc": "L"
+                            },
+                            "Mau": {
+                                "TenMau": "Đỏ",
+                                "MaHex": "#fc3b3b"
+                            }
+                        },
+                        {
+                            "MaCTSP": 2,
+                            "MaKichThuoc": 3,
+                            "MaMau": 2,
+                            "SoLuongTon": 987,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xanh",
+                                "MaHex": "#7188fe"
+                            }
+                        },
+                        {
+                            "MaCTSP": 26,
+                            "MaKichThuoc": 4,
+                            "MaMau": 7,
+                            "SoLuongTon": 100,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XXL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xám ",
+                                "MaHex": "#d1d1d1"
+                            }
+                        },
+                        {
+                            "MaCTSP": 34,
+                            "MaKichThuoc": 4,
+                            "MaMau": 12,
+                            "SoLuongTon": 996,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XXL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xanh san hô",
+                                "MaHex": "#4ea0df"
+                            }
+                        }
+                    ],
+                    "CT_DotGiamGia": [],
+                    "ThayDoiGia": [
+                        {
+                            "Gia": "250000.00",
+                            "NgayApDung": "2025-08-01"
+                        }
+                    ]
+                },
+                "interpretation": "Khách hàng mua \"Serenity Tee 2025\" thì có 100.0% khả năng sẽ mua \"Áo thun nam\" (xuất hiện cùng nhau trong 64.0% đơn hàng, lift = 1.11)"
+            },
+            {
+                "rule_id": 189,
+                "antecedent_ids": [
+                    5,
+                    7
+                ],
+                "consequent_id": 2,
+                "itemset": [
+                    2,
+                    5,
+                    7
+                ],
+                "support": 0.64,
+                "confidence": 1,
+                "lift": 1.11111,
+                "antecedent_products": [
+                    {
+                        "MaSP": 5,
+                        "TenSP": "SWE VISION L/S TEE - BROWN",
+                        "MaLoaiSP": 14,
+                        "MaNCC": 1,
+                        "MoTa": "| SWE® | VISION L/S TEE\nCOLOR: BROWN\nMATERIAL: 35% COTTON - 65% POLYESTER\nSIZE: S/M/L/XL\n\nVISION L/S TEE - Chiếc áo tay dài mới nằm trong bộ sưu tập \"THE FUTURE IS BRIGHT\" được thiết kế theo phong cách streetwear hiện đại kết hợp retro thể thao với điểm nhấn nằm ở những họa tiết ở mặt trước và 2 bên tay áo được in lụa sắc nét. Phần bo cổ đặc biệt được dệt riêng bằng sợi PE dày dặn kèm dây rút ở lai áo giúp điều chỉnh linh hoạt và duy trì form dáng đẹp.\n\nÁo L/S SWE được sử dụng vải cá sấu TC 35% COTTON - 65% POLYESTER, định lượng 230gsm, thiết kế form áo long sleeve nên chất lượng các bạn có thể hoàn toàn yên tâm với sản phẩm nhà SWE.\n\nForm áo được Fit size theo form và tiêu chuẩn tương đối của người Việt Nam, nếu bạn đang cân nhắc giữa hai size, nên chọn size lớn hơn.\nSize S: Chiều cao dưới 1m65, cân nặng dưới 65kg\nSize M: Chiều cao từ 1m65 - 1m75, cân nặng dưới 75kg\nSize L: Chiều cao từ 1m75 - 1m85, cân nặng dưới 90kg\nSize XL: Chiều cao từ 1m85 trở lên, cân nặng dưới 120kg\n\nCác bạn vui lòng tham khảo bảng size chart trước khi đặt hàng.\n* Lưu ý: Hạn chế sử dụng máy sấy nhiệt cao để giữ form áo.\nNOW AVAILABLE ONLINE & IN - STORE",
+                        "TrangThai": true,
+                        "NgayTao": "2025-08-12T06:44:18.000Z",
+                        "NhaCungCap": {
+                            "MaNCC": 1,
+                            "TenNCC": "Công ty TNHH Lưu Thành",
+                            "DiaChi": "Dĩ An, BìnhDương",
+                            "SDT": "0998887767",
+                            "Email": "lvthanh@work.com"
+                        },
+                        "LoaiSP": {
+                            "MaLoaiSP": 14,
+                            "TenLoai": "Áo thun",
+                            "NgayTao": "2025-07-20T00:00:00.000Z",
+                            "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                        },
+                        "AnhSanPhams": [
+                            {
+                                "MaAnh": 219,
+                                "MaSP": 5,
+                                "TenFile": "myf4or3khuxjzq900xpr.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108768/myf4or3khuxjzq900xpr.jpg",
+                                "AnhChinh": true,
+                                "ThuTu": 1,
+                                "MoTa": "Ảnh chính"
+                            },
+                            {
+                                "MaAnh": 220,
+                                "MaSP": 5,
+                                "TenFile": "umzjxk5mns6uwuircoig.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108768/umzjxk5mns6uwuircoig.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 221,
+                                "MaSP": 5,
+                                "TenFile": "eskfsq2ho1ebr2vpl8wr.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108767/eskfsq2ho1ebr2vpl8wr.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 222,
+                                "MaSP": 5,
+                                "TenFile": "iudoxoyhfiggwiwkoblc.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108767/iudoxoyhfiggwiwkoblc.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            }
+                        ],
+                        "ChiTietSanPhams": [
+                            {
+                                "MaCTSP": 3,
+                                "MaKichThuoc": 2,
+                                "MaMau": 1,
+                                "SoLuongTon": 4485,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Đỏ",
+                                    "MaHex": "#fc3b3b"
+                                }
+                            },
+                            {
+                                "MaCTSP": 17,
+                                "MaKichThuoc": 2,
+                                "MaMau": 5,
+                                "SoLuongTon": 1300,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Tím",
+                                    "MaHex": "#a93794"
+                                }
+                            }
+                        ],
+                        "CT_DotGiamGia": [
+                            {
+                                "PhanTramGiam": "10.00",
+                                "DotGiamGium": {
+                                    "NgayBatDau": "2025-09-06",
+                                    "NgayKetThuc": "2025-11-08",
+                                    "MoTa": "Xả kho cuối năm"
+                                }
+                            }
+                        ],
+                        "ThayDoiGia": [
+                            {
+                                "Gia": "500000.00",
+                                "NgayApDung": "2025-08-01"
+                            }
+                        ]
+                    },
+                    {
+                        "MaSP": 7,
+                        "TenSP": "Serenity Tee 2025",
+                        "MaLoaiSP": 14,
+                        "MaNCC": 1,
+                        "MoTa": "❗Lưu ý: KHÔNG SỬ DỤNG MÁY SẤY CHO ÁO COTTON để tránh tình trạng co rút❗Lộn ngược áo khi giặt để giữ đồ bền hình in ❗\n\nNOCTURNAL ® Serenity Tee\n\n• Artwork được sử dụng kỹ thuật in lụa xịn sò kết hợp với thêu nổi 3D ấn tượng, bền bỉ không bong tróc.\n\n• Phối màu pastel siêu xinh, ngập vibe Hè.\n\n• Form boxy tôn dáng, trendy.\n\n• Chất liệu: Prime Cotton 100% – Chất vải siêu xịn, dày dặn & giảm nhăn đến 70%.\n\n• Style đơn giản nhưng cá tính, dễ dàng mix & match thả ga sáng tạo nhiều outfit\n\n• Size: M | L | XL | XXL",
+                        "TrangThai": true,
+                        "NgayTao": "2025-08-14T06:44:18.000Z",
+                        "NhaCungCap": {
+                            "MaNCC": 1,
+                            "TenNCC": "Công ty TNHH Lưu Thành",
+                            "DiaChi": "Dĩ An, BìnhDương",
+                            "SDT": "0998887767",
+                            "Email": "lvthanh@work.com"
+                        },
+                        "LoaiSP": {
+                            "MaLoaiSP": 14,
+                            "TenLoai": "Áo thun",
+                            "NgayTao": "2025-07-20T00:00:00.000Z",
+                            "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                        },
+                        "AnhSanPhams": [
+                            {
+                                "MaAnh": 208,
+                                "MaSP": 7,
+                                "TenFile": "zlmdxwzonbp5e6qenxfg.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zlmdxwzonbp5e6qenxfg.png",
+                                "AnhChinh": true,
+                                "ThuTu": 1,
+                                "MoTa": "Ảnh chính"
+                            },
+                            {
+                                "MaAnh": 209,
+                                "MaSP": 7,
+                                "TenFile": "shknhd7gsxlnx0qm4n4x.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/shknhd7gsxlnx0qm4n4x.png",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 210,
+                                "MaSP": 7,
+                                "TenFile": "ea0dymvarg1ltu6nb4c7.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/ea0dymvarg1ltu6nb4c7.png",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 211,
+                                "MaSP": 7,
+                                "TenFile": "zydedjcffsdy5mqbxbqu.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zydedjcffsdy5mqbxbqu.png",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 212,
+                                "MaSP": 7,
+                                "TenFile": "wrqqsb3zj9b6wvzbphhe.png",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/wrqqsb3zj9b6wvzbphhe.png",
+                                "AnhChinh": false,
+                                "ThuTu": 5,
+                                "MoTa": "Ảnh phụ"
+                            }
+                        ],
+                        "ChiTietSanPhams": [
+                            {
+                                "MaCTSP": 5,
+                                "MaKichThuoc": 1,
+                                "MaMau": 11,
+                                "SoLuongTon": 997,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "M"
+                                },
+                                "Mau": {
+                                    "TenMau": "Cam ",
+                                    "MaHex": "#f4af80"
+                                }
+                            },
+                            {
+                                "MaCTSP": 6,
+                                "MaKichThuoc": 2,
+                                "MaMau": 5,
+                                "SoLuongTon": 1118,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Tím",
+                                    "MaHex": "#a93794"
+                                }
+                            },
+                            {
+                                "MaCTSP": 7,
+                                "MaKichThuoc": 3,
+                                "MaMau": 11,
+                                "SoLuongTon": 1991,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Cam ",
+                                    "MaHex": "#f4af80"
+                                }
+                            },
+                            {
+                                "MaCTSP": 8,
+                                "MaKichThuoc": 4,
+                                "MaMau": 8,
+                                "SoLuongTon": 498,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XXL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Xanh",
+                                    "MaHex": "#1a128c"
+                                }
+                            }
+                        ],
+                        "CT_DotGiamGia": [],
+                        "ThayDoiGia": [
+                            {
+                                "Gia": "230000.00",
+                                "NgayApDung": "2025-07-20"
+                            }
+                        ]
+                    }
+                ],
+                "consequent_product": {
+                    "MaSP": 2,
+                    "TenSP": "Áo thun nam",
+                    "MaLoaiSP": 14,
+                    "MaNCC": 1,
+                    "MoTa": "Áo thun nam chất liệu cotton",
+                    "TrangThai": true,
+                    "NgayTao": "2025-08-10T06:44:18.000Z",
+                    "NhaCungCap": {
+                        "MaNCC": 1,
+                        "TenNCC": "Công ty TNHH Lưu Thành",
+                        "DiaChi": "Dĩ An, BìnhDương",
+                        "SDT": "0998887767",
+                        "Email": "lvthanh@work.com"
+                    },
+                    "LoaiSP": {
+                        "MaLoaiSP": 14,
+                        "TenLoai": "Áo thun",
+                        "NgayTao": "2025-07-20T00:00:00.000Z",
+                        "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                    },
+                    "AnhSanPhams": [
+                        {
+                            "MaAnh": 96,
+                            "MaSP": 2,
+                            "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 97,
+                            "MaSP": 2,
+                            "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 98,
+                            "MaSP": 2,
+                            "TenFile": "vtz3dh1kzap70zya0w56.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802242/vtz3dh1kzap70zya0w56.jpg",
+                            "AnhChinh": true,
+                            "ThuTu": 1,
+                            "MoTa": "Ảnh chính"
+                        },
+                        {
+                            "MaAnh": 99,
+                            "MaSP": 2,
+                            "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 100,
+                            "MaSP": 2,
+                            "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 101,
+                            "MaSP": 2,
+                            "TenFile": "vmf4moya4e443ardexh1.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 5,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 102,
+                            "MaSP": 2,
+                            "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 103,
+                            "MaSP": 2,
+                            "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 104,
+                            "MaSP": 2,
+                            "TenFile": "vmf4moya4e443ardexh1.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 5,
+                            "MoTa": "Ảnh phụ"
+                        }
+                    ],
+                    "ChiTietSanPhams": [
+                        {
+                            "MaCTSP": 1,
+                            "MaKichThuoc": 2,
+                            "MaMau": 1,
+                            "SoLuongTon": 1188,
+                            "KichThuoc": {
+                                "TenKichThuoc": "L"
+                            },
+                            "Mau": {
+                                "TenMau": "Đỏ",
+                                "MaHex": "#fc3b3b"
+                            }
+                        },
+                        {
+                            "MaCTSP": 2,
+                            "MaKichThuoc": 3,
+                            "MaMau": 2,
+                            "SoLuongTon": 987,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xanh",
+                                "MaHex": "#7188fe"
+                            }
+                        },
+                        {
+                            "MaCTSP": 26,
+                            "MaKichThuoc": 4,
+                            "MaMau": 7,
+                            "SoLuongTon": 100,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XXL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xám ",
+                                "MaHex": "#d1d1d1"
+                            }
+                        },
+                        {
+                            "MaCTSP": 34,
+                            "MaKichThuoc": 4,
+                            "MaMau": 12,
+                            "SoLuongTon": 996,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XXL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xanh san hô",
+                                "MaHex": "#4ea0df"
+                            }
+                        }
+                    ],
+                    "CT_DotGiamGia": [],
+                    "ThayDoiGia": [
+                        {
+                            "Gia": "250000.00",
+                            "NgayApDung": "2025-08-01"
+                        }
+                    ]
+                },
+                "interpretation": "Khách hàng mua \"SWE VISION L/S TEE - BROWN\", \"Serenity Tee 2025\" thì có 100.0% khả năng sẽ mua \"Áo thun nam\" (xuất hiện cùng nhau trong 64.0% đơn hàng, lift = 1.11)"
+            },
+            {
+                "rule_id": 186,
+                "antecedent_ids": [
+                    6
+                ],
+                "consequent_id": 2,
+                "itemset": [
+                    2,
+                    6
+                ],
+                "support": 0.54,
+                "confidence": 1,
+                "lift": 1.11111,
+                "antecedent_products": [
+                    {
+                        "MaSP": 6,
+                        "TenSP": "SWE HEAVEN BOXY TEE",
+                        "MaLoaiSP": 14,
+                        "MaNCC": 1,
+                        "MoTa": "| SWE® | SWE HEAVEN BOXY TEE\nCOLOR: WHITE\nMATERIAL: COTTON 100%\nSIZE: S/M/L/XL\n\nSKEYE BOXY TEE - Chiếc áo thun mới nằm trong bộ sưu tập \"THE FUTURE IS BRIGHT\" được thiết kế ấn tượng. Điểm nhấn của áo nằm ở họa tiết con mắt mặt trước được in Trame sắc nét kết hợp thêu chữ tỉ mỉ. Mặt sau đơn giản với tag da mới của SWE. \n\nÁo thun SWE vẫn được sử dụng COTTON 100% thuần tự nhiên 2 chiều, định lượng 250gsm, thiết kế form BOXY nên chất lượng các bạn có thể hoàn toàn yên tâm với sản phẩm nhà SWE.\n\nForm áo được Fit size theo form và tiêu chuẩn tương đối của người Việt Nam, nếu bạn đang cân nhắc giữa hai size, nên chọn size lớn hơn.\nSize S: Chiều cao dưới 1m65, cân nặng dưới 60kg\nSize M: Chiều cao từ 1m65 - 1m75, cân nặng dưới 75kg\nSize L: Chiều cao từ 1m75 - 1m85, cân nặng dưới 85kg\nSize XL: Chiều cao trên 1m80, cân nặng trên 90kg\n\nCác bạn vui lòng tham khảo bảng size chart trước khi đặt hàng.\n* Lưu ý: Hạn chế sử dụng máy sấy nhiệt cao để giữ form áo.\nNOW AVAILABLE ONLINE & IN - STORE",
+                        "TrangThai": true,
+                        "NgayTao": "2025-08-13T06:44:18.000Z",
+                        "NhaCungCap": {
+                            "MaNCC": 1,
+                            "TenNCC": "Công ty TNHH Lưu Thành",
+                            "DiaChi": "Dĩ An, BìnhDương",
+                            "SDT": "0998887767",
+                            "Email": "lvthanh@work.com"
+                        },
+                        "LoaiSP": {
+                            "MaLoaiSP": 14,
+                            "TenLoai": "Áo thun",
+                            "NgayTao": "2025-07-20T00:00:00.000Z",
+                            "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                        },
+                        "AnhSanPhams": [
+                            {
+                                "MaAnh": 223,
+                                "MaSP": 6,
+                                "TenFile": "yckheq7lfyu2mkzjv0ix.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753109003/yckheq7lfyu2mkzjv0ix.jpg",
+                                "AnhChinh": true,
+                                "ThuTu": 1,
+                                "MoTa": "Ảnh chính"
+                            },
+                            {
+                                "MaAnh": 224,
+                                "MaSP": 6,
+                                "TenFile": "z2pk917huhiezfiukhpl.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753109012/z2pk917huhiezfiukhpl.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 225,
+                                "MaSP": 6,
+                                "TenFile": "xwo5udruwiqrz5liwjer.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753109010/xwo5udruwiqrz5liwjer.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 226,
+                                "MaSP": 6,
+                                "TenFile": "puuroamztisuayqtfrij.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753109010/puuroamztisuayqtfrij.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 227,
+                                "MaSP": 6,
+                                "TenFile": "uemzej0q55sarnqogjhx.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753109009/uemzej0q55sarnqogjhx.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 5,
+                                "MoTa": "Ảnh phụ"
+                            }
+                        ],
+                        "ChiTietSanPhams": [
+                            {
+                                "MaCTSP": 4,
+                                "MaKichThuoc": 2,
+                                "MaMau": 1,
+                                "SoLuongTon": 3297,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Đỏ",
+                                    "MaHex": "#fc3b3b"
+                                }
+                            }
+                        ],
+                        "CT_DotGiamGia": [
+                            {
+                                "PhanTramGiam": "10.00",
+                                "DotGiamGium": {
+                                    "NgayBatDau": "2025-09-06",
+                                    "NgayKetThuc": "2025-11-08",
+                                    "MoTa": "Xả kho cuối năm"
+                                }
+                            }
+                        ],
+                        "ThayDoiGia": [
+                            {
+                                "Gia": "200000.00",
+                                "NgayApDung": "2025-08-23"
+                            }
+                        ]
+                    }
+                ],
+                "consequent_product": {
+                    "MaSP": 2,
+                    "TenSP": "Áo thun nam",
+                    "MaLoaiSP": 14,
+                    "MaNCC": 1,
+                    "MoTa": "Áo thun nam chất liệu cotton",
+                    "TrangThai": true,
+                    "NgayTao": "2025-08-10T06:44:18.000Z",
+                    "NhaCungCap": {
+                        "MaNCC": 1,
+                        "TenNCC": "Công ty TNHH Lưu Thành",
+                        "DiaChi": "Dĩ An, BìnhDương",
+                        "SDT": "0998887767",
+                        "Email": "lvthanh@work.com"
+                    },
+                    "LoaiSP": {
+                        "MaLoaiSP": 14,
+                        "TenLoai": "Áo thun",
+                        "NgayTao": "2025-07-20T00:00:00.000Z",
+                        "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                    },
+                    "AnhSanPhams": [
+                        {
+                            "MaAnh": 96,
+                            "MaSP": 2,
+                            "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 97,
+                            "MaSP": 2,
+                            "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 98,
+                            "MaSP": 2,
+                            "TenFile": "vtz3dh1kzap70zya0w56.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802242/vtz3dh1kzap70zya0w56.jpg",
+                            "AnhChinh": true,
+                            "ThuTu": 1,
+                            "MoTa": "Ảnh chính"
+                        },
+                        {
+                            "MaAnh": 99,
+                            "MaSP": 2,
+                            "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 100,
+                            "MaSP": 2,
+                            "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 101,
+                            "MaSP": 2,
+                            "TenFile": "vmf4moya4e443ardexh1.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 5,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 102,
+                            "MaSP": 2,
+                            "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 103,
+                            "MaSP": 2,
+                            "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 104,
+                            "MaSP": 2,
+                            "TenFile": "vmf4moya4e443ardexh1.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 5,
+                            "MoTa": "Ảnh phụ"
+                        }
+                    ],
+                    "ChiTietSanPhams": [
+                        {
+                            "MaCTSP": 1,
+                            "MaKichThuoc": 2,
+                            "MaMau": 1,
+                            "SoLuongTon": 1188,
+                            "KichThuoc": {
+                                "TenKichThuoc": "L"
+                            },
+                            "Mau": {
+                                "TenMau": "Đỏ",
+                                "MaHex": "#fc3b3b"
+                            }
+                        },
+                        {
+                            "MaCTSP": 2,
+                            "MaKichThuoc": 3,
+                            "MaMau": 2,
+                            "SoLuongTon": 987,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xanh",
+                                "MaHex": "#7188fe"
+                            }
+                        },
+                        {
+                            "MaCTSP": 26,
+                            "MaKichThuoc": 4,
+                            "MaMau": 7,
+                            "SoLuongTon": 100,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XXL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xám ",
+                                "MaHex": "#d1d1d1"
+                            }
+                        },
+                        {
+                            "MaCTSP": 34,
+                            "MaKichThuoc": 4,
+                            "MaMau": 12,
+                            "SoLuongTon": 996,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XXL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xanh san hô",
+                                "MaHex": "#4ea0df"
+                            }
+                        }
+                    ],
+                    "CT_DotGiamGia": [],
+                    "ThayDoiGia": [
+                        {
+                            "Gia": "250000.00",
+                            "NgayApDung": "2025-08-01"
+                        }
+                    ]
+                },
+                "interpretation": "Khách hàng mua \"SWE HEAVEN BOXY TEE\" thì có 100.0% khả năng sẽ mua \"Áo thun nam\" (xuất hiện cùng nhau trong 54.0% đơn hàng, lift = 1.11)"
+            },
+            {
+                "rule_id": 187,
+                "antecedent_ids": [
+                    8
+                ],
+                "consequent_id": 2,
+                "itemset": [
+                    2,
+                    8
+                ],
+                "support": 0.52,
+                "confidence": 1,
+                "lift": 1.11111,
+                "antecedent_products": [
+                    {
+                        "MaSP": 8,
+                        "TenSP": "SWE SKEYE BOXY TEE",
+                        "MaLoaiSP": 14,
+                        "MaNCC": 1,
+                        "MoTa": "| SWE® | SKEYE BOXY TEE\nCOLOR: WHITE\nMATERIAL: COTTON 100%\nSIZE: S/M/L/XL\n\nSKEYE BOXY TEE - Chiếc áo thun mới nằm trong bộ sưu tập \"THE FUTURE IS BRIGHT\" được thiết kế ấn tượng. Điểm nhấn của áo nằm ở họa tiết con mắt mặt trước được in Trame sắc nét kết hợp thêu chữ tỉ mỉ. Mặt sau đơn giản với tag da mới của SWE. \n\nÁo thun SWE vẫn được sử dụng COTTON 100% thuần tự nhiên 2 chiều, định lượng 250gsm, thiết kế form BOXY nên chất lượng các bạn có thể hoàn toàn yên tâm với sản phẩm nhà SWE.\n\nForm áo được Fit size theo form và tiêu chuẩn tương đối của người Việt Nam, nếu bạn đang cân nhắc giữa hai size, nên chọn size lớn hơn.\nSize S: Chiều cao dưới 1m65, cân nặng dưới 60kg\nSize M: Chiều cao từ 1m65 - 1m75, cân nặng dưới 75kg\nSize L: Chiều cao từ 1m75 - 1m85, cân nặng dưới 85kg\nSize XL: Chiều cao trên 1m80, cân nặng trên 90kg\n\nCác bạn vui lòng tham khảo bảng size chart trước khi đặt hàng.\n* Lưu ý: Hạn chế sử dụng máy sấy nhiệt cao để giữ form áo.\nNOW AVAILABLE ONLINE & IN - STORE",
+                        "TrangThai": true,
+                        "NgayTao": "2025-08-15T06:44:18.000Z",
+                        "NhaCungCap": {
+                            "MaNCC": 1,
+                            "TenNCC": "Công ty TNHH Lưu Thành",
+                            "DiaChi": "Dĩ An, BìnhDương",
+                            "SDT": "0998887767",
+                            "Email": "lvthanh@work.com"
+                        },
+                        "LoaiSP": {
+                            "MaLoaiSP": 14,
+                            "TenLoai": "Áo thun",
+                            "NgayTao": "2025-07-20T00:00:00.000Z",
+                            "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                        },
+                        "AnhSanPhams": [
+                            {
+                                "MaAnh": 40,
+                                "MaSP": 8,
+                                "TenFile": "1_e0ffa5477a7f4989a7d3e16a895beac3_master.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753116563/imyoy4fecwuj3eogaeo4.jpg",
+                                "AnhChinh": true,
+                                "ThuTu": 1,
+                                "MoTa": "Ảnh chính"
+                            },
+                            {
+                                "MaAnh": 41,
+                                "MaSP": 8,
+                                "TenFile": "img_3520_21a69e5cf65e4cb6b9a660084c7d74be_master.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753116569/x8rt6ynlu3729tjyuiaa.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 42,
+                                "MaSP": 8,
+                                "TenFile": "img_3516_5026d9468d414387a64497b01550aba7_master.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753116571/b7h5ruw8ztuu5cmgvoer.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 43,
+                                "MaSP": 8,
+                                "TenFile": "img_3515_c68501c34cf14286ac1748d1928da99c_master.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753116572/bkqddqqxiqkefezvgfw6.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 44,
+                                "MaSP": 8,
+                                "TenFile": "2.1_c743c57bd26a425dbedf4194f9de6be4_master.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753116570/jn5yjobbyb73ew5hpems.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 5,
+                                "MoTa": "Ảnh phụ"
+                            }
+                        ],
+                        "ChiTietSanPhams": [
+                            {
+                                "MaCTSP": 9,
+                                "MaKichThuoc": 1,
+                                "MaMau": 5,
+                                "SoLuongTon": 1082,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "M"
+                                },
+                                "Mau": {
+                                    "TenMau": "Tím",
+                                    "MaHex": "#a93794"
+                                }
+                            }
+                        ],
+                        "CT_DotGiamGia": [],
+                        "ThayDoiGia": [
+                            {
+                                "Gia": "230000.00",
+                                "NgayApDung": "2025-07-21"
+                            }
+                        ]
+                    }
+                ],
+                "consequent_product": {
+                    "MaSP": 2,
+                    "TenSP": "Áo thun nam",
+                    "MaLoaiSP": 14,
+                    "MaNCC": 1,
+                    "MoTa": "Áo thun nam chất liệu cotton",
+                    "TrangThai": true,
+                    "NgayTao": "2025-08-10T06:44:18.000Z",
+                    "NhaCungCap": {
+                        "MaNCC": 1,
+                        "TenNCC": "Công ty TNHH Lưu Thành",
+                        "DiaChi": "Dĩ An, BìnhDương",
+                        "SDT": "0998887767",
+                        "Email": "lvthanh@work.com"
+                    },
+                    "LoaiSP": {
+                        "MaLoaiSP": 14,
+                        "TenLoai": "Áo thun",
+                        "NgayTao": "2025-07-20T00:00:00.000Z",
+                        "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                    },
+                    "AnhSanPhams": [
+                        {
+                            "MaAnh": 96,
+                            "MaSP": 2,
+                            "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 97,
+                            "MaSP": 2,
+                            "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 98,
+                            "MaSP": 2,
+                            "TenFile": "vtz3dh1kzap70zya0w56.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802242/vtz3dh1kzap70zya0w56.jpg",
+                            "AnhChinh": true,
+                            "ThuTu": 1,
+                            "MoTa": "Ảnh chính"
+                        },
+                        {
+                            "MaAnh": 99,
+                            "MaSP": 2,
+                            "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 100,
+                            "MaSP": 2,
+                            "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 101,
+                            "MaSP": 2,
+                            "TenFile": "vmf4moya4e443ardexh1.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 5,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 102,
+                            "MaSP": 2,
+                            "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 103,
+                            "MaSP": 2,
+                            "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 104,
+                            "MaSP": 2,
+                            "TenFile": "vmf4moya4e443ardexh1.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 5,
+                            "MoTa": "Ảnh phụ"
+                        }
+                    ],
+                    "ChiTietSanPhams": [
+                        {
+                            "MaCTSP": 1,
+                            "MaKichThuoc": 2,
+                            "MaMau": 1,
+                            "SoLuongTon": 1188,
+                            "KichThuoc": {
+                                "TenKichThuoc": "L"
+                            },
+                            "Mau": {
+                                "TenMau": "Đỏ",
+                                "MaHex": "#fc3b3b"
+                            }
+                        },
+                        {
+                            "MaCTSP": 2,
+                            "MaKichThuoc": 3,
+                            "MaMau": 2,
+                            "SoLuongTon": 987,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xanh",
+                                "MaHex": "#7188fe"
+                            }
+                        },
+                        {
+                            "MaCTSP": 26,
+                            "MaKichThuoc": 4,
+                            "MaMau": 7,
+                            "SoLuongTon": 100,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XXL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xám ",
+                                "MaHex": "#d1d1d1"
+                            }
+                        },
+                        {
+                            "MaCTSP": 34,
+                            "MaKichThuoc": 4,
+                            "MaMau": 12,
+                            "SoLuongTon": 996,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XXL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xanh san hô",
+                                "MaHex": "#4ea0df"
+                            }
+                        }
+                    ],
+                    "CT_DotGiamGia": [],
+                    "ThayDoiGia": [
+                        {
+                            "Gia": "250000.00",
+                            "NgayApDung": "2025-08-01"
+                        }
+                    ]
+                },
+                "interpretation": "Khách hàng mua \"SWE SKEYE BOXY TEE\" thì có 100.0% khả năng sẽ mua \"Áo thun nam\" (xuất hiện cùng nhau trong 52.0% đơn hàng, lift = 1.11)"
+            },
+            {
+                "rule_id": 190,
+                "antecedent_ids": [
+                    5
+                ],
+                "consequent_id": 2,
+                "itemset": [
+                    2,
+                    5
+                ],
+                "support": 0.66,
+                "confidence": 0.970588,
+                "lift": 1.07843,
+                "antecedent_products": [
+                    {
+                        "MaSP": 5,
+                        "TenSP": "SWE VISION L/S TEE - BROWN",
+                        "MaLoaiSP": 14,
+                        "MaNCC": 1,
+                        "MoTa": "| SWE® | VISION L/S TEE\nCOLOR: BROWN\nMATERIAL: 35% COTTON - 65% POLYESTER\nSIZE: S/M/L/XL\n\nVISION L/S TEE - Chiếc áo tay dài mới nằm trong bộ sưu tập \"THE FUTURE IS BRIGHT\" được thiết kế theo phong cách streetwear hiện đại kết hợp retro thể thao với điểm nhấn nằm ở những họa tiết ở mặt trước và 2 bên tay áo được in lụa sắc nét. Phần bo cổ đặc biệt được dệt riêng bằng sợi PE dày dặn kèm dây rút ở lai áo giúp điều chỉnh linh hoạt và duy trì form dáng đẹp.\n\nÁo L/S SWE được sử dụng vải cá sấu TC 35% COTTON - 65% POLYESTER, định lượng 230gsm, thiết kế form áo long sleeve nên chất lượng các bạn có thể hoàn toàn yên tâm với sản phẩm nhà SWE.\n\nForm áo được Fit size theo form và tiêu chuẩn tương đối của người Việt Nam, nếu bạn đang cân nhắc giữa hai size, nên chọn size lớn hơn.\nSize S: Chiều cao dưới 1m65, cân nặng dưới 65kg\nSize M: Chiều cao từ 1m65 - 1m75, cân nặng dưới 75kg\nSize L: Chiều cao từ 1m75 - 1m85, cân nặng dưới 90kg\nSize XL: Chiều cao từ 1m85 trở lên, cân nặng dưới 120kg\n\nCác bạn vui lòng tham khảo bảng size chart trước khi đặt hàng.\n* Lưu ý: Hạn chế sử dụng máy sấy nhiệt cao để giữ form áo.\nNOW AVAILABLE ONLINE & IN - STORE",
+                        "TrangThai": true,
+                        "NgayTao": "2025-08-12T06:44:18.000Z",
+                        "NhaCungCap": {
+                            "MaNCC": 1,
+                            "TenNCC": "Công ty TNHH Lưu Thành",
+                            "DiaChi": "Dĩ An, BìnhDương",
+                            "SDT": "0998887767",
+                            "Email": "lvthanh@work.com"
+                        },
+                        "LoaiSP": {
+                            "MaLoaiSP": 14,
+                            "TenLoai": "Áo thun",
+                            "NgayTao": "2025-07-20T00:00:00.000Z",
+                            "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                        },
+                        "AnhSanPhams": [
+                            {
+                                "MaAnh": 219,
+                                "MaSP": 5,
+                                "TenFile": "myf4or3khuxjzq900xpr.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108768/myf4or3khuxjzq900xpr.jpg",
+                                "AnhChinh": true,
+                                "ThuTu": 1,
+                                "MoTa": "Ảnh chính"
+                            },
+                            {
+                                "MaAnh": 220,
+                                "MaSP": 5,
+                                "TenFile": "umzjxk5mns6uwuircoig.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108768/umzjxk5mns6uwuircoig.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 221,
+                                "MaSP": 5,
+                                "TenFile": "eskfsq2ho1ebr2vpl8wr.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108767/eskfsq2ho1ebr2vpl8wr.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 222,
+                                "MaSP": 5,
+                                "TenFile": "iudoxoyhfiggwiwkoblc.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108767/iudoxoyhfiggwiwkoblc.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            }
+                        ],
+                        "ChiTietSanPhams": [
+                            {
+                                "MaCTSP": 3,
+                                "MaKichThuoc": 2,
+                                "MaMau": 1,
+                                "SoLuongTon": 4485,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Đỏ",
+                                    "MaHex": "#fc3b3b"
+                                }
+                            },
+                            {
+                                "MaCTSP": 17,
+                                "MaKichThuoc": 2,
+                                "MaMau": 5,
+                                "SoLuongTon": 1300,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Tím",
+                                    "MaHex": "#a93794"
+                                }
+                            }
+                        ],
+                        "CT_DotGiamGia": [
+                            {
+                                "PhanTramGiam": "10.00",
+                                "DotGiamGium": {
+                                    "NgayBatDau": "2025-09-06",
+                                    "NgayKetThuc": "2025-11-08",
+                                    "MoTa": "Xả kho cuối năm"
+                                }
+                            }
+                        ],
+                        "ThayDoiGia": [
+                            {
+                                "Gia": "500000.00",
+                                "NgayApDung": "2025-08-01"
+                            }
+                        ]
+                    }
+                ],
+                "consequent_product": {
+                    "MaSP": 2,
+                    "TenSP": "Áo thun nam",
+                    "MaLoaiSP": 14,
+                    "MaNCC": 1,
+                    "MoTa": "Áo thun nam chất liệu cotton",
+                    "TrangThai": true,
+                    "NgayTao": "2025-08-10T06:44:18.000Z",
+                    "NhaCungCap": {
+                        "MaNCC": 1,
+                        "TenNCC": "Công ty TNHH Lưu Thành",
+                        "DiaChi": "Dĩ An, BìnhDương",
+                        "SDT": "0998887767",
+                        "Email": "lvthanh@work.com"
+                    },
+                    "LoaiSP": {
+                        "MaLoaiSP": 14,
+                        "TenLoai": "Áo thun",
+                        "NgayTao": "2025-07-20T00:00:00.000Z",
+                        "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                    },
+                    "AnhSanPhams": [
+                        {
+                            "MaAnh": 96,
+                            "MaSP": 2,
+                            "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 97,
+                            "MaSP": 2,
+                            "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 98,
+                            "MaSP": 2,
+                            "TenFile": "vtz3dh1kzap70zya0w56.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802242/vtz3dh1kzap70zya0w56.jpg",
+                            "AnhChinh": true,
+                            "ThuTu": 1,
+                            "MoTa": "Ảnh chính"
+                        },
+                        {
+                            "MaAnh": 99,
+                            "MaSP": 2,
+                            "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 100,
+                            "MaSP": 2,
+                            "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 101,
+                            "MaSP": 2,
+                            "TenFile": "vmf4moya4e443ardexh1.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 5,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 102,
+                            "MaSP": 2,
+                            "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 103,
+                            "MaSP": 2,
+                            "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 104,
+                            "MaSP": 2,
+                            "TenFile": "vmf4moya4e443ardexh1.jpg",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                            "AnhChinh": false,
+                            "ThuTu": 5,
+                            "MoTa": "Ảnh phụ"
+                        }
+                    ],
+                    "ChiTietSanPhams": [
+                        {
+                            "MaCTSP": 1,
+                            "MaKichThuoc": 2,
+                            "MaMau": 1,
+                            "SoLuongTon": 1188,
+                            "KichThuoc": {
+                                "TenKichThuoc": "L"
+                            },
+                            "Mau": {
+                                "TenMau": "Đỏ",
+                                "MaHex": "#fc3b3b"
+                            }
+                        },
+                        {
+                            "MaCTSP": 2,
+                            "MaKichThuoc": 3,
+                            "MaMau": 2,
+                            "SoLuongTon": 987,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xanh",
+                                "MaHex": "#7188fe"
+                            }
+                        },
+                        {
+                            "MaCTSP": 26,
+                            "MaKichThuoc": 4,
+                            "MaMau": 7,
+                            "SoLuongTon": 100,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XXL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xám ",
+                                "MaHex": "#d1d1d1"
+                            }
+                        },
+                        {
+                            "MaCTSP": 34,
+                            "MaKichThuoc": 4,
+                            "MaMau": 12,
+                            "SoLuongTon": 996,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XXL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xanh san hô",
+                                "MaHex": "#4ea0df"
+                            }
+                        }
+                    ],
+                    "CT_DotGiamGia": [],
+                    "ThayDoiGia": [
+                        {
+                            "Gia": "250000.00",
+                            "NgayApDung": "2025-08-01"
+                        }
+                    ]
+                },
+                "interpretation": "Khách hàng mua \"SWE VISION L/S TEE - BROWN\" thì có 97.1% khả năng sẽ mua \"Áo thun nam\" (xuất hiện cùng nhau trong 66.0% đơn hàng, lift = 1.08)"
+            },
+            {
+                "rule_id": 191,
+                "antecedent_ids": [
+                    2,
+                    5
+                ],
+                "consequent_id": 7,
+                "itemset": [
+                    2,
+                    5,
+                    7
+                ],
+                "support": 0.64,
+                "confidence": 0.969697,
+                "lift": 1.51515,
+                "antecedent_products": [
+                    {
+                        "MaSP": 2,
+                        "TenSP": "Áo thun nam",
+                        "MaLoaiSP": 14,
+                        "MaNCC": 1,
+                        "MoTa": "Áo thun nam chất liệu cotton",
+                        "TrangThai": true,
+                        "NgayTao": "2025-08-10T06:44:18.000Z",
+                        "NhaCungCap": {
+                            "MaNCC": 1,
+                            "TenNCC": "Công ty TNHH Lưu Thành",
+                            "DiaChi": "Dĩ An, BìnhDương",
+                            "SDT": "0998887767",
+                            "Email": "lvthanh@work.com"
+                        },
+                        "LoaiSP": {
+                            "MaLoaiSP": 14,
+                            "TenLoai": "Áo thun",
+                            "NgayTao": "2025-07-20T00:00:00.000Z",
+                            "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                        },
+                        "AnhSanPhams": [
+                            {
+                                "MaAnh": 96,
+                                "MaSP": 2,
+                                "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 97,
+                                "MaSP": 2,
+                                "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 98,
+                                "MaSP": 2,
+                                "TenFile": "vtz3dh1kzap70zya0w56.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802242/vtz3dh1kzap70zya0w56.jpg",
+                                "AnhChinh": true,
+                                "ThuTu": 1,
+                                "MoTa": "Ảnh chính"
+                            },
+                            {
+                                "MaAnh": 99,
+                                "MaSP": 2,
+                                "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 100,
+                                "MaSP": 2,
+                                "TenFile": "vsslbwpwxp4wddxwhlj5.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802251/vsslbwpwxp4wddxwhlj5.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 101,
+                                "MaSP": 2,
+                                "TenFile": "vmf4moya4e443ardexh1.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 5,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 102,
+                                "MaSP": 2,
+                                "TenFile": "e86zhecmkc8pvqwn841h.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/e86zhecmkc8pvqwn841h.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 103,
+                                "MaSP": 2,
+                                "TenFile": "dzcsjfvz7a7usw4iucsb.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802253/dzcsjfvz7a7usw4iucsb.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 104,
+                                "MaSP": 2,
+                                "TenFile": "vmf4moya4e443ardexh1.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753802252/vmf4moya4e443ardexh1.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 5,
+                                "MoTa": "Ảnh phụ"
+                            }
+                        ],
+                        "ChiTietSanPhams": [
+                            {
+                                "MaCTSP": 1,
+                                "MaKichThuoc": 2,
+                                "MaMau": 1,
+                                "SoLuongTon": 1188,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Đỏ",
+                                    "MaHex": "#fc3b3b"
+                                }
+                            },
+                            {
+                                "MaCTSP": 2,
+                                "MaKichThuoc": 3,
+                                "MaMau": 2,
+                                "SoLuongTon": 987,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Xanh",
+                                    "MaHex": "#7188fe"
+                                }
+                            },
+                            {
+                                "MaCTSP": 26,
+                                "MaKichThuoc": 4,
+                                "MaMau": 7,
+                                "SoLuongTon": 100,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XXL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Xám ",
+                                    "MaHex": "#d1d1d1"
+                                }
+                            },
+                            {
+                                "MaCTSP": 34,
+                                "MaKichThuoc": 4,
+                                "MaMau": 12,
+                                "SoLuongTon": 996,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "XXL"
+                                },
+                                "Mau": {
+                                    "TenMau": "Xanh san hô",
+                                    "MaHex": "#4ea0df"
+                                }
+                            }
+                        ],
+                        "CT_DotGiamGia": [],
+                        "ThayDoiGia": [
+                            {
+                                "Gia": "250000.00",
+                                "NgayApDung": "2025-08-01"
+                            }
+                        ]
+                    },
+                    {
+                        "MaSP": 5,
+                        "TenSP": "SWE VISION L/S TEE - BROWN",
+                        "MaLoaiSP": 14,
+                        "MaNCC": 1,
+                        "MoTa": "| SWE® | VISION L/S TEE\nCOLOR: BROWN\nMATERIAL: 35% COTTON - 65% POLYESTER\nSIZE: S/M/L/XL\n\nVISION L/S TEE - Chiếc áo tay dài mới nằm trong bộ sưu tập \"THE FUTURE IS BRIGHT\" được thiết kế theo phong cách streetwear hiện đại kết hợp retro thể thao với điểm nhấn nằm ở những họa tiết ở mặt trước và 2 bên tay áo được in lụa sắc nét. Phần bo cổ đặc biệt được dệt riêng bằng sợi PE dày dặn kèm dây rút ở lai áo giúp điều chỉnh linh hoạt và duy trì form dáng đẹp.\n\nÁo L/S SWE được sử dụng vải cá sấu TC 35% COTTON - 65% POLYESTER, định lượng 230gsm, thiết kế form áo long sleeve nên chất lượng các bạn có thể hoàn toàn yên tâm với sản phẩm nhà SWE.\n\nForm áo được Fit size theo form và tiêu chuẩn tương đối của người Việt Nam, nếu bạn đang cân nhắc giữa hai size, nên chọn size lớn hơn.\nSize S: Chiều cao dưới 1m65, cân nặng dưới 65kg\nSize M: Chiều cao từ 1m65 - 1m75, cân nặng dưới 75kg\nSize L: Chiều cao từ 1m75 - 1m85, cân nặng dưới 90kg\nSize XL: Chiều cao từ 1m85 trở lên, cân nặng dưới 120kg\n\nCác bạn vui lòng tham khảo bảng size chart trước khi đặt hàng.\n* Lưu ý: Hạn chế sử dụng máy sấy nhiệt cao để giữ form áo.\nNOW AVAILABLE ONLINE & IN - STORE",
+                        "TrangThai": true,
+                        "NgayTao": "2025-08-12T06:44:18.000Z",
+                        "NhaCungCap": {
+                            "MaNCC": 1,
+                            "TenNCC": "Công ty TNHH Lưu Thành",
+                            "DiaChi": "Dĩ An, BìnhDương",
+                            "SDT": "0998887767",
+                            "Email": "lvthanh@work.com"
+                        },
+                        "LoaiSP": {
+                            "MaLoaiSP": 14,
+                            "TenLoai": "Áo thun",
+                            "NgayTao": "2025-07-20T00:00:00.000Z",
+                            "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                        },
+                        "AnhSanPhams": [
+                            {
+                                "MaAnh": 219,
+                                "MaSP": 5,
+                                "TenFile": "myf4or3khuxjzq900xpr.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108768/myf4or3khuxjzq900xpr.jpg",
+                                "AnhChinh": true,
+                                "ThuTu": 1,
+                                "MoTa": "Ảnh chính"
+                            },
+                            {
+                                "MaAnh": 220,
+                                "MaSP": 5,
+                                "TenFile": "umzjxk5mns6uwuircoig.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108768/umzjxk5mns6uwuircoig.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 221,
+                                "MaSP": 5,
+                                "TenFile": "eskfsq2ho1ebr2vpl8wr.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108767/eskfsq2ho1ebr2vpl8wr.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 222,
+                                "MaSP": 5,
+                                "TenFile": "iudoxoyhfiggwiwkoblc.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108767/iudoxoyhfiggwiwkoblc.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            }
+                        ],
+                        "ChiTietSanPhams": [
+                            {
+                                "MaCTSP": 3,
+                                "MaKichThuoc": 2,
+                                "MaMau": 1,
+                                "SoLuongTon": 4485,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Đỏ",
+                                    "MaHex": "#fc3b3b"
+                                }
+                            },
+                            {
+                                "MaCTSP": 17,
+                                "MaKichThuoc": 2,
+                                "MaMau": 5,
+                                "SoLuongTon": 1300,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Tím",
+                                    "MaHex": "#a93794"
+                                }
+                            }
+                        ],
+                        "CT_DotGiamGia": [
+                            {
+                                "PhanTramGiam": "10.00",
+                                "DotGiamGium": {
+                                    "NgayBatDau": "2025-09-06",
+                                    "NgayKetThuc": "2025-11-08",
+                                    "MoTa": "Xả kho cuối năm"
+                                }
+                            }
+                        ],
+                        "ThayDoiGia": [
+                            {
+                                "Gia": "500000.00",
+                                "NgayApDung": "2025-08-01"
+                            }
+                        ]
+                    }
+                ],
+                "consequent_product": {
+                    "MaSP": 7,
+                    "TenSP": "Serenity Tee 2025",
+                    "MaLoaiSP": 14,
+                    "MaNCC": 1,
+                    "MoTa": "❗Lưu ý: KHÔNG SỬ DỤNG MÁY SẤY CHO ÁO COTTON để tránh tình trạng co rút❗Lộn ngược áo khi giặt để giữ đồ bền hình in ❗\n\nNOCTURNAL ® Serenity Tee\n\n• Artwork được sử dụng kỹ thuật in lụa xịn sò kết hợp với thêu nổi 3D ấn tượng, bền bỉ không bong tróc.\n\n• Phối màu pastel siêu xinh, ngập vibe Hè.\n\n• Form boxy tôn dáng, trendy.\n\n• Chất liệu: Prime Cotton 100% – Chất vải siêu xịn, dày dặn & giảm nhăn đến 70%.\n\n• Style đơn giản nhưng cá tính, dễ dàng mix & match thả ga sáng tạo nhiều outfit\n\n• Size: M | L | XL | XXL",
+                    "TrangThai": true,
+                    "NgayTao": "2025-08-14T06:44:18.000Z",
+                    "NhaCungCap": {
+                        "MaNCC": 1,
+                        "TenNCC": "Công ty TNHH Lưu Thành",
+                        "DiaChi": "Dĩ An, BìnhDương",
+                        "SDT": "0998887767",
+                        "Email": "lvthanh@work.com"
+                    },
+                    "LoaiSP": {
+                        "MaLoaiSP": 14,
+                        "TenLoai": "Áo thun",
+                        "NgayTao": "2025-07-20T00:00:00.000Z",
+                        "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                    },
+                    "AnhSanPhams": [
+                        {
+                            "MaAnh": 208,
+                            "MaSP": 7,
+                            "TenFile": "zlmdxwzonbp5e6qenxfg.png",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zlmdxwzonbp5e6qenxfg.png",
+                            "AnhChinh": true,
+                            "ThuTu": 1,
+                            "MoTa": "Ảnh chính"
+                        },
+                        {
+                            "MaAnh": 209,
+                            "MaSP": 7,
+                            "TenFile": "shknhd7gsxlnx0qm4n4x.png",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/shknhd7gsxlnx0qm4n4x.png",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 210,
+                            "MaSP": 7,
+                            "TenFile": "ea0dymvarg1ltu6nb4c7.png",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/ea0dymvarg1ltu6nb4c7.png",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 211,
+                            "MaSP": 7,
+                            "TenFile": "zydedjcffsdy5mqbxbqu.png",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zydedjcffsdy5mqbxbqu.png",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 212,
+                            "MaSP": 7,
+                            "TenFile": "wrqqsb3zj9b6wvzbphhe.png",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/wrqqsb3zj9b6wvzbphhe.png",
+                            "AnhChinh": false,
+                            "ThuTu": 5,
+                            "MoTa": "Ảnh phụ"
+                        }
+                    ],
+                    "ChiTietSanPhams": [
+                        {
+                            "MaCTSP": 5,
+                            "MaKichThuoc": 1,
+                            "MaMau": 11,
+                            "SoLuongTon": 997,
+                            "KichThuoc": {
+                                "TenKichThuoc": "M"
+                            },
+                            "Mau": {
+                                "TenMau": "Cam ",
+                                "MaHex": "#f4af80"
+                            }
+                        },
+                        {
+                            "MaCTSP": 6,
+                            "MaKichThuoc": 2,
+                            "MaMau": 5,
+                            "SoLuongTon": 1118,
+                            "KichThuoc": {
+                                "TenKichThuoc": "L"
+                            },
+                            "Mau": {
+                                "TenMau": "Tím",
+                                "MaHex": "#a93794"
+                            }
+                        },
+                        {
+                            "MaCTSP": 7,
+                            "MaKichThuoc": 3,
+                            "MaMau": 11,
+                            "SoLuongTon": 1991,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XL"
+                            },
+                            "Mau": {
+                                "TenMau": "Cam ",
+                                "MaHex": "#f4af80"
+                            }
+                        },
+                        {
+                            "MaCTSP": 8,
+                            "MaKichThuoc": 4,
+                            "MaMau": 8,
+                            "SoLuongTon": 498,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XXL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xanh",
+                                "MaHex": "#1a128c"
+                            }
+                        }
+                    ],
+                    "CT_DotGiamGia": [],
+                    "ThayDoiGia": [
+                        {
+                            "Gia": "230000.00",
+                            "NgayApDung": "2025-07-20"
+                        }
+                    ]
+                },
+                "interpretation": "Khách hàng mua \"Áo thun nam\", \"SWE VISION L/S TEE - BROWN\" thì có 97.0% khả năng sẽ mua \"Serenity Tee 2025\" (xuất hiện cùng nhau trong 64.0% đơn hàng, lift = 1.52)"
+            },
+            {
+                "rule_id": 192,
+                "antecedent_ids": [
+                    5
+                ],
+                "consequent_id": 7,
+                "itemset": [
+                    5,
+                    7
+                ],
+                "support": 0.64,
+                "confidence": 0.941176,
+                "lift": 1.47059,
+                "antecedent_products": [
+                    {
+                        "MaSP": 5,
+                        "TenSP": "SWE VISION L/S TEE - BROWN",
+                        "MaLoaiSP": 14,
+                        "MaNCC": 1,
+                        "MoTa": "| SWE® | VISION L/S TEE\nCOLOR: BROWN\nMATERIAL: 35% COTTON - 65% POLYESTER\nSIZE: S/M/L/XL\n\nVISION L/S TEE - Chiếc áo tay dài mới nằm trong bộ sưu tập \"THE FUTURE IS BRIGHT\" được thiết kế theo phong cách streetwear hiện đại kết hợp retro thể thao với điểm nhấn nằm ở những họa tiết ở mặt trước và 2 bên tay áo được in lụa sắc nét. Phần bo cổ đặc biệt được dệt riêng bằng sợi PE dày dặn kèm dây rút ở lai áo giúp điều chỉnh linh hoạt và duy trì form dáng đẹp.\n\nÁo L/S SWE được sử dụng vải cá sấu TC 35% COTTON - 65% POLYESTER, định lượng 230gsm, thiết kế form áo long sleeve nên chất lượng các bạn có thể hoàn toàn yên tâm với sản phẩm nhà SWE.\n\nForm áo được Fit size theo form và tiêu chuẩn tương đối của người Việt Nam, nếu bạn đang cân nhắc giữa hai size, nên chọn size lớn hơn.\nSize S: Chiều cao dưới 1m65, cân nặng dưới 65kg\nSize M: Chiều cao từ 1m65 - 1m75, cân nặng dưới 75kg\nSize L: Chiều cao từ 1m75 - 1m85, cân nặng dưới 90kg\nSize XL: Chiều cao từ 1m85 trở lên, cân nặng dưới 120kg\n\nCác bạn vui lòng tham khảo bảng size chart trước khi đặt hàng.\n* Lưu ý: Hạn chế sử dụng máy sấy nhiệt cao để giữ form áo.\nNOW AVAILABLE ONLINE & IN - STORE",
+                        "TrangThai": true,
+                        "NgayTao": "2025-08-12T06:44:18.000Z",
+                        "NhaCungCap": {
+                            "MaNCC": 1,
+                            "TenNCC": "Công ty TNHH Lưu Thành",
+                            "DiaChi": "Dĩ An, BìnhDương",
+                            "SDT": "0998887767",
+                            "Email": "lvthanh@work.com"
+                        },
+                        "LoaiSP": {
+                            "MaLoaiSP": 14,
+                            "TenLoai": "Áo thun",
+                            "NgayTao": "2025-07-20T00:00:00.000Z",
+                            "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                        },
+                        "AnhSanPhams": [
+                            {
+                                "MaAnh": 219,
+                                "MaSP": 5,
+                                "TenFile": "myf4or3khuxjzq900xpr.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108768/myf4or3khuxjzq900xpr.jpg",
+                                "AnhChinh": true,
+                                "ThuTu": 1,
+                                "MoTa": "Ảnh chính"
+                            },
+                            {
+                                "MaAnh": 220,
+                                "MaSP": 5,
+                                "TenFile": "umzjxk5mns6uwuircoig.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108768/umzjxk5mns6uwuircoig.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 2,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 221,
+                                "MaSP": 5,
+                                "TenFile": "eskfsq2ho1ebr2vpl8wr.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108767/eskfsq2ho1ebr2vpl8wr.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 3,
+                                "MoTa": "Ảnh phụ"
+                            },
+                            {
+                                "MaAnh": 222,
+                                "MaSP": 5,
+                                "TenFile": "iudoxoyhfiggwiwkoblc.jpg",
+                                "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753108767/iudoxoyhfiggwiwkoblc.jpg",
+                                "AnhChinh": false,
+                                "ThuTu": 4,
+                                "MoTa": "Ảnh phụ"
+                            }
+                        ],
+                        "ChiTietSanPhams": [
+                            {
+                                "MaCTSP": 3,
+                                "MaKichThuoc": 2,
+                                "MaMau": 1,
+                                "SoLuongTon": 4485,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Đỏ",
+                                    "MaHex": "#fc3b3b"
+                                }
+                            },
+                            {
+                                "MaCTSP": 17,
+                                "MaKichThuoc": 2,
+                                "MaMau": 5,
+                                "SoLuongTon": 1300,
+                                "KichThuoc": {
+                                    "TenKichThuoc": "L"
+                                },
+                                "Mau": {
+                                    "TenMau": "Tím",
+                                    "MaHex": "#a93794"
+                                }
+                            }
+                        ],
+                        "CT_DotGiamGia": [
+                            {
+                                "PhanTramGiam": "10.00",
+                                "DotGiamGium": {
+                                    "NgayBatDau": "2025-09-06",
+                                    "NgayKetThuc": "2025-11-08",
+                                    "MoTa": "Xả kho cuối năm"
+                                }
+                            }
+                        ],
+                        "ThayDoiGia": [
+                            {
+                                "Gia": "500000.00",
+                                "NgayApDung": "2025-08-01"
+                            }
+                        ]
+                    }
+                ],
+                "consequent_product": {
+                    "MaSP": 7,
+                    "TenSP": "Serenity Tee 2025",
+                    "MaLoaiSP": 14,
+                    "MaNCC": 1,
+                    "MoTa": "❗Lưu ý: KHÔNG SỬ DỤNG MÁY SẤY CHO ÁO COTTON để tránh tình trạng co rút❗Lộn ngược áo khi giặt để giữ đồ bền hình in ❗\n\nNOCTURNAL ® Serenity Tee\n\n• Artwork được sử dụng kỹ thuật in lụa xịn sò kết hợp với thêu nổi 3D ấn tượng, bền bỉ không bong tróc.\n\n• Phối màu pastel siêu xinh, ngập vibe Hè.\n\n• Form boxy tôn dáng, trendy.\n\n• Chất liệu: Prime Cotton 100% – Chất vải siêu xịn, dày dặn & giảm nhăn đến 70%.\n\n• Style đơn giản nhưng cá tính, dễ dàng mix & match thả ga sáng tạo nhiều outfit\n\n• Size: M | L | XL | XXL",
+                    "TrangThai": true,
+                    "NgayTao": "2025-08-14T06:44:18.000Z",
+                    "NhaCungCap": {
+                        "MaNCC": 1,
+                        "TenNCC": "Công ty TNHH Lưu Thành",
+                        "DiaChi": "Dĩ An, BìnhDương",
+                        "SDT": "0998887767",
+                        "Email": "lvthanh@work.com"
+                    },
+                    "LoaiSP": {
+                        "MaLoaiSP": 14,
+                        "TenLoai": "Áo thun",
+                        "NgayTao": "2025-07-20T00:00:00.000Z",
+                        "HinhMinhHoa": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753803694/o6bjhdlj5lxv9ecfcjhe.jpg"
+                    },
+                    "AnhSanPhams": [
+                        {
+                            "MaAnh": 208,
+                            "MaSP": 7,
+                            "TenFile": "zlmdxwzonbp5e6qenxfg.png",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zlmdxwzonbp5e6qenxfg.png",
+                            "AnhChinh": true,
+                            "ThuTu": 1,
+                            "MoTa": "Ảnh chính"
+                        },
+                        {
+                            "MaAnh": 209,
+                            "MaSP": 7,
+                            "TenFile": "shknhd7gsxlnx0qm4n4x.png",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/shknhd7gsxlnx0qm4n4x.png",
+                            "AnhChinh": false,
+                            "ThuTu": 2,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 210,
+                            "MaSP": 7,
+                            "TenFile": "ea0dymvarg1ltu6nb4c7.png",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/ea0dymvarg1ltu6nb4c7.png",
+                            "AnhChinh": false,
+                            "ThuTu": 3,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 211,
+                            "MaSP": 7,
+                            "TenFile": "zydedjcffsdy5mqbxbqu.png",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/zydedjcffsdy5mqbxbqu.png",
+                            "AnhChinh": false,
+                            "ThuTu": 4,
+                            "MoTa": "Ảnh phụ"
+                        },
+                        {
+                            "MaAnh": 212,
+                            "MaSP": 7,
+                            "TenFile": "wrqqsb3zj9b6wvzbphhe.png",
+                            "DuongDan": "https://res.cloudinary.com/dusnwegeq/image/upload/v1753001175/wrqqsb3zj9b6wvzbphhe.png",
+                            "AnhChinh": false,
+                            "ThuTu": 5,
+                            "MoTa": "Ảnh phụ"
+                        }
+                    ],
+                    "ChiTietSanPhams": [
+                        {
+                            "MaCTSP": 5,
+                            "MaKichThuoc": 1,
+                            "MaMau": 11,
+                            "SoLuongTon": 997,
+                            "KichThuoc": {
+                                "TenKichThuoc": "M"
+                            },
+                            "Mau": {
+                                "TenMau": "Cam ",
+                                "MaHex": "#f4af80"
+                            }
+                        },
+                        {
+                            "MaCTSP": 6,
+                            "MaKichThuoc": 2,
+                            "MaMau": 5,
+                            "SoLuongTon": 1118,
+                            "KichThuoc": {
+                                "TenKichThuoc": "L"
+                            },
+                            "Mau": {
+                                "TenMau": "Tím",
+                                "MaHex": "#a93794"
+                            }
+                        },
+                        {
+                            "MaCTSP": 7,
+                            "MaKichThuoc": 3,
+                            "MaMau": 11,
+                            "SoLuongTon": 1991,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XL"
+                            },
+                            "Mau": {
+                                "TenMau": "Cam ",
+                                "MaHex": "#f4af80"
+                            }
+                        },
+                        {
+                            "MaCTSP": 8,
+                            "MaKichThuoc": 4,
+                            "MaMau": 8,
+                            "SoLuongTon": 498,
+                            "KichThuoc": {
+                                "TenKichThuoc": "XXL"
+                            },
+                            "Mau": {
+                                "TenMau": "Xanh",
+                                "MaHex": "#1a128c"
+                            }
+                        }
+                    ],
+                    "CT_DotGiamGia": [],
+                    "ThayDoiGia": [
+                        {
+                            "Gia": "230000.00",
+                            "NgayApDung": "2025-07-20"
+                        }
+                    ]
+                },
+                "interpretation": "Khách hàng mua \"SWE VISION L/S TEE - BROWN\" thì có 94.1% khả năng sẽ mua \"Serenity Tee 2025\" (xuất hiện cùng nhau trong 64.0% đơn hàng, lift = 1.47)"
+            }
+        ],
+        "total": 9,
+        "limit": 50,
+        "offset": 0
+    }
+}

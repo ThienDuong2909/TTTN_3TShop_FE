@@ -1942,3 +1942,25 @@ export const updateFPGrowthConfig = async (configData) => {
     return handleError(error);
   }
 };
+
+// Lấy danh sách rules FP-Growth
+export const getFPGrowthRules = async (params = {}) => {
+  try {
+    const response = await api.get("/fpgrowth/rules", { params });
+    return response.data;
+  } catch (error) {
+    console.error("Get FP-Growth rules error:", error);
+    return handleError(error);
+  }
+};
+
+// Làm mới cache FP-Growth
+export const refreshFPGrowthCache = async () => {
+  try {
+    const response = await api.get("/fpgrowth/refresh-cache");
+    return response.data;
+  } catch (error) {
+    console.error("Refresh FP-Growth cache error:", error);
+    return handleError(error);
+  }
+};
