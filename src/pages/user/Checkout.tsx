@@ -17,7 +17,18 @@ import { useApp } from "../../contexts/AppContext";
 import {
   createOrder as apiCreateOrder,
   getCurrentExchangeRate,
+  getProvinces,
+  getWards,
+  Province,
+  Ward,
 } from "../../services/api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +64,67 @@ export default function Checkout() {
   const phoneRef = useRef(phone);
   const deliveryTimeRef = useRef(deliveryTime);
   const [usdRate, setUsdRate] = useState(23000);
+
+  // Address split state
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [wards, setWards] = useState<Ward[]>([]);
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState<string>("");
+  const [selectedWardCode, setSelectedWardCode] = useState<string>("");
+  const [houseNumber, setHouseNumber] = useState<string>("");
+  const [filteredWards, setFilteredWards] = useState<Ward[]>([]);
+
+  // Fetch address data
+  useEffect(() => {
+    const fetchAddressData = async () => {
+      try {
+        const [provincesData, wardsData] = await Promise.all([
+          getProvinces(),
+          getWards(),
+        ]);
+        setProvinces(provincesData);
+        setWards(wardsData);
+      } catch (error) {
+        console.error("Error fetching address data:", error);
+      }
+    };
+    fetchAddressData();
+  }, []);
+
+  // Filter wards when province changes
+  useEffect(() => {
+    if (selectedProvinceCode) {
+      const filtered = wards.filter(
+        (w) => w.province_code === Number(selectedProvinceCode)
+      );
+      setFilteredWards(filtered);
+      // Reset ward if not in the new list (optional, but good UX)
+      // If we change province, the previous ward code is likely invalid for this province
+      // So we should probably reset it unless we want to keep it if it happens to match (unlikely)
+      // But to be safe and avoid confusion, let's reset it if the province changes
+      // However, we need to be careful not to reset it on initial load if we were populating it (but we aren't populating from existing address yet)
+      setSelectedWardCode("");
+    } else {
+      setFilteredWards([]);
+      setSelectedWardCode("");
+    }
+  }, [selectedProvinceCode, wards]);
+
+  // Update full address string
+  useEffect(() => {
+    if (selectedProvinceCode && selectedWardCode && houseNumber) {
+      const province = provinces.find(
+        (p) => p.code === Number(selectedProvinceCode)
+      );
+      const ward = wards.find((w) => w.code === Number(selectedWardCode));
+
+      if (province && ward) {
+        const fullAddress = `${houseNumber}, ${ward.name}, ${province.name}`;
+        setAddress(fullAddress);
+        addressRef.current = fullAddress;
+      }
+    }
+  }, [selectedProvinceCode, selectedWardCode, houseNumber, provinces, wards]);
+
 
   const subtotal = getCartTotal();
   const shippingFee = subtotal >= 500000 ? 0 : 30000;
@@ -228,14 +300,72 @@ export default function Checkout() {
               </div>
               <div>
                 <label className="text-sm font-medium">Địa chỉ giao hàng</label>
-                <Input
-                  value={address}
-                  onChange={(e) => {
-                    setAddress(e.target.value);
-                    addressRef.current = e.target.value;
-                  }}
-                  className={errors.address ? "border-red-500" : ""}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 mt-2">
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-500">Tỉnh / Thành phố</label>
+                    <Select
+                      value={selectedProvinceCode}
+                      onValueChange={setSelectedProvinceCode}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn Tỉnh / Thành phố" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {provinces.map((province) => (
+                          <SelectItem
+                            key={province.code}
+                            value={province.code.toString()}
+                          >
+                            {province.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-500">Phường / Xã</label>
+                    <Select
+                      value={selectedWardCode}
+                      onValueChange={setSelectedWardCode}
+                      disabled={!selectedProvinceCode}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn Phường / Xã" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredWards.map((ward) => (
+                          <SelectItem
+                            key={ward.code}
+                            value={ward.code.toString()}
+                          >
+                            {ward.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs text-gray-500">Số nhà, tên đường</label>
+                  <Input
+                    value={houseNumber}
+                    onChange={(e) => setHouseNumber(e.target.value)}
+                    placeholder="Số nhà, tên đường..."
+                    className={errors.address ? "border-red-500" : ""}
+                  />
+                </div>
+
+                {/* Hidden input to store the full address for form submission if needed, 
+                    but we are updating 'address' state directly so it might not be strictly necessary 
+                    to show the full address, but maybe good for verification */}
+                {address && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Địa chỉ đầy đủ: {address}
+                  </p>
+                )}
+
                 {errors.address && (
                   <p className="text-sm text-red-500 mt-1">{errors.address}</p>
                 )}
@@ -271,7 +401,7 @@ export default function Checkout() {
                   <div className="text-xs text-gray-500 mt-1">
                     {deliveryTime
                       ? "Đã chọn: " +
-                        dayjs(deliveryTime).format("HH:mm DD-MM-YYYY")
+                      dayjs(deliveryTime).format("HH:mm DD-MM-YYYY")
                       : ""}
                   </div>
                 </div>

@@ -798,6 +798,32 @@ export const updateColor = async (colorId, colorData) => {
   }
 };
 
+// ===================
+// ADDRESS API
+// ===================
+
+export const getProvinces = async () => {
+  try {
+    const response = await fetch("https://provinces.open-api.vn/api/v2/p/");
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching provinces:", error);
+    return [];
+  }
+};
+
+export const getWards = async () => {
+  try {
+    const response = await fetch("https://provinces.open-api.vn/api/v2/w/");
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching wards:", error);
+    return [];
+  }
+};
+
 // Xóa màu
 export const deleteColor = async (colorId) => {
   try {
