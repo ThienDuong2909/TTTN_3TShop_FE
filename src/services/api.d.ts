@@ -9,7 +9,7 @@ export function getPurchaseOrderReceivedStatus(id: string): Promise<any>;
 
 // Supplier functions
 export function getSuppliers(page?: number): Promise<any>;
-export function getAllSuppliers(): Promise<{data: any[]}>;
+export function getAllSuppliers(): Promise<{ data: any[] }>;
 export function createSupplier(data: any): Promise<any>;
 export function updateSupplier(supplierId: string | number, data: any): Promise<any>;
 export function deleteSupplier(supplierId: string | number): Promise<any>;
@@ -19,7 +19,7 @@ export function getPurchaseOrderReceivedStatus(id: string): Promise<any>;
 
 // Supplier functions
 export function getSuppliers(page?: number): Promise<any>;
-export function getAllSuppliers(): Promise<{data: any[]}>;
+export function getAllSuppliers(): Promise<{ data: any[] }>;
 export function createSupplier(data: any): Promise<any>;
 export function updateSupplier(supplierId: string | number, data: any): Promise<any>;
 export function deleteSupplier(supplierId: string | number): Promise<any>;
@@ -61,7 +61,7 @@ export function createColor(colorData: any): Promise<any>;
 export function updateColor(colorId: string | number, colorData: any): Promise<any>;
 export function deleteColor(colorId: string | number): Promise<any>;
 export function getCategories(): Promise<any[]>;
-export function getAllSuppliers(): Promise<{data: any[]}>;
+export function getAllSuppliers(): Promise<{ data: any[] }>;
 
 // Product functions  
 export function createProduct(productData: any): Promise<{
@@ -111,7 +111,7 @@ export function formatPrice(amount: number): string;
 export function formatDate(date: string | Date): string;
 export function formatDateForApi(date: string | Date): string;
 export function showError(message: string): void;
-export function showSuccess(message: string): void; 
+export function showSuccess(message: string): void;
 
 // Product functions
 export function getAllProducts(): Promise<any[]>;
@@ -126,8 +126,8 @@ export function addToCartApi(data: {
   tenKichThuoc: string;
 }): Promise<any>;
 
-export function getCartItemsApi (maKH: string | number): Promise<any>;
-export function removeFromCartApi (maKH: number, maSP :number, maHex : string, tenKichThuoc: string, donGia: number): Promise<any>;
+export function getCartItemsApi(maKH: string | number): Promise<any>;
+export function removeFromCartApi(maKH: number, maSP: number, maHex: string, tenKichThuoc: string, donGia: number): Promise<any>;
 export interface OrderProduct {
   maSP: number;
   soLuong: number;
@@ -172,7 +172,7 @@ export function getDiscountProducts(): Promise<any[]>;
 export function getSearchProducts(q: string): Promise<any[]>;
 
 export function getCustomerOrders(maKH: number): Promise<any[]>;
-export function getOrderDetail(payload: { maKH: number, maDDH: number|string }): Promise<any>;
+export function getOrderDetail(payload: { maKH: number, maDDH: number | string }): Promise<any>;
 
 // Review functions
 export function submitReview(reviewData: { MaCTDonDatHang: number; MoTa: string; SoSao: number }): Promise<any>;
@@ -280,10 +280,10 @@ export function assignPermissionsToEmployee(nhanVienId: number, permissionIds: n
 
 
 // Return Request functions
-export function createReturnSlip(returnData: { 
-  maDDH: number; 
-  danhSachSanPham: Array<{ maCTDDH: number; soLuongTra: number }>; 
-  lyDo: string 
+export function createReturnSlip(returnData: {
+  maDDH: number;
+  danhSachSanPham: Array<{ maCTDDH: number; soLuongTra: number }>;
+  lyDo: string
 }): Promise<any>;
 export function getReturnRequests(): Promise<any>;
 export function getReturnRequestsByStatus(status: number): Promise<any>;
@@ -1074,3 +1074,22 @@ export interface FPGrowthRulesResponse {
 }
 
 export declare function getFPGrowthRules(params?: { limit?: number; offset?: number }): Promise<FPGrowthRulesResponse>;
+export interface Province {
+  code: number;
+  name: string;
+  division_type: string;
+  codename: string;
+  phone_code: number;
+  wards: any[];
+}
+
+export interface Ward {
+  code: number;
+  name: string;
+  division_type: string;
+  codename: string;
+  province_code: number;
+}
+
+export function getProvinces(): Promise<Province[]>;
+export function getWards(): Promise<Ward[]>;
