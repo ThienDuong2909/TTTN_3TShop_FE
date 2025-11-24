@@ -9,9 +9,15 @@ import api from "./fetch";
 const handleError = (error) => {
   const message =
     error.response?.data?.message || error.message || "Có lỗi xảy ra";
+  const errorDetail = error.response?.data?.error;
   console.error("API Error:", message);
   // Return error object with success: false to be consistent
-  return { success: false, error: true, message };
+  // Return specific error message in 'error' field if available, otherwise use generic message or true
+  return {
+    success: false,
+    error: errorDetail || message || true,
+    message,
+  };
 };
 
 // Xử lý API response chung - kiểm tra lỗi 401 cho tất cả API calls
@@ -1082,13 +1088,23 @@ export const login = async (credentials) => {
   }
 };
 
+// Đăng nhập bằng Google
+export const googleLogin = async (idToken) => {
+  try {
+    const response = await api.post("/auth/google-login", { idToken });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
 // Đăng ký
 export const register = async (userData) => {
   try {
     const response = await api.post("/auth/register", userData);
     return response.data;
   } catch (error) {
-    handleError(error);
+    return handleError(error);
   }
 };
 

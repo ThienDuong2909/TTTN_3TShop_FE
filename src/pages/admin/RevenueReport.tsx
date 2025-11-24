@@ -119,16 +119,27 @@ export default function RevenueReport() {
     setLoading(true);
     try {
       // Validate date inputs
-      if (!startDate || !endDate) {
+      if (!startDate) {
         toast({
           title: "Lỗi",
-          description: "Vui lòng chọn ngày bắt đầu và ngày kết thúc",
+          description: "Vui lòng chọn ngày bắt đầu",
           variant: "destructive",
         });
         return;
       }
 
-      if (new Date(startDate) > new Date(endDate)) {
+      let currentEndDate = endDate;
+      if (!currentEndDate) {
+        // Nếu không chọn ngày kết thúc, mặc định là ngày hiện tại (theo giờ địa phương)
+        currentEndDate = new Date(
+          new Date().getTime() - new Date().getTimezoneOffset() * 60000
+        )
+          .toISOString()
+          .split("T")[0];
+        setEndDate(currentEndDate);
+      }
+
+      if (new Date(startDate) > new Date(currentEndDate)) {
         toast({
           title: "Lỗi",
           description: "Ngày bắt đầu không thể lớn hơn ngày kết thúc",
@@ -138,7 +149,7 @@ export default function RevenueReport() {
       }
 
       // Call API
-      const result = await getRevenueReport(startDate, endDate);
+      const result = await getRevenueReport(startDate, currentEndDate);
       console.log("Revenue Report Result:", result);
 
       // Check if API returned error
@@ -161,7 +172,11 @@ export default function RevenueReport() {
         setReportData([]);
         setProcessedData([]);
         setTotalRevenue(0);
-        setLastGeneratedParams({ reportType, startDate, endDate });
+        setLastGeneratedParams({
+          reportType,
+          startDate,
+          endDate: currentEndDate,
+        });
         return;
       }
 
@@ -181,10 +196,14 @@ export default function RevenueReport() {
 
       // Process and set data
       setReportData(result);
-      processReportData(result);
+      processReportData(result, startDate, currentEndDate);
 
       // Save the parameters used to generate this data
-      setLastGeneratedParams({ reportType, startDate, endDate });
+      setLastGeneratedParams({
+        reportType,
+        startDate,
+        endDate: currentEndDate,
+      });
 
       toast({
         title: "Thành công",
@@ -349,9 +368,17 @@ export default function RevenueReport() {
       });
     }
   };
-  const processReportData = (data: RevenueReportData[]) => {
+  const processReportData = (
+    data: RevenueReportData[],
+    currentStartDate = startDate,
+    currentEndDate = endDate
+  ) => {
     // Tạo tất cả các periods trong khoảng thời gian
-    const allPeriods = generateAllPeriods(startDate, endDate, reportType);
+    const allPeriods = generateAllPeriods(
+      currentStartDate,
+      currentEndDate,
+      reportType
+    );
 
     // Merge với dữ liệu từ API
     const mergedData = mergeDataWithPeriods(allPeriods, data, reportType);
@@ -389,14 +416,14 @@ export default function RevenueReport() {
       .getDate()
       .toString()
       .padStart(2, "0")}/${(startDateObj.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}/${startDateObj.getFullYear()}`;
+        .toString()
+        .padStart(2, "0")}/${startDateObj.getFullYear()}`;
     const endFormatted = `${endDateObj
       .getDate()
       .toString()
       .padStart(2, "0")}/${(endDateObj.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}/${endDateObj.getFullYear()}`;
+        .toString()
+        .padStart(2, "0")}/${endDateObj.getFullYear()}`;
     return `${startFormatted} - ${endFormatted}`;
   };
 
@@ -550,10 +577,10 @@ export default function RevenueReport() {
         `${String.fromCharCode(65 + startCol)}${rowNum}`
       ).value = info[1]; // Column C
       worksheet.getCell(`${String.fromCharCode(65 + startCol)}${rowNum}`).font =
-        {
-          size: 14, // Tăng từ 11 lên 22
-          color: { argb: "FF374151" },
-        };
+      {
+        size: 14, // Tăng từ 11 lên 22
+        color: { argb: "FF374151" },
+      };
       worksheet.getRow(rowNum).height = 35; // Thêm height
     });
 
@@ -653,7 +680,7 @@ export default function RevenueReport() {
             item.doanhThu === 0 ? { argb: "FF9CA3AF" } : { argb: "FF000000" },
         };
         cell.alignment = {
-          horizontal: "center",
+          horizontal: col >= startCol + 3 ? "right" : "center",
           vertical: "middle",
         };
         cell.border = {
@@ -674,32 +701,50 @@ export default function RevenueReport() {
     // Total row - cập nhật layout
     const totalRow = worksheet.addRow([
       "", // Column A (empty)
-      "Tổng doanh thu:", // Column B (Label chiếm B:D)
-      "", // Column C (part of label)
-      "", // Column D (part of label)
-      totalRevenue, // Column E (Amount chiếm E:G)
-      "", // Column F (part of amount)
-      "", // Column G (part of amount)
+      "", // Column B (will be rich text)
+      "",
+      "",
+      "",
+      "",
+      "",
     ]);
 
-    // Merge cells cho total row
+    // Merge cells cho total row (B:G)
     const totalRowNum = totalRow.number;
     worksheet.mergeCells(
       `${String.fromCharCode(
         65 + startCol - 1
-      )}${totalRowNum}:${String.fromCharCode(65 + startCol + 1)}${totalRowNum}`
-    ); // B:D cho label
-    worksheet.mergeCells(
-      `${String.fromCharCode(
-        65 + startCol + 2
       )}${totalRowNum}:${String.fromCharCode(65 + startCol + 4)}${totalRowNum}`
-    ); // E:G cho amount
+    ); // B:G
+
+    // Set rich text value
+    const totalCell = totalRow.getCell(startCol);
+    totalCell.value = {
+      richText: [
+        {
+          text: "Tổng doanh thu: ",
+          font: {
+            bold: true,
+            size: 14,
+            color: { argb: "FF374151" },
+          },
+        },
+        {
+          text: `${formatPrice(totalRevenue)} VNĐ`,
+          font: {
+            bold: true,
+            size: 14,
+            color: { argb: "FFDC2626" },
+          },
+        },
+      ],
+    };
 
     // Style total row
     for (let col = startCol; col <= startCol + 5; col++) {
       const cell = totalRow.getCell(col);
       cell.alignment = {
-        horizontal: "center",
+        horizontal: "right",
         vertical: "middle",
       };
       cell.border = {
@@ -708,27 +753,6 @@ export default function RevenueReport() {
         bottom: { style: "thin", color: { argb: "FF000000" } },
         right: { style: "thin", color: { argb: "FF000000" } },
       };
-
-      if (col >= startCol - 1 && col <= startCol + 1) {
-        // "Tổng doanh thu:" label (Columns B:D)
-        cell.font = {
-          bold: true,
-          size: 14,
-          color: { argb: "FF374151" },
-        };
-        cell.alignment = {
-          horizontal: "right",
-          vertical: "middle",
-        };
-      } else if (col >= startCol + 2) {
-        // Amount in red (Columns E:G)
-        cell.font = {
-          bold: true,
-          size: 14,
-          color: { argb: "FFDC2626" },
-        };
-        cell.numFmt = "#,##0";
-      }
     }
     totalRow.height = 50;
 
@@ -1021,15 +1045,14 @@ export default function RevenueReport() {
           </div>
           <div class="info-item">
             <span class="info-label">Chức vụ:</span>
-            <span class="info-value">${
-              state.user?.role === "Admin" ? "Quản trị viên" : "Nhân viên"
-            }</span>
+            <span class="info-value">${state.user?.role === "Admin" ? "Quản trị viên" : "Nhân viên"
+      }</span>
           </div>
           <div class="info-item">
             <span class="info-label">Thời gian lập báo cáo:</span>
             <span class="info-value">${new Date().toLocaleDateString(
-              "vi-VN"
-            )}</span>
+        "vi-VN"
+      )}</span>
           </div>
         </div>
 
@@ -1042,27 +1065,27 @@ export default function RevenueReport() {
           </thead>
           <tbody>
             ${processedData
-              .map(
-                (item) => `
+        .map(
+          (item) => `
               <tr style="${item.doanhThu === 0 ? "color: #9CA3AF;" : ""}">
                 <td>${formatPeriodWithYear(
-                  item.period,
-                  item.nam,
-                  reportType
-                )}</td>
-                <td>${formatPrice(item.doanhThu)}</td>
+            item.period,
+            item.nam,
+            reportType
+          )}</td>
+                <td style="text-align: right;">${formatPrice(item.doanhThu)}</td>
               </tr>
             `
-              )
-              .join("")}
+        )
+        .join("")}
           </tbody>
         </table>
 
         <div class="total-section">
           <span class="total-text">
             Tổng doanh thu: <span class="total-amount">${formatPrice(
-              totalRevenue
-            )} VNĐ</span>
+          totalRevenue
+        )} VNĐ</span>
           </span>
         </div>
 
@@ -1183,12 +1206,18 @@ export default function RevenueReport() {
                     }
                   />
                 </div>
-                <div className="w-40">
-                  <Label htmlFor="endDate">Ngày Kết Thúc</Label>
+                <div className="w-auto">
+                  <Label htmlFor="endDate" className="whitespace-nowrap">
+                    Ngày Kết Thúc{" "}
+                    <span className="text-xs text-muted-foreground font-normal">
+                      (Mặc định hôm nay)
+                    </span>
+                  </Label>
                   <Input
                     id="endDate"
                     type="date"
                     value={endDate}
+                    max={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0]}
                     onChange={(e) =>
                       handleParamChange(undefined, undefined, e.target.value)
                     }
@@ -1457,7 +1486,7 @@ export default function RevenueReport() {
                               reportType
                             )}
                           </TableCell>
-                          <TableCell className="text-center border">
+                          <TableCell className="text-right border">
                             {item.doanhThu === 0 ? (
                               <span className="text-gray-400">0</span>
                             ) : (

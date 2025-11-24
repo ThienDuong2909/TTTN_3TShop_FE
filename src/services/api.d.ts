@@ -181,6 +181,7 @@ export function getProductComments(productId: number): Promise<any>;
 
 // Auth functions
 export function login(credentials: { email: string; password: string }): Promise<any>;
+export function googleLogin(idToken: string): Promise<any>;
 export function register(userData: { Email: string; Password: string; TenKH: string }): Promise<any>;
 
 export function getRevenueReport(startDate: string, endDate: string): Promise<any>;
