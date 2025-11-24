@@ -20,16 +20,16 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { DialogHeader } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { useApp } from "@/contexts/AppContext";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
+  DialogHeader,
   DialogTitle,
-} from "@radix-ui/react-dialog";
-import { Label } from "@radix-ui/react-dropdown-menu";
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useApp } from "@/contexts/AppContext";
 
 // Skeleton Component
 const Skeleton = ({ className = "", ...props }) => (
@@ -269,11 +269,10 @@ export default function AccountSettings() {
       <Card className="w-full">
         <CardHeader>
           <CardTitle
-            className={`flex items-center gap-2 transition-all duration-500 ${
-              progressiveStates.header
+            className={`flex items-center gap-2 transition-all duration-500 ${progressiveStates.header
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-4"
-            }`}
+              }`}
           >
             <Settings className="h-5 w-5" />
             Cài đặt tài khoản
@@ -282,11 +281,10 @@ export default function AccountSettings() {
         <CardContent className="space-y-6">
           {/* Account Info Section */}
           <div
-            className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-500 ${
-              progressiveStates.accountInfo
+            className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-500 ${progressiveStates.accountInfo
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-4"
-            }`}
+              }`}
           >
             {/* Email */}
             <div className="space-y-2">
@@ -493,11 +491,10 @@ export default function AccountSettings() {
 
           {/* Security Notice */}
           <div
-            className={`bg-yellow-50 border border-yellow-200 rounded-lg p-4 transition-all duration-500 ${
-              progressiveStates.security
+            className={`bg-yellow-50 border border-yellow-200 rounded-lg p-4 transition-all duration-500 ${progressiveStates.security
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-4"
-            }`}
+              }`}
           >
             <div className="flex items-start gap-3">
               <Shield className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />

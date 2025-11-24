@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Google Login</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body>
+    <h1>Test Google Login Isolation</h1>
+    <p>Open Console (F12) to see logs.</p>
+    <div id="g_id_onload" data-client_id="329726609553-i0c8to3nnsfs8qobja9tul9l0oo334je.apps.googleusercontent.com"
+        data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with"
+        data-shape="rectangular" data-logo_alignment="left">
+    </div>
+
+    <script>
+        console.log("Testing Google Login with:");
+        console.log("Origin:", window.location.origin);
+        console.log("Client ID:", "329726609553-i0c8to3nnsfs8qobja9tul9l0oo334je.apps.googleusercontent.com");
+    </script>
+</body>
+
+</html>

@@ -82,6 +82,7 @@ export default function Register() {
         Password: formData.Password,
         TenKH: formData.TenKH,
       });
+      console.log("API REGISTER RESPONSE", res);
       if (res?.success) {
         toast.success("Đăng ký thành công! Hãy đăng nhập.");
         navigate("/login");
