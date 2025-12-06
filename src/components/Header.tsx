@@ -47,15 +47,13 @@ function Header() {
         <Link
           key={item.name}
           to={item.href}
-          className={`${
-            item.current
+          className={`${item.current
               ? "text-brand-600 border-b-2 border-brand-600 dark:text-brand-400 dark:border-brand-400"
               : "text-gray-600 hover:text-brand-600 dark:text-gray-300 dark:hover:text-brand-400"
-          } ${
-            mobile
+            } ${mobile
               ? "block px-3 py-2 text-base font-medium border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800"
               : "inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors"
-          }`}
+            }`}
         >
           {item.name}
         </Link>
@@ -64,7 +62,7 @@ function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 text-foreground">
       {/* Top bar */}
       {/* <div className="border-b bg-brand-50 dark:bg-brand-900/20">
         <div className="container mx-auto px-4 py-2">
@@ -114,7 +112,7 @@ function Header() {
           {/* Search Bar */}
           <div className="flex-1 max-w-lg mx-8 hidden md:block">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Tìm kiếm sản phẩm..."
@@ -202,21 +200,21 @@ function Header() {
                   {(state.user?.role === "Admin" ||
                     state.user?.role === "NhanVienCuaHang" ||
                     state.user?.role === "NhanVienGiaoHang") && (
-                    <>
-                      <DropdownMenuItem>
-                        <Link
-                          to={
-                            state.user?.role === "NhanVienGiaoHang"
-                              ? "/admin/orders"
-                              : "/admin"
-                          }
-                        >
-                          Bảng điều khiển
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
+                      <>
+                        <DropdownMenuItem>
+                          <Link
+                            to={
+                              state.user?.role === "NhanVienGiaoHang"
+                                ? "/admin/orders"
+                                : "/admin"
+                            }
+                          >
+                            Bảng điều khiển
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
 
                   {state.user?.role === "KhachHang" && (
                     <DropdownMenuItem>
@@ -297,7 +295,7 @@ function Header() {
         {isSearchOpen && (
           <div className="md:hidden py-4 border-t">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Tìm kiếm sản phẩm..."

@@ -1084,13 +1084,24 @@ export interface Province {
   wards: any[];
 }
 
+export interface District {
+  code: number;
+  name: string;
+  division_type: string;
+  codename: string;
+  province_code: number;
+  wards: any[];
+}
+
 export interface Ward {
   code: number;
   name: string;
   division_type: string;
   codename: string;
   province_code: number;
+  district_code: number;
 }
 
 export function getProvinces(): Promise<Province[]>;
+export function getDistricts(): Promise<District[]>;
 export function getWards(): Promise<Ward[]>;

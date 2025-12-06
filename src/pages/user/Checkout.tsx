@@ -18,8 +18,10 @@ import {
   createOrder as apiCreateOrder,
   getCurrentExchangeRate,
   getProvinces,
+  getDistricts,
   getWards,
   Province,
+  District,
   Ward,
 } from "../../services/api";
 import {
@@ -67,22 +69,34 @@ export default function Checkout() {
 
   // Address split state
   const [provinces, setProvinces] = useState<Province[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
   const [selectedProvinceCode, setSelectedProvinceCode] = useState<string>("");
+  const [selectedDistrictCode, setSelectedDistrictCode] = useState<string>("");
   const [selectedWardCode, setSelectedWardCode] = useState<string>("");
   const [houseNumber, setHouseNumber] = useState<string>("");
+  const [filteredDistricts, setFilteredDistricts] = useState<District[]>([]);
   const [filteredWards, setFilteredWards] = useState<Ward[]>([]);
 
   // Fetch address data
   useEffect(() => {
     const fetchAddressData = async () => {
       try {
-        const [provincesData, wardsData] = await Promise.all([
+        const [provincesData, districtsData, wardsData] = await Promise.all([
           getProvinces(),
+          getDistricts(),
           getWards(),
         ]);
-        setProvinces(provincesData);
+        // Filter only Ho Chi Minh City (Code 79)
+        const hcmCity = provincesData.filter((p) => p.code === 79);
+        setProvinces(hcmCity);
+        setDistricts(districtsData);
         setWards(wardsData);
+
+        // Auto select HCM City if available
+        if (hcmCity.length > 0) {
+          setSelectedProvinceCode(hcmCity[0].code.toString());
+        }
       } catch (error) {
         console.error("Error fetching address data:", error);
       }
@@ -90,40 +104,54 @@ export default function Checkout() {
     fetchAddressData();
   }, []);
 
-  // Filter wards when province changes
+  // Filter districts when province changes
   useEffect(() => {
     if (selectedProvinceCode) {
+      const filtered = districts.filter(
+        (d) => d.province_code === Number(selectedProvinceCode)
+      );
+      setFilteredDistricts(filtered);
+      setSelectedDistrictCode("");
+      setSelectedWardCode("");
+    } else {
+      setFilteredDistricts([]);
+      setSelectedDistrictCode("");
+      setSelectedWardCode("");
+    }
+  }, [selectedProvinceCode, districts]);
+
+  // Filter wards when district changes
+  useEffect(() => {
+    if (selectedDistrictCode) {
       const filtered = wards.filter(
-        (w) => w.province_code === Number(selectedProvinceCode)
+        (w) => w.district_code === Number(selectedDistrictCode)
       );
       setFilteredWards(filtered);
-      // Reset ward if not in the new list (optional, but good UX)
-      // If we change province, the previous ward code is likely invalid for this province
-      // So we should probably reset it unless we want to keep it if it happens to match (unlikely)
-      // But to be safe and avoid confusion, let's reset it if the province changes
-      // However, we need to be careful not to reset it on initial load if we were populating it (but we aren't populating from existing address yet)
       setSelectedWardCode("");
     } else {
       setFilteredWards([]);
       setSelectedWardCode("");
     }
-  }, [selectedProvinceCode, wards]);
+  }, [selectedDistrictCode, wards]);
 
   // Update full address string
   useEffect(() => {
-    if (selectedProvinceCode && selectedWardCode && houseNumber) {
+    if (selectedProvinceCode && selectedDistrictCode && selectedWardCode && houseNumber) {
       const province = provinces.find(
         (p) => p.code === Number(selectedProvinceCode)
       );
+      const district = districts.find(
+        (d) => d.code === Number(selectedDistrictCode)
+      );
       const ward = wards.find((w) => w.code === Number(selectedWardCode));
 
-      if (province && ward) {
-        const fullAddress = `${houseNumber}, ${ward.name}, ${province.name}`;
+      if (province && district && ward) {
+        const fullAddress = `${houseNumber}, ${ward.name}, ${district.name}, ${province.name}`;
         setAddress(fullAddress);
         addressRef.current = fullAddress;
       }
     }
-  }, [selectedProvinceCode, selectedWardCode, houseNumber, provinces, wards]);
+  }, [selectedProvinceCode, selectedDistrictCode, selectedWardCode, houseNumber, provinces, districts, wards]);
 
 
   const subtotal = getCartTotal();
@@ -300,7 +328,7 @@ export default function Checkout() {
               </div>
               <div>
                 <label className="text-sm font-medium">Địa chỉ giao hàng</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 mt-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 mt-2">
                   <div className="space-y-2">
                     <label className="text-xs text-gray-500">Tỉnh / Thành phố</label>
                     <Select
@@ -324,11 +352,34 @@ export default function Checkout() {
                   </div>
 
                   <div className="space-y-2">
+                    <label className="text-xs text-gray-500">Quận / Huyện</label>
+                    <Select
+                      value={selectedDistrictCode}
+                      onValueChange={setSelectedDistrictCode}
+                      disabled={!selectedProvinceCode}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn Quận / Huyện" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredDistricts.map((district) => (
+                          <SelectItem
+                            key={district.code}
+                            value={district.code.toString()}
+                          >
+                            {district.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
                     <label className="text-xs text-gray-500">Phường / Xã</label>
                     <Select
                       value={selectedWardCode}
                       onValueChange={setSelectedWardCode}
-                      disabled={!selectedProvinceCode}
+                      disabled={!selectedDistrictCode}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Chọn Phường / Xã" />
