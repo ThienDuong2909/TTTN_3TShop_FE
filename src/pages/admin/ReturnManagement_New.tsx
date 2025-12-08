@@ -805,7 +805,7 @@ export default function ReturnManagement() {
         )}
 
         {/* Pagination info */}
-        {pagination && (
+        {/* {pagination && (
           <div className="mt-4 text-sm text-gray-600 dark:text-gray-300 text-center">
             Hiển thị {filteredReturns.length} / {pagination.totalItems} kết quả
             {pagination.totalPages > 1 && (
@@ -815,7 +815,7 @@ export default function ReturnManagement() {
               </span>
             )}
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Modal Components */}

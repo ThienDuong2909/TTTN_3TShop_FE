@@ -255,10 +255,15 @@ export function CreateDiscountPeriodDialog({
       if (isSelected) {
         return prev.filter((p) => p.MaSP !== product.MaSP);
       } else {
-        return [
-          ...prev,
-          { MaSP: product.MaSP, PhanTramGiam: formData.PhanTramGiamChung },
-        ]; // Use common discount
+        // Ensure we use a valid discount percentage (default to 10 if invalid)
+        const validDiscount =
+          formData.PhanTramGiamChung &&
+          !isNaN(formData.PhanTramGiamChung) &&
+          formData.PhanTramGiamChung >= 1 &&
+          formData.PhanTramGiamChung <= 99
+            ? formData.PhanTramGiamChung
+            : 10;
+        return [...prev, { MaSP: product.MaSP, PhanTramGiam: validDiscount }];
       }
     });
   };
@@ -274,12 +279,21 @@ export function CreateDiscountPeriodDialog({
   };
 
   const selectAllFiltered = () => {
+    // Ensure we use a valid discount percentage (default to 10 if invalid)
+    const validDiscount =
+      formData.PhanTramGiamChung &&
+      !isNaN(formData.PhanTramGiamChung) &&
+      formData.PhanTramGiamChung >= 1 &&
+      formData.PhanTramGiamChung <= 99
+        ? formData.PhanTramGiamChung
+        : 10;
+
     const newSelections = filteredProducts
       .filter((product) => !isProductSelected(product.MaSP))
       .map((product) => ({
         MaSP: product.MaSP,
-        PhanTramGiam: formData.PhanTramGiamChung,
-      })); // Use common discount
+        PhanTramGiam: validDiscount,
+      }));
 
     setSelectedProducts((prev) => [...prev, ...newSelections]);
   };
@@ -383,7 +397,10 @@ export function CreateDiscountPeriodDialog({
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: field === "PhanTramGiamChung" ? parseInt(value) : value,
+      [field]:
+        field === "PhanTramGiamChung"
+          ? Math.max(1, Math.min(99, parseInt(value) || 1))
+          : value,
     }));
 
     // Clear error when user starts typing
