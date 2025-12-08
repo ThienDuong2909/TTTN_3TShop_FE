@@ -1333,7 +1333,7 @@ export default function ProductManagement() {
                                         >
                                           <Edit className="h-3 w-3" />
                                         </Button>
-                                        <Button
+                                        {/* <Button
                                           variant="outline"
                                           size="sm"
                                           className="h-7 w-7 p-0"
@@ -1351,7 +1351,7 @@ export default function ProductManagement() {
                                           ) : (
                                             <Eye className="h-3 w-3" />
                                           )}
-                                        </Button>
+                                        </Button> */}
                                       </>
                                     )}
                                   </div>
