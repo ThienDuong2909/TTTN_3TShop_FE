@@ -378,7 +378,7 @@ const Departments = () => {
           >
             Sửa
           </button>
-          {record.isActive === true ? (
+          {/* {record.isActive === true ? (
             <button
               className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded hover:bg-red-200"
               onClick={() => handleToggleDepartment(record)}
@@ -392,7 +392,7 @@ const Departments = () => {
             >
               Hiển thị
             </button>
-          ) : null}
+          ) : null} */}
         </div>
       ),
     },

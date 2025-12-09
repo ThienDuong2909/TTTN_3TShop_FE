@@ -66,13 +66,19 @@ export const getEmployees = async () => {
     if (result.success && Array.isArray(result.data)) {
       const mapped = result.data.map((item) => {
         // Find latest department (most recent NgayBatDau) for all employee info
-        const latestDepartment =
-          item.NhanVien_BoPhans?.reduce((latest, current) => {
-            if (!latest) return current;
-            return new Date(current.NgayBatDau) > new Date(latest.NgayBatDau)
-              ? current
-              : latest;
-          }, null) || {};
+        let latestDepartment = null;
+        
+        if (item.NhanVien_BoPhans && item.NhanVien_BoPhans.length > 0) {
+          // Sắp xếp theo NgayBatDau giảm dần (mới nhất trước)
+          const sortedDepartments = [...item.NhanVien_BoPhans].sort((a, b) => {
+            const dateA = new Date(a.NgayBatDau);
+            const dateB = new Date(b.NgayBatDau);
+            return dateB - dateA; // Sort descending (newest first)
+          });
+          
+          // Lấy bản ghi đầu tiên (NgayBatDau gần nhất)
+          latestDepartment = sortedDepartments[0];
+        }
 
         const mappedEmployee = {
           maNV: item.MaNV,
@@ -82,12 +88,12 @@ export const getEmployees = async () => {
           luong: item.Luong ? parseInt(item.Luong) : undefined,
           maTK: item.MaTK,
 
-          department: latestDepartment.BoPhan?.MaBoPhan?.toString() || "",
-          departmentName: latestDepartment.BoPhan?.TenBoPhan || "",
+          department: latestDepartment?.BoPhan?.MaBoPhan?.toString() || "",
+          departmentName: latestDepartment?.BoPhan?.TenBoPhan || "",
           username: item.TaiKhoan?.Email || "MISSING EMAIL",
-          isActive: latestDepartment.TrangThai || "",
-          createdAt: latestDepartment.NgayBatDau || "",
-          updatedAt: latestDepartment.NgayKetThuc || "",
+          isActive: latestDepartment?.TrangThai || "",
+          createdAt: latestDepartment?.NgayBatDau || "",
+          updatedAt: latestDepartment?.NgayKetThuc || "",
           khuVucPhuTrach: item.KhuVucPhuTrach || [],
         };
         return mappedEmployee;
