@@ -429,17 +429,6 @@ export default function ProductManagement() {
 
   // Helper function to handle file selection and upload
   const handleImageUpload = async (files: FileList) => {
-    const maxImages = 5;
-    const currentImageCount = productForm.images.length;
-    const remainingSlots = maxImages - currentImageCount;
-
-    if (files.length > remainingSlots) {
-      toast.error(
-        `Chỉ có thể tải lên tối đa ${remainingSlots} ảnh nữa (tối đa ${maxImages} ảnh)`
-      );
-      return;
-    }
-
     const validFiles: File[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -913,9 +902,9 @@ export default function ProductManagement() {
                           <span>Đang tải ảnh...</span>
                           <span>{progress}%</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-gray-200 rounded-full h-1">
                           <div
-                            className="bg-[#825B32] h-2 rounded-full transition-all duration-300"
+                            className="bg-[#825B32] h-1 rounded-full transition-all duration-300"
                             style={{ width: `${progress}%` }}
                           ></div>
                         </div>
@@ -931,7 +920,7 @@ export default function ProductManagement() {
                   <div className="flex items-center gap-2">
                     <ImagePlus className="h-5 w-5 text-[#825B32]" />
                     <span className="text-sm font-medium text-gray-700">
-                      Thêm ảnh ({productForm.images.length}/5)
+                      Thêm ảnh ({productForm.images.length})
                     </span>
                   </div>
                   <Button
@@ -940,10 +929,7 @@ export default function ProductManagement() {
                     size="sm"
                     className="text-xs py-1 px-3 border-[#825B32] text-[#825B32] hover:bg-[#825B32] hover:text-white"
                     onClick={handleImageUploadClick}
-                    disabled={
-                      productForm.images.length >= 5 ||
-                      Object.keys(imageUploadProgress).length > 0
-                    }
+                    disabled={Object.keys(imageUploadProgress).length > 0}
                   >
                     <Upload className="h-3 w-3 mr-1" />
                     Chọn ảnh
