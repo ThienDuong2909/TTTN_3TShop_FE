@@ -1,8 +1,20 @@
 import { useRef, useState, useEffect } from "react";
-import { Upload, Download, Eye, AlertCircle, CheckCircle, X } from "lucide-react";
+import {
+  Upload,
+  Download,
+  Eye,
+  AlertCircle,
+  CheckCircle,
+  X,
+} from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "../../../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card";
 import { useToast } from "../../../components/ui/use-toast";
 import {
   Table,
@@ -22,7 +34,10 @@ import {
 import { Badge } from "../../../components/ui/badge";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
 import { getPurchaseOrderReceivedStatus } from "../../../services/api";
-import { parseVietnameseCurrency, comparePricesFlexibly } from "../../../lib/utils";
+import {
+  parseVietnameseCurrency,
+  comparePricesFlexibly,
+} from "../../../lib/utils";
 
 interface GoodsReceiptItem {
   purchaseOrderItemId: string;
@@ -78,7 +93,9 @@ interface PurchaseOrder {
 
 interface ExcelImportProps {
   selectedPO: PurchaseOrder | null;
-  onDataProcessed: (items: Omit<GoodsReceiptItem, "totalReceivedValue">[]) => void;
+  onDataProcessed: (
+    items: Omit<GoodsReceiptItem, "totalReceivedValue">[]
+  ) => void;
   excelData: any[];
   excelError: string;
   onExcelDataChange: (data: any[]) => void;
@@ -103,10 +120,14 @@ export default function ExcelImport({
 }: ExcelImportProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
-  const [processedItems, setProcessedItems] = useState<Omit<GoodsReceiptItem, "totalReceivedValue">[]>([]);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>(
+    []
+  );
+  const [processedItems, setProcessedItems] = useState<
+    Omit<GoodsReceiptItem, "totalReceivedValue">[]
+  >([]);
   const [receivedStatus, setReceivedStatus] = useState<any[]>([]);
-  
+
   // Lấy thông tin số lượng đã nhập khi selectedPO thay đổi
   useEffect(() => {
     const fetchReceivedStatus = async () => {
@@ -124,7 +145,7 @@ export default function ExcelImport({
     };
     fetchReceivedStatus();
   }, [selectedPO]);
-  
+
   // New states for sheet selection and data detection
   const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null);
   const [availableSheets, setAvailableSheets] = useState<string[]>([]);
@@ -146,7 +167,7 @@ export default function ExcelImport({
     setSelectedSheet("");
     setRawExcelData([]);
     setDataStartRow(0);
-    
+
     // Reset file input để có thể upload lại cùng file
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -157,7 +178,7 @@ export default function ExcelImport({
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "application/vnd.ms-excel",
     ];
-    
+
     if (!allowedTypes.includes(file.type)) {
       onExcelErrorChange("Chỉ chấp nhận file Excel (.xlsx, .xls)");
       return;
@@ -174,16 +195,17 @@ export default function ExcelImport({
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: "array" });
-        
+
         // Store workbook and available sheets
         setWorkbook(workbook);
         setAvailableSheets(workbook.SheetNames);
-        
+
         // Open sheet selection dialog
         setIsSheetDialogOpen(true);
-        
       } catch (error) {
-        onExcelErrorChange("Lỗi đọc file Excel. Vui lòng kiểm tra định dạng file.");
+        onExcelErrorChange(
+          "Lỗi đọc file Excel. Vui lòng kiểm tra định dạng file."
+        );
         console.error("Excel processing error:", error);
       }
     };
@@ -192,31 +214,52 @@ export default function ExcelImport({
 
   // Function to detect data start row
   const detectDataStartRow = (worksheet: XLSX.WorkSheet): number => {
-    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
     const maxRow = range.e.r;
-    
+
     // Look for header row with product table columns - specifically for PHIẾU NHẬP HÀNG format
     const requiredTableHeaders = [
-      'stt', 'no', 'số thứ tự',
-      'tên sản phẩm', 'product', 'sản phẩm', 
-      'màu sắc', 'color', 'mau sac',
-      'size', 'kich thuoc', 'kích thước',
-      'đơn vị tính', 'unit', 'don vi tinh',
-      'số lượng đặt', 'ordered quantity', 'so luong dat',
-      'số lượng nhận', 'received quantity', 'so luong nhan',
-      'đơn giá', 'unit price', 'don gia',
-      'thành tiền', 'total', 'thanh tien'
+      "stt",
+      "no",
+      "số thứ tự",
+      "tên sản phẩm",
+      "product",
+      "sản phẩm",
+      "màu sắc",
+      "color",
+      "mau sac",
+      "size",
+      "kich thuoc",
+      "kích thước",
+      "đơn vị tính",
+      "unit",
+      "don vi tinh",
+      "số lượng đặt",
+      "ordered quantity",
+      "so luong dat",
+      "số lượng nhận",
+      "received quantity",
+      "so luong nhan",
+      "đơn giá",
+      "unit price",
+      "don gia",
+      "thành tiền",
+      "total",
+      "thanh tien",
     ];
-    
+
     // First, look for the document title "PHIẾU NHẬP HÀNG"
     let documentTitleFound = false;
     let titleRow = -1;
-    
+
     for (let row = 0; row <= Math.min(maxRow, 10); row++) {
       for (let col = range.s.c; col <= range.e.c; col++) {
         const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
         const cell = worksheet[cellAddress];
-        if (cell && cell.v?.toString().toLowerCase().includes('phiếu nhập hàng')) {
+        if (
+          cell &&
+          cell.v?.toString().toLowerCase().includes("phiếu nhập hàng")
+        ) {
           documentTitleFound = true;
           titleRow = row;
           break;
@@ -224,65 +267,75 @@ export default function ExcelImport({
       }
       if (documentTitleFound) break;
     }
-    
+
     // If document title found, look for table headers after it
     const startSearchRow = documentTitleFound ? titleRow + 1 : 0;
-    
+
     for (let row = startSearchRow; row <= Math.min(maxRow, 30); row++) {
       const rowData: any = {};
       const rowValues: string[] = [];
-      
+
       // Get all cells in this row
       for (let col = range.s.c; col <= range.e.c; col++) {
         const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
         const cell = worksheet[cellAddress];
         if (cell) {
-          const cellValue = cell.v?.toString().toLowerCase() || '';
+          const cellValue = cell.v?.toString().toLowerCase() || "";
           rowData[cellValue] = true;
           rowValues.push(cellValue);
         }
       }
-      
+
       // Check if this row contains table header keywords
-      const matchedKeywords = requiredTableHeaders.filter(keyword => 
-        rowValues.some(cellValue => cellValue.includes(keyword))
+      const matchedKeywords = requiredTableHeaders.filter((keyword) =>
+        rowValues.some((cellValue) => cellValue.includes(keyword))
       );
-      
+
       // Need at least 4 matches to be considered a valid table header
       if (matchedKeywords.length >= 4) {
         // Additional check: make sure this looks like a proper table header row
-        const hasSTT = rowValues.some(v => v.includes('stt') || v.includes('no') || v.includes('số thứ tự'));
-        const hasProductName = rowValues.some(v => v.includes('tên sản phẩm') || v.includes('product') || v.includes('sản phẩm'));
-        const hasQuantity = rowValues.some(v => v.includes('số lượng') || v.includes('quantity'));
-        
+        const hasSTT = rowValues.some(
+          (v) =>
+            v.includes("stt") || v.includes("no") || v.includes("số thứ tự")
+        );
+        const hasProductName = rowValues.some(
+          (v) =>
+            v.includes("tên sản phẩm") ||
+            v.includes("product") ||
+            v.includes("sản phẩm")
+        );
+        const hasQuantity = rowValues.some(
+          (v) => v.includes("số lượng") || v.includes("quantity")
+        );
+
         if (hasSTT && hasProductName && hasQuantity) {
           return row + 1; // Data starts from next row
         }
       }
     }
-    
+
     return 1; // Default to first row if no header detected
   };
 
   // Function to load sheet data
   const loadSheetData = (sheetName: string) => {
     if (!workbook) return;
-    
+
     const worksheet = workbook.Sheets[sheetName];
     const detectedStartRow = detectDataStartRow(worksheet);
     setDataStartRow(detectedStartRow);
-    
+
     // Convert sheet to JSON starting from detected data row
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, {
       range: detectedStartRow - 1, // XLSX uses 0-based indexing
-      header: 1 // Get raw data as arrays
+      header: 1, // Get raw data as arrays
     });
-    
+
     // Convert to objects with headers
     if (jsonData.length > 0) {
       const headers = jsonData[0] as string[];
       const dataRows = jsonData.slice(1) as any[][];
-      
+
       const processedData = dataRows
         .map((row, index) => {
           const obj: any = {};
@@ -293,46 +346,50 @@ export default function ExcelImport({
           });
           return obj;
         })
-        .filter(row => {
+        .filter((row) => {
           // Remove empty rows and rows that don't contain product data
-          const hasProductData = Object.values(row).some(value => 
-            value !== null && 
-            value !== undefined && 
-            value !== '' && 
-            value.toString().trim() !== ''
+          const hasProductData = Object.values(row).some(
+            (value) =>
+              value !== null &&
+              value !== undefined &&
+              value !== "" &&
+              value.toString().trim() !== ""
           );
-          
+
           // Check if row contains product-related data (not just headers or empty)
-          const hasProductName = Object.keys(row).some(key => 
-            key.toLowerCase().includes('tên sản phẩm') || 
-            key.toLowerCase().includes('product')
+          const hasProductName = Object.keys(row).some(
+            (key) =>
+              key.toLowerCase().includes("tên sản phẩm") ||
+              key.toLowerCase().includes("product")
           );
-          
+
           return hasProductData && hasProductName;
         })
-        .filter(row => {
+        .filter((row) => {
           // Additional filter: remove rows that are likely headers or footers
           const firstValue = Object.values(row)[0];
-          if (typeof firstValue === 'string') {
+          if (typeof firstValue === "string") {
             const lowerValue = firstValue.toLowerCase();
             // Skip rows that are likely headers, footers, or summary rows
-            if (lowerValue.includes('tổng') || 
-                lowerValue.includes('total') || 
-                lowerValue.includes('cộng') ||
-                lowerValue.includes('sum') ||
-                lowerValue.includes('stt') ||
-                lowerValue.includes('no') ||
-                lowerValue === '' ||
-                lowerValue === ' ') {
+            if (
+              lowerValue.includes("tổng") ||
+              lowerValue.includes("total") ||
+              lowerValue.includes("cộng") ||
+              lowerValue.includes("sum") ||
+              lowerValue.includes("stt") ||
+              lowerValue.includes("no") ||
+              lowerValue === "" ||
+              lowerValue === " "
+            ) {
               return false;
             }
           }
           return true;
         });
-      
+
       // Debug logging cho dữ liệu thô từ Excel
-      console.log('Raw Excel Data:', processedData);
-      
+      console.log("Raw Excel Data:", processedData);
+
       setRawExcelData(processedData);
       setSelectedSheet(sheetName);
     } else {
@@ -354,7 +411,9 @@ export default function ExcelImport({
     // Validate Excel structure FIRST
     const structureValidation = validateExcelStructure(rawExcelData);
     if (!structureValidation.isValid) {
-      onExcelErrorChange(structureValidation.error || "Cấu trúc file Excel không hợp lệ");
+      onExcelErrorChange(
+        structureValidation.error || "Cấu trúc file Excel không hợp lệ"
+      );
       setIsSheetDialogOpen(false);
       return;
     }
@@ -364,7 +423,7 @@ export default function ExcelImport({
     const items = processExcelData(rawExcelData);
     console.log("Processed Items:", items);
     setProcessedItems(items);
-    
+
     // Gửi dữ liệu vào form nhập kho (có thể có lỗi)
     console.log("Calling onDataProcessed with items:", items);
     onDataProcessed(items);
@@ -381,79 +440,116 @@ export default function ExcelImport({
         description: `Đã import ${rawExcelData.length} dòng dữ liệu từ sheet "${selectedSheet}"`,
       });
     } else {
-      onExcelErrorChange(`Phát hiện ${validation.errors.length} lỗi trong dữ liệu Excel. Vui lòng sửa lỗi trước khi nhập kho.`);
+      onExcelErrorChange(
+        `Phát hiện ${validation.errors.length} lỗi trong dữ liệu Excel. Vui lòng sửa lỗi trước khi nhập kho.`
+      );
     }
-    
+
     console.log("=== PROCESS SELECTED SHEET END ===");
-    
+
     // Đóng dialog sau khi xử lý
     setIsSheetDialogOpen(false);
   };
 
-  const validateExcelStructure = (data: any[]): { isValid: boolean; error?: string } => {
+  const validateExcelStructure = (
+    data: any[]
+  ): { isValid: boolean; error?: string } => {
     if (!data || data.length === 0) {
       return { isValid: false, error: "File Excel không có dữ liệu" };
     }
 
     // Các cột bắt buộc theo format PHIẾU NHẬP HÀNG
     const requiredColumns = [
-      "stt", "no", "số thứ tự",
-      "tên sản phẩm", "product", "sản phẩm",
-      "số lượng đặt", "ordered quantity", "so luong dat",
-      "số lượng nhận", "received quantity", "so luong nhan",
-      "đơn giá", "unit price", "don gia"
+      "stt",
+      "no",
+      "số thứ tự",
+      "tên sản phẩm",
+      "product",
+      "sản phẩm",
+      "số lượng đặt",
+      "ordered quantity",
+      "so luong dat",
+      "số lượng nhận",
+      "received quantity",
+      "so luong nhan",
+      "đơn giá",
+      "unit price",
+      "don gia",
     ];
 
     const firstRow = data[0];
-    const availableColumns = Object.keys(firstRow).map(col => col.toLowerCase());
-    
+    const availableColumns = Object.keys(firstRow).map((col) =>
+      col.toLowerCase()
+    );
+
     // Kiểm tra các cột bắt buộc
     const missingRequiredColumns = [];
-    
+
     // Kiểm tra STT
-    const hasSTT = availableColumns.some(col => 
-      col.includes('stt') || col.includes('no') || col.includes('số thứ tự')
+    const hasSTT = availableColumns.some(
+      (col) =>
+        col.includes("stt") || col.includes("no") || col.includes("số thứ tự")
     );
-    if (!hasSTT) missingRequiredColumns.push('STT/Số thứ tự');
-    
+    if (!hasSTT) missingRequiredColumns.push("STT/Số thứ tự");
+
     // Kiểm tra Tên sản phẩm
-    const hasProductName = availableColumns.some(col => 
-      col.includes('tên sản phẩm') || col.includes('product') || col.includes('sản phẩm')
+    const hasProductName = availableColumns.some(
+      (col) =>
+        col.includes("tên sản phẩm") ||
+        col.includes("product") ||
+        col.includes("sản phẩm")
     );
-    if (!hasProductName) missingRequiredColumns.push('Tên sản phẩm');
-    
+    if (!hasProductName) missingRequiredColumns.push("Tên sản phẩm");
+
     // Kiểm tra Số lượng đặt
-    const hasOrderedQty = availableColumns.some(col => 
-      col.includes('số lượng đặt') || col.includes('ordered quantity') || col.includes('so luong dat')
+    const hasOrderedQty = availableColumns.some(
+      (col) =>
+        col.includes("số lượng đặt") ||
+        col.includes("ordered quantity") ||
+        col.includes("so luong dat")
     );
-    if (!hasOrderedQty) missingRequiredColumns.push('Số lượng đặt');
-    
+    if (!hasOrderedQty) missingRequiredColumns.push("Số lượng đặt");
+
     // Kiểm tra Số lượng nhận
-    const hasReceivedQty = availableColumns.some(col => 
-      col.includes('số lượng nhận') || col.includes('received quantity') || col.includes('so luong nhan')
+    const hasReceivedQty = availableColumns.some(
+      (col) =>
+        col.includes("số lượng nhận") ||
+        col.includes("received quantity") ||
+        col.includes("so luong nhan")
     );
-    if (!hasReceivedQty) missingRequiredColumns.push('Số lượng nhận');
-    
+    if (!hasReceivedQty) missingRequiredColumns.push("Số lượng nhận");
+
     // Kiểm tra Đơn giá
-    const hasUnitPrice = availableColumns.some(col => 
-      col.includes('đơn giá') || col.includes('unit price') || col.includes('don gia')
+    const hasUnitPrice = availableColumns.some(
+      (col) =>
+        col.includes("đơn giá") ||
+        col.includes("unit price") ||
+        col.includes("don gia")
     );
-    if (!hasUnitPrice) missingRequiredColumns.push('Đơn giá');
+    if (!hasUnitPrice) missingRequiredColumns.push("Đơn giá");
 
     if (missingRequiredColumns.length > 0) {
       return {
         isValid: false,
-        error: `Format file không đúng. Thiếu các cột bắt buộc: ${missingRequiredColumns.join(", ")}`
+        error: `Format file không đúng. Thiếu các cột bắt buộc: ${missingRequiredColumns.join(
+          ", "
+        )}`,
       };
     }
 
     // Kiểm tra xem có phải là format PHIẾU NHẬP HÀNG không
-    const hasValidFormat = hasSTT && hasProductName && hasOrderedQty && hasReceivedQty && hasUnitPrice;
-    
+    const hasValidFormat =
+      hasSTT &&
+      hasProductName &&
+      hasOrderedQty &&
+      hasReceivedQty &&
+      hasUnitPrice;
+
     if (!hasValidFormat) {
       return {
         isValid: false,
-        error: "File không đúng format PHIẾU NHẬP HÀNG. Vui lòng sử dụng template mẫu."
+        error:
+          "File không đúng format PHIẾU NHẬP HÀNG. Vui lòng sử dụng template mẫu.",
       };
     }
 
@@ -468,28 +564,33 @@ export default function ExcelImport({
       errors.push({
         row: 1,
         field: "general",
-        message: "Vui lòng chọn phiếu đặt hàng trước khi import Excel"
+        message: "Vui lòng chọn phiếu đặt hàng trước khi import Excel",
       });
       return { errors };
     }
 
     // Lấy danh sách sản phẩm từ phiếu đặt hàng để cross-reference
     const poItems = selectedPO.CT_PhieuDatHangNCCs || [];
-    
+
     // Debug logging cho receivedStatus
     console.log("Received Status Data:", receivedStatus);
-    
+
     // Tạo map để tìm kiếm sản phẩm theo tên + màu + size
+    // QUAN TRỌNG: Chuẩn hóa key để so sánh chính xác (lowercase, trim, loại bỏ khoảng trắng thừa)
     const poItemsMap = new Map();
-    
+
     poItems.forEach((item: any) => {
-      const productName = item.TenSP || item.ChiTietSanPham?.SanPham?.TenSP || '';
-      const color = item.ChiTietSanPham?.Mau?.TenMau || item.Mau?.TenMau || '';
-      const size = item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || item.KichThuoc?.TenKichThuoc || '';
+      const productName =
+        item.TenSP || item.ChiTietSanPham?.SanPham?.TenSP || "";
+      const color = item.ChiTietSanPham?.Mau?.TenMau || item.Mau?.TenMau || "";
+      const size =
+        item.ChiTietSanPham?.KichThuoc?.TenKichThuoc ||
+        item.KichThuoc?.TenKichThuoc ||
+        "";
       const orderedQty = item.SoLuong || 0;
       const unitPrice = item.DonGia || 0;
       const maCTSP = item.MaCTSP;
-      
+
       // Debug logging cho PO items
       console.log(`PO Item: ${productName}`, {
         color,
@@ -497,19 +598,25 @@ export default function ExcelImport({
         orderedQty,
         rawDonGia: item.DonGia,
         unitPrice,
-        maCTSP
+        maCTSP,
       });
-      
-      // Tạo key từ tên + màu + size
-      const key = `${productName.toLowerCase().trim()}|${color.toLowerCase().trim()}|${size.toLowerCase().trim()}`;
-      
+
+      // Tạo key từ tên + màu + size (chuẩn hóa để so sánh không phân biệt hoa thường và khoảng trắng)
+      const normalizedProductName = productName
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, " ");
+      const normalizedColor = color.toLowerCase().trim().replace(/\s+/g, " ");
+      const normalizedSize = size.toLowerCase().trim().replace(/\s+/g, " ");
+      const key = `${normalizedProductName}|${normalizedColor}|${normalizedSize}`;
+
       poItemsMap.set(key, {
         productName,
         color,
         size,
         orderedQty,
         unitPrice,
-        maCTSP
+        maCTSP,
       });
     });
 
@@ -528,44 +635,44 @@ export default function ExcelImport({
       // Lấy dữ liệu từ Excel
       const productName = normalizeKey(row, [
         "tên sản phẩm",
-        "product_name", 
+        "product_name",
         "productName",
-        "Tên sản phẩm"
+        "Tên sản phẩm",
       ]);
-      
+
       const color = normalizeKey(row, [
         "màu sắc",
         "color",
         "mau_sac",
-        "Màu sắc"
+        "Màu sắc",
       ]);
-      
+
       const size = normalizeKey(row, [
         "size",
         "kich_thuoc",
         "kichThuoc",
         "Size",
-        "kích thước"
+        "kích thước",
       ]);
-      
+
       const orderedQty = parseInt(
         normalizeKey(row, [
           "số lượng đặt",
           "ordered_quantity",
-          "orderedQuantity", 
-          "Số lượng đặt"
+          "orderedQuantity",
+          "Số lượng đặt",
         ])
       );
-      
+
       const receivedQty = parseInt(
         normalizeKey(row, [
           "số lượng nhận",
           "received_quantity",
-          "receivedQuantity", 
-          "Số lượng nhận"
+          "receivedQuantity",
+          "Số lượng nhận",
         ])
       );
-      
+
       // Sử dụng utility function từ lib/utils
 
       const unitPrice = parseVietnameseCurrency(
@@ -582,7 +689,7 @@ export default function ExcelImport({
           "Unit price",
           "Don gia",
           "Don gia (VND)",
-          "Đơn giá (VND)"
+          "Đơn giá (VND)",
         ])
       );
 
@@ -603,20 +710,20 @@ export default function ExcelImport({
           "Unit price",
           "Don gia",
           "Don gia (VND)",
-          "Đơn giá (VND)"
+          "Đơn giá (VND)",
         ]),
         parsedUnitPrice: unitPrice,
         receivedQty,
         orderedQty,
-        unitPriceIsValid: unitPrice > 0
+        unitPriceIsValid: unitPrice > 0,
       });
 
       // Validate product name (required)
-      if (!productName || productName.toString().trim() === '') {
+      if (!productName || productName.toString().trim() === "") {
         errors.push({
           row: rowNumber,
           field: "tên sản phẩm",
-          message: "Tên sản phẩm không được để trống"
+          message: "Tên sản phẩm không được để trống",
         });
         continue; // Skip other validations if product name is empty
       }
@@ -626,7 +733,7 @@ export default function ExcelImport({
         errors.push({
           row: rowNumber,
           field: "số lượng đặt",
-          message: "Số lượng đặt phải là số dương"
+          message: "Số lượng đặt phải là số dương",
         });
       }
 
@@ -635,7 +742,7 @@ export default function ExcelImport({
         errors.push({
           row: rowNumber,
           field: "số lượng nhận",
-          message: "Số lượng nhận phải là số dương"
+          message: "Số lượng nhận phải là số dương",
         });
       }
 
@@ -644,134 +751,226 @@ export default function ExcelImport({
         errors.push({
           row: rowNumber,
           field: "đơn giá",
-          message: "Đơn giá phải là số dương"
+          message: "Đơn giá phải là số dương",
         });
       }
 
-      // CROSS-REFERENCE VALIDATION với phiếu đặt hàng
-      const normalizedProductName = productName.toString().toLowerCase().trim();
-      const normalizedColor = color.toString().toLowerCase().trim();
-      const normalizedSize = size.toString().toLowerCase().trim();
-      
-      // Tìm sản phẩm khớp trong PO (tên + màu + size)
+      // ===== CROSS-REFERENCE VALIDATION VỚI PHIẾU ĐẶT HÀNG =====
+      // Chuẩn hóa dữ liệu để so sánh không phân biệt hoa thường và khoảng trắng
+      const normalizedProductName = productName
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, " ");
+      const normalizedColor = color
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, " ");
+      const normalizedSize = size
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, " ");
+
+      // Tìm sản phẩm khớp CHÍNH XÁC trong PO (tên + màu + size)
       const searchKey = `${normalizedProductName}|${normalizedColor}|${normalizedSize}`;
-      let poItem = poItemsMap.get(searchKey);
-      
-      // Nếu không tìm thấy, thử tìm chỉ theo tên sản phẩm
+      const poItem = poItemsMap.get(searchKey);
+
+      // KIỂM TRA BẮT BUỘC: Sản phẩm phải tồn tại trong phiếu đặt hàng
       if (!poItem) {
-        for (const [key, item] of poItemsMap.entries()) {
-          if (key.startsWith(normalizedProductName + '|')) {
-            poItem = item;
-            break;
-          }
-        }
-      }
-      
-      if (!poItem) {
-        let errorMessage = `Sản phẩm "${productName}"`;
-        if (color) errorMessage += ` màu "${color}"`;
-        if (size) errorMessage += ` size "${size}"`;
-        errorMessage += ` không có trong phiếu đặt hàng`;
-        
+        let errorMessage = `Không tìm thấy sản phẩm "${productName}"`;
+        if (color && color.toString().trim())
+          errorMessage += ` - Màu: "${color}"`;
+        if (size && size.toString().trim())
+          errorMessage += ` - Size: "${size}"`;
+        errorMessage += ` trong phiếu đặt hàng. Vui lòng kiểm tra lại tên sản phẩm, màu sắc và kích thước phải khớp chính xác 100%.`;
+
         errors.push({
           row: rowNumber,
-          field: "tên sản phẩm",
-          message: errorMessage
+          field: "sản phẩm",
+          message: errorMessage,
         });
-      } else {
-        // Kiểm tra số lượng đặt có khớp với phiếu đặt hàng không
+        continue; // Skip các validation tiếp theo nếu sản phẩm không tồn tại
+      }
+
+      // ===== VALIDATION CHI TIẾT KHI SẢN PHẨM TỒN TẠI =====
+      else {
+        // 1. KIỂM TRA TÊN SẢN PHẨM (phải khớp chính xác 100%)
+        const poProductNameNormalized = poItem.productName
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, " ");
+        if (normalizedProductName !== poProductNameNormalized) {
+          errors.push({
+            row: rowNumber,
+            field: "tên sản phẩm",
+            message: `Tên sản phẩm "${productName}" không khớp chính xác với phiếu đặt hàng "${poItem.productName}". Vui lòng nhập đúng tên sản phẩm.`,
+          });
+        }
+
+        // 2. KIỂM TRA MÀU SẮC (phải khớp chính xác 100%)
+        const poColorNormalized = poItem.color
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, " ");
+        if (normalizedColor !== poColorNormalized) {
+          errors.push({
+            row: rowNumber,
+            field: "màu sắc",
+            message: `Màu sắc "${color}" không khớp với phiếu đặt hàng "${poItem.color}". Vui lòng nhập đúng màu sắc.`,
+          });
+        }
+
+        // 3. KIỂM TRA KÍCH CỠ (phải khớp chính xác 100%)
+        const poSizeNormalized = poItem.size
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, " ");
+        if (normalizedSize !== poSizeNormalized) {
+          errors.push({
+            row: rowNumber,
+            field: "kích cỡ",
+            message: `Kích cỡ "${size}" không khớp với phiếu đặt hàng "${poItem.size}". Vui lòng nhập đúng kích cỡ.`,
+          });
+        }
+
+        // 4. KIỂM TRA SỐ LƯỢNG ĐặT (phải khớp chính xác 100%)
         if (orderedQty !== poItem.orderedQty) {
           errors.push({
             row: rowNumber,
             field: "số lượng đặt",
-            message: `Số lượng đặt (${orderedQty}) không khớp với phiếu đặt hàng (${poItem.orderedQty})`
+            message: `Số lượng đặt (${orderedQty}) không khớp với phiếu đặt hàng (${poItem.orderedQty}). Vui lòng kiểm tra lại.`,
           });
         }
-        
-        // Kiểm tra đơn giá có khớp với phiếu đặt hàng không
-        console.log(`Unit Price Comparison for ${productName}:`, {
-          excelUnitPrice: unitPrice,
-          excelUnitPriceType: typeof unitPrice,
-          poUnitPrice: poItem.unitPrice,
-          poUnitPriceType: typeof poItem.unitPrice,
-          difference: Math.abs(unitPrice - poItem.unitPrice),
-          isMatch: comparePricesFlexibly(unitPrice, poItem.unitPrice),
-          // Debug chi tiết hơn
-          test1: Math.abs(unitPrice - poItem.unitPrice) <= 0.01,
-          test2: Math.abs(unitPrice * 1000 - poItem.unitPrice) <= 0.01,
-          test3: Math.abs(unitPrice - poItem.unitPrice * 1000) <= 0.01,
-          test4: Math.abs(unitPrice * 100 - poItem.unitPrice) <= 0.01,
-          test5: Math.abs(unitPrice - poItem.unitPrice * 100) <= 0.01
-        });
-        
+
+        // 5. KIỂM TRA ĐƠN GIÁ (phải khớp chính xác 100%)
+        console.log(
+          `Unit Price Validation for Row ${rowNumber} - ${productName}:`,
+          {
+            excelUnitPrice: unitPrice,
+            poUnitPrice: poItem.unitPrice,
+            isMatch: comparePricesFlexibly(unitPrice, poItem.unitPrice),
+            difference: Math.abs(unitPrice - poItem.unitPrice),
+          }
+        );
+
         if (!comparePricesFlexibly(unitPrice, poItem.unitPrice)) {
           errors.push({
             row: rowNumber,
             field: "đơn giá",
-            message: `Đơn giá (${unitPrice}) không khớp với phiếu đặt hàng (${poItem.unitPrice})`
+            message: `Đơn giá (${unitPrice.toLocaleString(
+              "vi-VN"
+            )} VNĐ) không khớp với phiếu đặt hàng (${poItem.unitPrice.toLocaleString(
+              "vi-VN"
+            )} VNĐ). Vui lòng kiểm tra lại.`,
           });
         }
-        
-        // Kiểm tra số lượng nhận không được vượt quá số lượng đặt
-        console.log(`Quantity validation for ${productName}:`, {
-          receivedQty,
-          orderedQty,
-          receivedQtyFromPO: poItem.orderedQty,
-          isReceivedQtyValid: receivedQty <= orderedQty
-        });
-        
+
+        // 6. KIỂM TRA SỐ LƯỢNG NHẬN không được vượt quá SỐ LƯỢNG ĐẶT
         if (receivedQty > orderedQty) {
           errors.push({
             row: rowNumber,
             field: "số lượng nhận",
-            message: `Số lượng nhận (${receivedQty}) không được vượt quá số lượng đặt (${orderedQty})`
+            message: `Số lượng nhận (${receivedQty}) KHÔNG ĐƯỢC vượt quá số lượng đặt (${orderedQty}). Vui lòng kiểm tra lại.`,
           });
         }
-        
-        // Kiểm tra số lượng nhận không được vượt quá số lượng còn cần nhập
-        // Sử dụng cùng logic như nhập tay
+
+        // 7. KIỂM TRA SỐ LƯỢNG NHẬN không được vượt quá SỐ LƯỢNG CÒN CẦN NHẬP
         const getRemainingQuantity = (maCTSP: string | number) => {
-          const found = receivedStatus.find((item: any) => String(item.MaCTSP) === String(maCTSP));
+          const found = receivedStatus.find(
+            (item: any) => String(item.MaCTSP) === String(maCTSP)
+          );
           return found ? found.SoLuongConLai : 0;
         };
-        
+
         const remainingFromAPI = getRemainingQuantity(poItem.maCTSP);
-        
-        // Tổng số đã nhập cho sản phẩm này trong Excel (trừ dòng hiện tại)
-        const totalEnteredOtherRows = data.reduce((sum, row, idx) => {
+
+        // Tính tổng số đã nhập cho sản phẩm này trong Excel (trừ dòng hiện tại)
+        const totalEnteredOtherRows = data.reduce((sum, otherRow, idx) => {
           if (idx !== index) {
-            const otherProductName = normalizeKey(row, ["tên sản phẩm", "product_name", "productName", "Tên sản phẩm"]) || "";
-            const otherColor = normalizeKey(row, ["màu sắc", "color", "mau_sac", "Màu sắc"]) || "";
-            const otherSize = normalizeKey(row, ["size", "kich_thuoc", "kichThuoc", "Size"]) || "";
-            
-            // Kiểm tra xem có phải cùng sản phẩm không
-            if (otherProductName.toLowerCase().trim() === productName.toLowerCase().trim() &&
-                otherColor.toLowerCase().trim() === color.toLowerCase().trim() &&
-                otherSize.toLowerCase().trim() === size.toLowerCase().trim()) {
-              const otherReceivedQty = parseInt(normalizeKey(row, ["số lượng nhận", "received_quantity", "receivedQuantity", "Số lượng nhận"])) || 0;
+            const otherProductName =
+              normalizeKey(otherRow, [
+                "tên sản phẩm",
+                "product_name",
+                "productName",
+                "Tên sản phẩm",
+              ]) || "";
+            const otherColor =
+              normalizeKey(otherRow, [
+                "màu sắc",
+                "color",
+                "mau_sac",
+                "Màu sắc",
+              ]) || "";
+            const otherSize =
+              normalizeKey(otherRow, [
+                "size",
+                "kich_thuoc",
+                "kichThuoc",
+                "Size",
+                "kích thước",
+              ]) || "";
+
+            const otherNormalizedProductName = otherProductName
+              .toString()
+              .toLowerCase()
+              .trim()
+              .replace(/\s+/g, " ");
+            const otherNormalizedColor = otherColor
+              .toString()
+              .toLowerCase()
+              .trim()
+              .replace(/\s+/g, " ");
+            const otherNormalizedSize = otherSize
+              .toString()
+              .toLowerCase()
+              .trim()
+              .replace(/\s+/g, " ");
+
+            // Kiểm tra xem có phải cùng sản phẩm không (so sánh chính xác)
+            if (
+              otherNormalizedProductName === normalizedProductName &&
+              otherNormalizedColor === normalizedColor &&
+              otherNormalizedSize === normalizedSize
+            ) {
+              const otherReceivedQty =
+                parseInt(
+                  normalizeKey(otherRow, [
+                    "số lượng nhận",
+                    "received_quantity",
+                    "receivedQuantity",
+                    "Số lượng nhận",
+                  ])
+                ) || 0;
               return sum + otherReceivedQty;
             }
           }
           return sum;
         }, 0);
-        
+
         // Số còn lại thực sự cho dòng này
         const realRemaining = (remainingFromAPI ?? 0) - totalEnteredOtherRows;
-        
-        console.log(`Remaining quantity validation for ${productName}:`, {
-          receivedQty,
-          orderedQty,
-          remainingFromAPI,
-          totalEnteredOtherRows,
-          realRemaining,
-          isRemainingQtyValid: receivedQty <= realRemaining
-        });
-        
+
+        console.log(
+          `Remaining Quantity Validation for Row ${rowNumber} - ${productName}:`,
+          {
+            receivedQty,
+            orderedQty,
+            remainingFromAPI,
+            totalEnteredOtherRows,
+            realRemaining,
+            isValid: receivedQty <= realRemaining,
+          }
+        );
+
         if (realRemaining >= 0 && receivedQty > realRemaining) {
           errors.push({
             row: rowNumber,
             field: "số lượng nhận",
-            message: `Số lượng nhận (${receivedQty}) vượt quá số lượng còn cần nhập (${realRemaining}).`
+            message: `Số lượng nhận (${receivedQty}) vượt quá số lượng còn cần nhập (${realRemaining}). Sản phẩm này đã được nhập ${
+              orderedQty - realRemaining
+            }/${orderedQty}.`,
           });
         }
       }
@@ -780,135 +979,212 @@ export default function ExcelImport({
     return { errors };
   };
 
-  const processExcelData = (data: any[]): Omit<GoodsReceiptItem, "totalReceivedValue">[] => {
+  const processExcelData = (
+    data: any[]
+  ): Omit<GoodsReceiptItem, "totalReceivedValue">[] => {
     const normalizeKey = (obj: any, possibleKeys: string[]) => {
       for (const key of possibleKeys) {
         if (obj[key] !== undefined) {
-          console.log(`normalizeKey found: "${key}" = ${obj[key]} (type: ${typeof obj[key]})`);
+          console.log(
+            `normalizeKey found: "${key}" = ${obj[key]} (type: ${typeof obj[
+              key
+            ]})`
+          );
           return obj[key];
         }
       }
-      console.log(`normalizeKey not found for keys: ${possibleKeys.join(', ')}`);
-      console.log(`Available keys in obj: ${Object.keys(obj).join(', ')}`);
+      console.log(
+        `normalizeKey not found for keys: ${possibleKeys.join(", ")}`
+      );
+      console.log(`Available keys in obj: ${Object.keys(obj).join(", ")}`);
       return "";
     };
 
     // Build a quick lookup map of PO items by (name|color|size)
     const poItems = selectedPO?.CT_PhieuDatHangNCCs || [];
-    const poItemsMap = new Map<string, { maCTSP: any; productName: string; color: string; size: string; unitPrice: number; orderedQty: number }>();
+    const poItemsMap = new Map<
+      string,
+      {
+        maCTSP: any;
+        productName: string;
+        color: string;
+        size: string;
+        unitPrice: number;
+        orderedQty: number;
+      }
+    >();
     poItems.forEach((item: any) => {
-      const productName = item.TenSP || item.ChiTietSanPham?.SanPham?.TenSP || "";
+      const productName =
+        item.TenSP || item.ChiTietSanPham?.SanPham?.TenSP || "";
       const color = item.ChiTietSanPham?.Mau?.TenMau || item.Mau?.TenMau || "";
-      const size = item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || item.KichThuoc?.TenKichThuoc || "";
+      const size =
+        item.ChiTietSanPham?.KichThuoc?.TenKichThuoc ||
+        item.KichThuoc?.TenKichThuoc ||
+        "";
       const orderedQty = item.SoLuong || 0;
       const unitPrice = item.DonGia || 0;
       const maCTSP = item.MaCTSP;
       console.log("maCTSP", maCTSP);
-      const key = `${productName.toLowerCase().trim()}|${color.toLowerCase().trim()}|${size.toLowerCase().trim()}`;
-      poItemsMap.set(key, { maCTSP, productName, color, size, unitPrice, orderedQty });
+      const key = `${productName.toLowerCase().trim()}|${color
+        .toLowerCase()
+        .trim()}|${size.toLowerCase().trim()}`;
+      poItemsMap.set(key, {
+        maCTSP,
+        productName,
+        color,
+        size,
+        unitPrice,
+        orderedQty,
+      });
     });
 
-    const processedItems: Omit<GoodsReceiptItem, "totalReceivedValue">[] = data.map((row, index) => {
-      
-      // Lấy dữ liệu TRỰC TIẾP từ Excel - ưu tiên map theo STT sang CT_PhieuDatHangNCCs
-      const sttValueRaw = normalizeKey(row, [
-        "stt", "STT", "no", "No", "số thứ tự", "Số thứ tự"
-      ]);
-      const stt = parseInt(sttValueRaw);
-      const productName = normalizeKey(row, ["tên sản phẩm", "product_name", "productName", "Tên sản phẩm"]) || "";
-      const color = normalizeKey(row, ["màu sắc", "color", "mau_sac", "Màu sắc"]) || "";
-      const size = normalizeKey(row, ["size", "kich_thuoc", "kichThuoc", "Size"]) || "";
-      const orderedQty = parseInt(normalizeKey(row, ["số lượng đặt", "ordered_quantity", "orderedQuantity", "Số lượng đặt"])) || 0;
-      const receivedQty = parseInt(normalizeKey(row, ["số lượng nhận", "received_quantity", "receivedQuantity", "Số lượng nhận"])) || 0;
-      
-      const rawUnitPrice = normalizeKey(row, [
-        "đơn giá", 
-        "unit_price", 
-        "unitPrice", 
-        "Đơn giá", 
-        "đơn giá (vnđ)", 
-        "unit price (vnđ)",
-        "Đơn giá (VNĐ)",
-        "đơn giá (VNĐ)",
-        "Unit Price",
-        "Unit price",
-        "Don gia",
-        "Don gia (VND)",
-        "Đơn giá (VND)"
-      ]);
-      
-      // Cải thiện việc parse đơn giá
-      let unitPrice = 0;
-      if (rawUnitPrice !== undefined && rawUnitPrice !== null && rawUnitPrice !== "") {
-        // Nếu là số, sử dụng trực tiếp
-        if (typeof rawUnitPrice === 'number') {
-          unitPrice = rawUnitPrice;
-        } else {
-          // Nếu là string, parse bằng hàm parseVietnameseCurrency
-          unitPrice = parseVietnameseCurrency(rawUnitPrice);
-        }
-      }
-      
-      const notes = normalizeKey(row, ["ghi chú", "notes", "note", "Ghi chú"]) || "";
+    const processedItems: Omit<GoodsReceiptItem, "totalReceivedValue">[] =
+      data.map((row, index) => {
+        // Lấy dữ liệu TRỰC TIẾP từ Excel - ưu tiên map theo STT sang CT_PhieuDatHangNCCs
+        const sttValueRaw = normalizeKey(row, [
+          "stt",
+          "STT",
+          "no",
+          "No",
+          "số thứ tự",
+          "Số thứ tự",
+        ]);
+        const stt = parseInt(sttValueRaw);
+        const productName =
+          normalizeKey(row, [
+            "tên sản phẩm",
+            "product_name",
+            "productName",
+            "Tên sản phẩm",
+          ]) || "";
+        const color =
+          normalizeKey(row, ["màu sắc", "color", "mau_sac", "Màu sắc"]) || "";
+        const size =
+          normalizeKey(row, ["size", "kich_thuoc", "kichThuoc", "Size"]) || "";
+        const orderedQty =
+          parseInt(
+            normalizeKey(row, [
+              "số lượng đặt",
+              "ordered_quantity",
+              "orderedQuantity",
+              "Số lượng đặt",
+            ])
+          ) || 0;
+        const receivedQty =
+          parseInt(
+            normalizeKey(row, [
+              "số lượng nhận",
+              "received_quantity",
+              "receivedQuantity",
+              "Số lượng nhận",
+            ])
+          ) || 0;
 
-      // Debug logging chi tiết hơn
-      console.log(`Row ${index + 1} - Unit Price Processing:`, {
-        productName,
-        rawUnitPrice,
-        rawUnitPriceType: typeof rawUnitPrice,
-        parsedUnitPrice: unitPrice,
-        receivedQty,
-        orderedQty,
-        rowData: row // Log toàn bộ row data để xem có gì khác không
-      });
+        const rawUnitPrice = normalizeKey(row, [
+          "đơn giá",
+          "unit_price",
+          "unitPrice",
+          "Đơn giá",
+          "đơn giá (vnđ)",
+          "unit price (vnđ)",
+          "Đơn giá (VNĐ)",
+          "đơn giá (VNĐ)",
+          "Unit Price",
+          "Unit price",
+          "Don gia",
+          "Don gia (VND)",
+          "Đơn giá (VND)",
+        ]);
 
-      // Try to find the matching PO item to get the correct MaCTSP
-      let matchedMaCTSP: any = undefined;
-      // 1) Prefer mapping by STT if valid and selectedPO exists
-      if (selectedPO && Array.isArray(selectedPO.CT_PhieuDatHangNCCs) && !isNaN(stt) && stt > 0) {
-        const idx = stt - 1;
-        const poItemAtIndex = selectedPO.CT_PhieuDatHangNCCs[idx];
-        if (poItemAtIndex && poItemAtIndex.MaCTSP !== undefined && poItemAtIndex.MaCTSP !== null) {
-          matchedMaCTSP = poItemAtIndex.MaCTSP;
-        }
-      }
-      // 2) If STT mapping not available, fallback to name|color|size
-      if (matchedMaCTSP === undefined) {
-        const normalizedProductName = productName.toString().toLowerCase().trim();
-        const normalizedColor = color.toString().toLowerCase().trim();
-        const normalizedSize = size.toString().toLowerCase().trim();
-        const searchKey = `${normalizedProductName}|${normalizedColor}|${normalizedSize}`;
-        let matched = poItemsMap.get(searchKey);
-        if (!matched) {
-          // fallback: match by product name only
-          for (const [key, value] of poItemsMap.entries()) {
-            if (key.startsWith(normalizedProductName + '|')) {
-              matched = value;
-              break;
-            }
+        // Cải thiện việc parse đơn giá
+        let unitPrice = 0;
+        if (
+          rawUnitPrice !== undefined &&
+          rawUnitPrice !== null &&
+          rawUnitPrice !== ""
+        ) {
+          // Nếu là số, sử dụng trực tiếp
+          if (typeof rawUnitPrice === "number") {
+            unitPrice = rawUnitPrice;
+          } else {
+            // Nếu là string, parse bằng hàm parseVietnameseCurrency
+            unitPrice = parseVietnameseCurrency(rawUnitPrice);
           }
         }
-        matchedMaCTSP = matched?.maCTSP;
-      }
 
-      // Tạo item đơn giản - lấy dữ liệu TRỰC TIẾP từ Excel
-      const processedItem = {
-        // Use matched MaCTSP when found; otherwise keep a temp id so row can still be displayed.
-        purchaseOrderItemId: matchedMaCTSP ?? `excel_${index}`,
-        productId: matchedMaCTSP ?? `excel_${index}`,
-        productName: productName,
-        selectedColor: color,
-        colorName: color,
-        selectedSize: size,
-        orderedQuantity: orderedQty,
-        receivedQuantity: receivedQty,
-        unitPrice: unitPrice, // Lấy TRỰC TIẾP từ Excel
-        condition: "good" as const,
-        notes: notes,
-      };
-      
-      return processedItem;
-    });
+        const notes =
+          normalizeKey(row, ["ghi chú", "notes", "note", "Ghi chú"]) || "";
+
+        // Debug logging chi tiết hơn
+        console.log(`Row ${index + 1} - Unit Price Processing:`, {
+          productName,
+          rawUnitPrice,
+          rawUnitPriceType: typeof rawUnitPrice,
+          parsedUnitPrice: unitPrice,
+          receivedQty,
+          orderedQty,
+          rowData: row, // Log toàn bộ row data để xem có gì khác không
+        });
+
+        // Try to find the matching PO item to get the correct MaCTSP
+        let matchedMaCTSP: any = undefined;
+        // 1) Prefer mapping by STT if valid and selectedPO exists
+        if (
+          selectedPO &&
+          Array.isArray(selectedPO.CT_PhieuDatHangNCCs) &&
+          !isNaN(stt) &&
+          stt > 0
+        ) {
+          const idx = stt - 1;
+          const poItemAtIndex = selectedPO.CT_PhieuDatHangNCCs[idx];
+          if (
+            poItemAtIndex &&
+            poItemAtIndex.MaCTSP !== undefined &&
+            poItemAtIndex.MaCTSP !== null
+          ) {
+            matchedMaCTSP = poItemAtIndex.MaCTSP;
+          }
+        }
+        // 2) If STT mapping not available, fallback to name|color|size
+        if (matchedMaCTSP === undefined) {
+          const normalizedProductName = productName
+            .toString()
+            .toLowerCase()
+            .trim();
+          const normalizedColor = color.toString().toLowerCase().trim();
+          const normalizedSize = size.toString().toLowerCase().trim();
+          const searchKey = `${normalizedProductName}|${normalizedColor}|${normalizedSize}`;
+          let matched = poItemsMap.get(searchKey);
+          if (!matched) {
+            // fallback: match by product name only
+            for (const [key, value] of poItemsMap.entries()) {
+              if (key.startsWith(normalizedProductName + "|")) {
+                matched = value;
+                break;
+              }
+            }
+          }
+          matchedMaCTSP = matched?.maCTSP;
+        }
+
+        // Tạo item đơn giản - lấy dữ liệu TRỰC TIẾP từ Excel
+        const processedItem = {
+          // Use matched MaCTSP when found; otherwise keep a temp id so row can still be displayed.
+          purchaseOrderItemId: matchedMaCTSP ?? `excel_${index}`,
+          productId: matchedMaCTSP ?? `excel_${index}`,
+          productName: productName,
+          selectedColor: color,
+          colorName: color,
+          selectedSize: size,
+          orderedQuantity: orderedQty,
+          receivedQuantity: receivedQty,
+          unitPrice: unitPrice, // Lấy TRỰC TIẾP từ Excel
+          condition: "good" as const,
+          notes: notes,
+        };
+
+        return processedItem;
+      });
 
     return processedItems;
   };
@@ -928,12 +1204,17 @@ export default function ExcelImport({
       STT: index + 1,
       "Tên sản phẩm": item.TenSP || item.productName || "",
       "Màu sắc": item.ChiTietSanPham?.Mau?.TenMau || item.Mau?.TenMau || "",
-      "Size": item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || item.KichThuoc?.TenKichThuoc || "",
+      Size:
+        item.ChiTietSanPham?.KichThuoc?.TenKichThuoc ||
+        item.KichThuoc?.TenKichThuoc ||
+        "",
       "Đơn vị tính": "Cái",
       "Số lượng đặt": item.SoLuong || item.quantity || 0,
       "Số lượng nhận": "", // Để trống để người dùng điền
       "Đơn giá (VNĐ)": item.DonGia || item.unitPrice || 0,
-      "Thành tiền (VNĐ)": (item.SoLuong || item.quantity || 0) * (item.DonGia || item.unitPrice || 0),
+      "Thành tiền (VNĐ)":
+        (item.SoLuong || item.quantity || 0) *
+        (item.DonGia || item.unitPrice || 0),
       "Ghi chú": "", // Để trống để người dùng điền
     }));
 
@@ -955,23 +1236,29 @@ export default function ExcelImport({
 
     // Set column widths
     ws["!cols"] = [
-      { width: 5 },   // STT
-      { width: 40 },  // Tên sản phẩm
-      { width: 15 },  // Màu sắc
-      { width: 10 },  // Size
-      { width: 15 },  // Đơn vị tính
-      { width: 15 },  // Số lượng đặt
-      { width: 15 },  // Số lượng nhận
-      { width: 15 },  // Đơn giá (VNĐ)
-      { width: 15 },  // Thành tiền (VNĐ)
-      { width: 30 },  // Ghi chú
+      { width: 5 }, // STT
+      { width: 40 }, // Tên sản phẩm
+      { width: 15 }, // Màu sắc
+      { width: 10 }, // Size
+      { width: 15 }, // Đơn vị tính
+      { width: 15 }, // Số lượng đặt
+      { width: 15 }, // Số lượng nhận
+      { width: 15 }, // Đơn giá (VNĐ)
+      { width: 15 }, // Thành tiền (VNĐ)
+      { width: 30 }, // Ghi chú
     ];
 
-    XLSX.writeFile(wb, `goods_receipt_template_${selectedPO?.MaPDH || selectedPO?.id || "unknown"}.xlsx`);
-    
+    XLSX.writeFile(
+      wb,
+      `goods_receipt_template_${
+        selectedPO?.MaPDH || selectedPO?.id || "unknown"
+      }.xlsx`
+    );
+
     toast({
       title: "Tải template thành công",
-      description: "File template Excel đã được tải về. Chỉ cần điền số lượng nhận và ghi chú (nếu cần).",
+      description:
+        "File template Excel đã được tải về. Chỉ cần điền số lượng nhận và ghi chú (nếu cần).",
     });
   };
 
@@ -981,10 +1268,12 @@ export default function ExcelImport({
       damaged: { label: "Hỏng", className: "bg-red-100 text-red-800" },
       defective: { label: "Lỗi", className: "bg-yellow-100 text-yellow-800" },
     };
-    
+
     const conditionInfo = conditionMap[condition as keyof typeof conditionMap];
     return (
-      <Badge className={conditionInfo?.className || "bg-gray-100 text-gray-800"}>
+      <Badge
+        className={conditionInfo?.className || "bg-gray-100 text-gray-800"}
+      >
         {conditionInfo?.label || condition}
       </Badge>
     );
@@ -1016,7 +1305,7 @@ export default function ExcelImport({
 
   // Function to check if a row has errors
   const getRowErrors = (rowIndex: number): ValidationError[] => {
-    return validationErrors.filter(error => error.row === rowIndex + 2); // +2 because Excel rows start from 2
+    return validationErrors.filter((error) => error.row === rowIndex + 2); // +2 because Excel rows start from 2
   };
 
   // Function to get row styling based on errors
@@ -1039,7 +1328,8 @@ export default function ExcelImport({
       <CardContent className="space-y-4">
         <div className="text-center space-y-4">
           <p className="text-sm text-muted-foreground">
-            Tải file template Excel và chỉ điền số lượng nhận về. Thông tin sản phẩm sẽ lấy từ phiếu đặt hàng.
+            Tải file template Excel và chỉ điền số lượng nhận về. Thông tin sản
+            phẩm sẽ lấy từ phiếu đặt hàng.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
@@ -1079,7 +1369,11 @@ export default function ExcelImport({
           {/* Data Display - Always show when there's data */}
           {excelData.length > 0 && (
             <div className="space-y-4">
-              <Alert variant={validationErrors.length === 0 ? "default" : "destructive"}>
+              <Alert
+                variant={
+                  validationErrors.length === 0 ? "default" : "destructive"
+                }
+              >
                 {validationErrors.length === 0 ? (
                   <CheckCircle className="h-4 w-4" />
                 ) : (
@@ -1088,10 +1382,9 @@ export default function ExcelImport({
                 <AlertDescription>
                   <div className="flex items-center justify-between">
                     <span>
-                      {validationErrors.length === 0 
+                      {validationErrors.length === 0
                         ? `Đã import thành công ${excelData.length} dòng dữ liệu từ Excel`
-                        : `Đã import ${excelData.length} dòng dữ liệu từ Excel (có ${validationErrors.length} lỗi)`
-                      }
+                        : `Đã import ${excelData.length} dòng dữ liệu từ Excel (có ${validationErrors.length} lỗi)`}
                     </span>
                     <div className="flex gap-2">
                       <Button
@@ -1126,7 +1419,9 @@ export default function ExcelImport({
                   {availableSheets.map((sheetName) => (
                     <Button
                       key={sheetName}
-                      variant={selectedSheet === sheetName ? "default" : "outline"}
+                      variant={
+                        selectedSheet === sheetName ? "default" : "outline"
+                      }
                       onClick={() => loadSheetData(sheetName)}
                       className="justify-start"
                     >
@@ -1144,19 +1439,22 @@ export default function ExcelImport({
                       Preview dữ liệu từ sheet "{selectedSheet}"
                     </h3>
                     <div className="text-sm text-muted-foreground">
-                      Dữ liệu bắt đầu từ dòng {dataStartRow + 1} • {rawExcelData.length} dòng
+                      Dữ liệu bắt đầu từ dòng {dataStartRow + 1} •{" "}
+                      {rawExcelData.length} dòng
                     </div>
                   </div>
-                  
+
                   <div className="border rounded-lg overflow-hidden">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          {Object.keys(rawExcelData[0] || {}).map((header, index) => (
-                            <TableHead key={index} className="text-xs">
-                              {header}
-                            </TableHead>
-                          ))}
+                          {Object.keys(rawExcelData[0] || {}).map(
+                            (header, index) => (
+                              <TableHead key={index} className="text-xs">
+                                {header}
+                              </TableHead>
+                            )
+                          )}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1164,7 +1462,7 @@ export default function ExcelImport({
                           <TableRow key={rowIndex}>
                             {Object.values(row).map((value, colIndex) => (
                               <TableCell key={colIndex} className="text-xs">
-                                {value?.toString() || ''}
+                                {value?.toString() || ""}
                               </TableCell>
                             ))}
                           </TableRow>
@@ -1201,4 +1499,4 @@ export default function ExcelImport({
       </CardContent>
     </Card>
   );
-} 
+}

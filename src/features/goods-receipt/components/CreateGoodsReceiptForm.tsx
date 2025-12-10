@@ -688,19 +688,14 @@ export default function CreateGoodsReceiptForm({
                                       );
                                     } else {
                                       const val = parseInt(value);
-                                      if (!isNaN(val) && val >= 1) {
+                                      // Không cho phép số âm hoặc 0
+                                      if (!isNaN(val) && val >= 0) {
                                         handleReceivedQuantityChange(
                                           index,
                                           val
                                         );
-                                      } else {
-                                        // Keep the string value if it's not a valid number
-                                        updateGRItem(
-                                          index,
-                                          "receivedQuantity",
-                                          value
-                                        );
                                       }
+                                      // Nếu là số âm hoặc không hợp lệ, không làm gì (giữ nguyên giá trị cũ)
                                     }
                                   }}
                                   onBlur={() =>
@@ -709,7 +704,7 @@ export default function CreateGoodsReceiptForm({
                                       [`receivedQuantity_${index}`]: true,
                                     }))
                                   }
-                                  min="1"
+                                  min="0"
                                   max={
                                     getRemainingQuantity(
                                       item.purchaseOrderItemId
@@ -965,17 +960,41 @@ export default function CreateGoodsReceiptForm({
 
       {/* Error Summary */}
       {inputMethod === "excel" && excelValidationErrors.length > 0 && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center gap-2 text-red-700">
-            <AlertCircle className="h-4 w-4" />
-            <span className="font-medium">
-              Không thể nhập kho: {excelValidationErrors.length} lỗi trong file
-              Excel
-            </span>
+        <div className="mb-4 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-800 text-base mb-2">
+                ⛔ KHÔNG THỂ NHẬP KHO - Phát hiện {excelValidationErrors.length}{" "}
+                lỗi
+              </h3>
+              <p className="text-sm text-red-700 mb-3">
+                File Excel có thông tin không khớp với phiếu đặt hàng. Vui lòng
+                kiểm tra và sửa các lỗi sau:
+              </p>
+              <div className="bg-white p-3 rounded border border-red-200 max-h-40 overflow-y-auto">
+                <ul className="space-y-1 text-sm">
+                  {excelValidationErrors
+                    .slice(0, 10)
+                    .map((error: any, idx: number) => (
+                      <li key={idx} className="text-red-700">
+                        <span className="font-medium">Dòng {error.row}:</span>{" "}
+                        {error.message}
+                      </li>
+                    ))}
+                  {excelValidationErrors.length > 10 && (
+                    <li className="text-red-600 font-medium">
+                      ... và {excelValidationErrors.length - 10} lỗi khác
+                    </li>
+                  )}
+                </ul>
+              </div>
+              <p className="text-xs text-red-600 mt-2 font-medium">
+                💡 Lưu ý: Thông tin sản phẩm (tên, màu sắc, kích cỡ, số lượng
+                đặt, đơn giá) phải khớp 100% với phiếu đặt hàng.
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-red-600 mt-1">
-            Vui lòng sửa lỗi trong file Excel trước khi tiếp tục
-          </p>
         </div>
       )}
 
@@ -995,6 +1014,7 @@ export default function CreateGoodsReceiptForm({
                 onClick={handleCreateGRWithFilter}
                 disabled={
                   loading.creating ||
+                  grForm.items.length === 0 ||
                   (inputMethod === "excel" && excelValidationErrors.length > 0)
                 }
                 className="bg-brand-600 hover:bg-brand-700"
@@ -1012,11 +1032,15 @@ export default function CreateGoodsReceiptForm({
                 )}
               </Button>
             </TooltipTrigger>
-            {inputMethod === "excel" && excelValidationErrors.length > 0 && (
+            {grForm.items.length === 0 ? (
+              <TooltipContent>
+                <p>Chưa có sản phẩm nào để nhập kho</p>
+              </TooltipContent>
+            ) : inputMethod === "excel" && excelValidationErrors.length > 0 ? (
               <TooltipContent>
                 <p>Vui lòng sửa lỗi trong file Excel trước khi nhập kho</p>
               </TooltipContent>
-            )}
+            ) : null}
           </Tooltip>
         </TooltipProvider>
       </div>
