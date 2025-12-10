@@ -565,6 +565,16 @@ export default function ProductManagement() {
     if (!editingProduct) return;
 
     // Validation
+    if (!productForm.name.trim()) {
+      toast.error("Vui lòng nhập tên sản phẩm!");
+      return;
+    }
+
+    if (!productForm.description.trim()) {
+      toast.error("Vui lòng nhập mô tả sản phẩm!");
+      return;
+    }
+
     if (productForm.priceChanged && !productForm.priceApplyDate) {
       toast.error("Vui lòng chọn ngày áp dụng cho giá mới!");
       return;
