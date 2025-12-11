@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useTheme } from "./ThemeProvider";
 import {
   Facebook,
   Instagram,
@@ -9,9 +11,20 @@ import {
   MapPin,
 } from "lucide-react";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+// import { Input } from "./ui/input";
 
 function Footer() {
+  const { theme } = useTheme();
+  const [logoSrc, setLogoSrc] = useState("../../3tshop.png");
+
+  useEffect(() => {
+    const isDark =
+      theme === "dark" ||
+      (theme === "system" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    setLogoSrc(isDark ? "../../3tshop_light.png" : "../../3tshop.png");
+  }, [theme]);
+
   const customerLinks = [
     { name: "Giới thiệu", href: "/about" },
     { name: "Liên hệ", href: "/contact" },
@@ -45,7 +58,7 @@ function Footer() {
         {/* Company Info */}
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
-            <img className="h-28 w-28" src="../../3tshop.png" alt="Logo" />
+            <img className="h-28 w-28" src={logoSrc} alt="Logo" />
           </div>
           <p className="text-gray-600 dark:text-gray-300">
             Thời trang hiện đại, chất lượng cao với giá cả hợp lý. Mang đến

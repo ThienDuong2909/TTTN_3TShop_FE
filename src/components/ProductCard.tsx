@@ -9,6 +9,7 @@ export interface Product {
   id: number;
   name: string;
   price: number;
+  mota: string;
   originalPrice?: number;
   image: string;
   images?: string[];
@@ -19,6 +20,7 @@ export interface Product {
   isNew?: boolean;
   isBestSeller?: boolean;
   category?: string;
+  categoryName?: string;
   colors?: string[];
   sizes?: string[];
   sizeMap?: Record<string, string[]>;
@@ -31,7 +33,7 @@ interface ProductCardProps {
   onToggleLike?: (productId: number) => void;
   isLiked?: boolean;
   className?: string;
-  titleClassName?: string; 
+  titleClassName?: string;
 }
 
 export function ProductCard({
@@ -83,9 +85,8 @@ export function ProductCard({
             <img
               src={product.image}
               alt={product.name}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
-                imageLoaded ? "opacity-100" : "opacity-0"
-              }`}
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"
+                }`}
               onLoad={() => setImageLoaded(true)}
               loading="lazy"
             />
@@ -124,11 +125,10 @@ export function ProductCard({
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={`w-4 h-4 ${
-                      i < Math.floor(product.rating)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
-                    }`}
+                    className={`w-4 h-4 ${i < Math.floor(product.rating)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-gray-300"
+                      }`}
                   />
                 ))}
               </div>

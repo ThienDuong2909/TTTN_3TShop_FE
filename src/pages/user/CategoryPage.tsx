@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { ProductCard } from "../../components/ProductCard";
 import { GridIcon, List, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -79,27 +79,18 @@ export default function CategoryPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header với nút Back */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="shrink-0"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {categoryName}
-            </h1>
-          </div>
-        </div>
-        <p className="text-gray-600 dark:text-gray-300 ml-14">
-          Khám phá các sản phẩm trong danh mục này
-        </p>
-      </div>
+      {/* Breadcrumb */}
+      <nav className="mb-8">
+        <ol className="flex items-center space-x-2 text-sm">
+          <li>
+            <Link to="/" className="text-gray-500 hover:text-brand-600">
+              Trang chủ
+            </Link>
+          </li>
+          <li>/</li>
+          <li className="text-base font-medium text-gray-900 dark:text-white">{categoryName}</li>
+        </ol>
+      </nav>
 
       {/* Toolbar */}
       <div className="flex flex-wrap gap-4 items-center justify-between mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
