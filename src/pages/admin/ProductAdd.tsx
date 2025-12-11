@@ -592,7 +592,8 @@ QUAN TRỌNG:
 
         if (successfulUploads.length < validFiles.length) {
           toast.warning(
-            `${validFiles.length - successfulUploads.length
+            `${
+              validFiles.length - successfulUploads.length
             } ảnh upload thất bại!`
           );
         }
@@ -948,10 +949,11 @@ QUAN TRỌNG:
                 type="button"
                 onClick={addImage}
                 disabled={isUploading || formData.images.length >= 5}
-                className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${isUploading || formData.images.length >= 5
-                  ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-                  : "bg-[#825B32] text-white hover:bg-[#6d4a2a]"
-                  }`}
+                className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                  isUploading || formData.images.length >= 5
+                    ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                    : "bg-[#825B32] text-white hover:bg-[#6d4a2a]"
+                }`}
               >
                 <Upload className="w-4 h-4 mr-2" />
                 {isUploading ? "Đang upload..." : "Thêm hình ảnh"}
@@ -1012,12 +1014,12 @@ QUAN TRỌNG:
               <p className="text-xs text-gray-400 mt-1">
                 Click "Thêm hình ảnh" để upload từ máy tính (tối đa 5 ảnh)
               </p>
-              <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+              {/* <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-xs text-blue-700 font-medium">
                   ✨ Ảnh đầu tiên sẽ được tự động phân tích bằng AI để gợi ý
                   thông tin sản phẩm
                 </p>
-              </div>
+              </div> */}
             </div>
           )}
         </div>
