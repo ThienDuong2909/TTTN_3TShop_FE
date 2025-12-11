@@ -5,13 +5,15 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-ARG VITE_OPENAI_API_KEY
+
 
 COPY . .
 # Nếu FE cần biết URL API, dùng biến build-time:
 #   ARG VITE_API_BASE_URL
 #   ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 # và trong code gọi import.meta.env.VITE_API_BASE_URL
+ARG VITE_OPENAI_API_KEY
+ENV VITE_OPENAI_API_KEY=$VITE_OPENAI_API_KEY
 RUN npm run build
 
 # ---------- Serve stage ----------
