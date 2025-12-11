@@ -15,14 +15,26 @@ import {
 } from "./ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { ThemeToggle } from "./ThemeToggle";
+import { useTheme } from "./ThemeProvider";
+import { useEffect } from "react";
 
 function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { state, getCartItemsCount, setSearchQuery, setUser } = useApp();
+  const { theme } = useTheme();
+  const [logoSrc, setLogoSrc] = useState("../../3tshop.png");
   const location = useLocation();
   const navigate = useNavigate();
   const cartItems = getCartItemsCount();
   const isLoggedIn = !!state.user;
+
+  useEffect(() => {
+    const isDark =
+      theme === "dark" ||
+      (theme === "system" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    setLogoSrc(isDark ? "../../3tshop_light.png" : "../../3tshop.png");
+  }, [theme]);
 
   const navigation: any = [
     // { name: "Trang chủ", href: "/", current: location.pathname === "/" },
@@ -48,8 +60,8 @@ function Header() {
           key={item.name}
           to={item.href}
           className={`${item.current
-              ? "text-brand-600 border-b-2 border-brand-600 dark:text-brand-400 dark:border-brand-400"
-              : "text-gray-600 hover:text-brand-600 dark:text-gray-300 dark:hover:text-brand-400"
+            ? "text-brand-600 border-b-2 border-brand-600 dark:text-brand-400 dark:border-brand-400"
+            : "text-gray-600 hover:text-brand-600 dark:text-gray-300 dark:hover:text-brand-400"
             } ${mobile
               ? "block px-3 py-2 text-base font-medium border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800"
               : "inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors"
@@ -100,7 +112,7 @@ function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <img className="h-10 w-10" src="../../3tshop.png" alt="Logo" />
+              <img className="h-10 w-10" src={logoSrc} alt="Logo" />
             </Link>
           </div>
 

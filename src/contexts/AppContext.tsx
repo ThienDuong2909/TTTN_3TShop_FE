@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import { CartItem, User } from "../types";
 import { Product } from "../components/ProductCard";
-import { removeFromCartApi } from "../services/api";
+import { removeFromCartApi, getCartItemsApi } from "../services/api";
 import { clearCartApi } from "../services/api";
 interface AppState {
   cart: CartItem[];
@@ -14,18 +14,18 @@ interface AppState {
 
 type AppAction =
   | {
-      type: "ADD_TO_CART";
-      product: Product;
-      quantity?: number;
-      color?: string;
-      size?: string;
-    }
+    type: "ADD_TO_CART";
+    product: Product;
+    quantity?: number;
+    color?: string;
+    size?: string;
+  }
   | {
-      type: "REMOVE_FROM_CART";
-      productId: number;
-      color?: string;
-      size?: string;
-    }
+    type: "REMOVE_FROM_CART";
+    productId: number;
+    color?: string;
+    size?: string;
+  }
   | { type: "UPDATE_CART_QUANTITY"; productId: number; quantity: number }
   | { type: "CLEAR_CART" }
   | { type: "TOGGLE_WISHLIST"; productId: number }
@@ -165,6 +165,7 @@ interface AppContextType {
   isInWishlist: (productId: number) => boolean;
   setCartFromBackend: (cart: CartItem[]) => void;
   clearCartFully: () => Promise<void>;
+  refreshCart: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -299,6 +300,63 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     dispatch({ type: "UPDATE_CART_QUANTITY", productId, quantity });
   };
 
+  const refreshCart = async () => {
+    try {
+      if (!state.user) return;
+
+      const res = await getCartItemsApi(state.user.id);
+      const groupedMap = new Map<string, CartItem>();
+
+      for (const item of res.items) {
+        const productId = item.maCTSP;
+        const color = item.mau?.hex;
+        const size = item.kichThuoc?.ten;
+        const donGia = Number(item.donGia ?? 0);
+
+        const key = `${productId}-${color}-${size}-${donGia}`;
+
+        if (!groupedMap.has(key)) {
+          groupedMap.set(key, {
+            product: {
+              id: productId,
+              name: item.sanPham?.tenSP || "Tên SP",
+              price: donGia,
+              originalPrice: undefined,
+              image: item.anhSanPham,
+              rating: 4.5,
+              reviews: 0,
+              totalSold: 0,
+              discount: 0,
+              isNew: false,
+              isBestSeller: false,
+              category: "",
+              colors: [],
+              sizes: [],
+            },
+            quantity: item.soLuong,
+            selectedColor: color,
+            selectedSize: size,
+          });
+        } else {
+          const existing = groupedMap.get(key)!;
+          existing.quantity += item.soLuong;
+        }
+      }
+
+      setCartFromBackend(Array.from(groupedMap.values()));
+    } catch (err) {
+      console.error("Lỗi khi refresh giỏ hàng:", err);
+    }
+  };
+
+  // Automatically refresh cart when user changes (e.g. on load)
+  useEffect(() => {
+    if (state.user) {
+      refreshCart();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.user?.id]);
+
   const clearCart = () => {
     dispatch({ type: "CLEAR_CART" });
   };
@@ -348,6 +406,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     getCartItemsCount,
     isInWishlist,
     clearCartFully,
+    refreshCart,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

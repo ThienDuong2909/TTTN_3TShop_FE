@@ -3,7 +3,6 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import {
   Star,
-  Heart,
   Share2,
   ChevronLeft,
   ChevronRight,
@@ -33,6 +32,7 @@ import type { Product } from "../../components/ProductCard";
 import { addToCartApi } from "../../services/api";
 import { Toast } from "@radix-ui/react-toast";
 import { toast } from "sonner";
+import { Skeleton } from "../../components/ui/skeleton";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -64,7 +64,8 @@ export default function ProductDetail() {
 
         const raw = await getProductDetail(Number(id)); // Ép kiểu rõ ràng
         const mapped = mapProductDetailFromApi(raw);
-        console.log(product);
+        console.log("product: ", raw);
+        console.log("product mapped: ", mapped);
         setProduct(mapped);
       } catch (err) {
         console.error("Lỗi khi lấy chi tiết sản phẩm:", err);
@@ -156,8 +157,97 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-        <Loader2 className="animate-spin w-12 h-12 text-brand-600" />
+      <div className="container mx-auto px-4 py-8">
+        {/* Breadcrumb Skeleton */}
+        <div className="flex items-center gap-2 mb-8">
+          <Skeleton className="h-4 w-20" />
+          <span className="text-gray-300">/</span>
+          <Skeleton className="h-4 w-24" />
+          <span className="text-gray-300">/</span>
+          <Skeleton className="h-4 w-40" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+          {/* Images Skeleton */}
+          <div className="space-y-4">
+            <Skeleton className="w-full aspect-square rounded-lg" />
+            <div className="grid grid-cols-4 gap-2">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="aspect-square rounded-lg" />
+              ))}
+            </div>
+          </div>
+
+          {/* Info Skeleton */}
+          <div className="space-y-6">
+            <div>
+              <Skeleton className="h-10 w-3/4 mb-4" />
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-5 w-24" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-48" />
+              <Skeleton className="h-5 w-32" />
+            </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              {/* Colors */}
+              <div>
+                <Skeleton className="h-5 w-16 mb-2" />
+                <div className="flex gap-2">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} className="h-8 w-8 rounded-full" />
+                  ))}
+                </div>
+              </div>
+
+              {/* Sizes */}
+              <div>
+                <Skeleton className="h-5 w-20 mb-2" />
+                <div className="flex gap-2">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} className="h-9 w-16 rounded-md" />
+                  ))}
+                </div>
+              </div>
+
+              {/* Quantity */}
+              <div>
+                <Skeleton className="h-5 w-16 mb-2" />
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-9 w-9 rounded-md" />
+                  <Skeleton className="h-6 w-8" />
+                  <Skeleton className="h-9 w-9 rounded-md" />
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-3 pt-4">
+              <Skeleton className="h-12 w-full rounded-md" />
+              <div className="flex gap-3">
+                <Skeleton className="h-10 flex-1 rounded-md" />
+                <Skeleton className="h-10 w-12 rounded-md" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs Skeleton */}
+        <div className="mb-12">
+          <div className="flex gap-1 mb-6 border-b">
+            <Skeleton className="h-10 w-32 rounded-t-lg" />
+            <Skeleton className="h-10 w-32 rounded-t-lg" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -223,6 +313,12 @@ export default function ProductDetail() {
     );
   };
 
+  const handleShare = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    toast.success("Đã sao chép liên kết vào clipboard");
+  };
+
   const colorNames: Record<string, string> = {
     "#000000": "Đen",
     "#ffffff": "Trắng",
@@ -249,20 +345,14 @@ export default function ProductDetail() {
           <li>/</li>
           <li>
             <Link
-              to={`/${
-                categories.find(
-                  (cat) => cat.id === product.category?.split("-")[0]
-                )?.slug || ""
-              }`}
+              to={`/category/${product.category}`}
               className="text-gray-500 hover:text-brand-600"
             >
-              {categories.find(
-                (cat) => cat.id === product.category?.split("-")[0]
-              )?.name || "Sản phẩm"}
+              {product.categoryName || "Sản phẩm"}
             </Link>
           </li>
           <li>/</li>
-          <li className="text-gray-900 dark:text-white">{product.name}</li>
+          <li className="text-base font-medium text-gray-900 dark:text-white">{product.name}</li>
         </ol>
       </nav>
 
@@ -313,11 +403,10 @@ export default function ProductDetail() {
               {productImages.map((image, index) => (
                 <button
                   key={index}
-                  className={`aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border-2 ${
-                    selectedImageIndex === index
-                      ? "border-brand-600"
-                      : "border-transparent"
-                  }`}
+                  className={`aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border-2 ${selectedImageIndex === index
+                    ? "border-brand-600"
+                    : "border-transparent"
+                    }`}
                   onClick={() => setSelectedImageIndex(index)}
                 >
                   <img
@@ -344,14 +433,13 @@ export default function ProductDetail() {
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={`w-5 h-5 ${
-                      i <
+                    className={`w-5 h-5 ${i <
                       Math.floor(
                         commentsSummary?.averageRating || product.rating
                       )
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
-                    }`}
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-gray-300"
+                      }`}
                   />
                 ))}
               </div>
@@ -394,7 +482,7 @@ export default function ProductDetail() {
                   {Math.round(
                     ((product.originalPrice - product.price) /
                       product.originalPrice) *
-                      100
+                    100
                   )}
                   %)
                 </p>
@@ -414,11 +502,10 @@ export default function ProductDetail() {
                   {product.colors.map((color) => (
                     <button
                       key={color}
-                      className={`w-8 h-8 rounded-full border-2 ${
-                        selectedColor === color
-                          ? "border-brand-600 ring-2 ring-brand-200"
-                          : "border-gray-300"
-                      }`}
+                      className={`w-8 h-8 rounded-full border-2 ${selectedColor === color
+                        ? "border-brand-600 ring-2 ring-brand-200"
+                        : "border-gray-300"
+                        }`}
                       style={{ backgroundColor: color }}
                       onClick={() => setSelectedColor(color)}
                       title={colorNames[color] || color}
@@ -486,9 +573,9 @@ export default function ProductDetail() {
           </div>
 
           {/* Action Buttons */}
-          <div className="space-y-3">
+          <div className="flex gap-3">
             <Button
-              className="w-full bg-brand-600 hover:bg-brand-700"
+              className="flex-1 bg-brand-600 hover:bg-brand-700"
               size="lg"
               disabled={stock === 0}
               onClick={handleAddToCart}
@@ -497,23 +584,9 @@ export default function ProductDetail() {
               Thêm vào giỏ hàng - {formatPrice(product.price * quantity)}
             </Button>
 
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => toggleWishlist(product.id)}
-              >
-                <Heart
-                  className={`w-4 h-4 mr-2 ${
-                    isInWishlist(product.id) ? "fill-red-500 text-red-500" : ""
-                  }`}
-                />
-                {isInWishlist(product.id) ? "Đã yêu thích" : "Yêu thích"}
-              </Button>
-              <Button variant="outline" size="sm">
-                <Share2 className="w-4 h-4" />
-              </Button>
-            </div>
+            <Button variant="outline" size="lg" onClick={handleShare}>
+              <Share2 className="w-5 h-5" />
+            </Button>
           </div>
 
           {/* Benefits */}
@@ -533,21 +606,21 @@ export default function ProductDetail() {
           </div> */}
 
           {/* Size Guide */}
-        <div className="pt-6 border-t">
-          {/* <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="pt-6 border-t">
+            {/* <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Hướng dẫn chọn size
           </h3> */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-            <img
-              src="/size.png"
-              alt="Hướng dẫn chọn size"
-              className="w-full h-auto max-w-sm mx-auto rounded-lg shadow-sm"
-            />
-            <p className="text-sm text-gray-600 dark:text-gray-300 text-center mt-3">
-              Tham khảo bảng size để chọn kích thước phù hợp nhất
-            </p>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+              <img
+                src="/size.png"
+                alt="Hướng dẫn chọn size"
+                className="w-full h-auto max-w-sm mx-auto rounded-lg shadow-sm"
+              />
+              <p className="text-sm text-gray-600 dark:text-gray-300 text-center mt-3">
+                Tham khảo bảng size để chọn kích thước phù hợp nhất
+              </p>
+            </div>
           </div>
-        </div>
 
         </div>
       </div>
@@ -567,16 +640,7 @@ export default function ProductDetail() {
             <CardContent className="pt-6">
               <div className="prose max-w-none">
                 <p>
-                  {product.name} là sản phẩm chất lượng cao được thiết kế với sự
-                  tỉ mỉ trong từng chi tiết. Được làm từ những chất liệu tốt
-                  nhất, sản phẩm mang đến sự thoải mái và phong cách cho người
-                  sử dụng.
-                </p>
-                <p>
-                  Với thiết kế hiện đại và tinh tế, sản phẩm phù hợp cho nhiều
-                  hoàn cảnh khác nhau từ công việc đến giải trí. Đây chính là
-                  lựa chọn hoàn hảo cho những ai yêu thích sự kết hợp giữa chất
-                  lượng và phong cách.
+                  {product?.mota}
                 </p>
               </div>
             </CardContent>
@@ -599,14 +663,13 @@ export default function ProductDetail() {
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              className={`w-4 h-4 ${
-                                i <
+                              className={`w-4 h-4 ${i <
                                 Math.floor(
                                   Number(commentsSummary.averageRating)
                                 )
-                                  ? "fill-yellow-400 text-yellow-400"
-                                  : "text-gray-300"
-                              }`}
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-gray-300"
+                                }`}
                             />
                           ))}
                         </div>
@@ -654,8 +717,24 @@ export default function ProductDetail() {
 
             {/* Comments List */}
             {commentsLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin" />
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Card key={i}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-start gap-4">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-4 w-16" />
+                          </div>
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-16 w-full" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             ) : comments.length === 0 ? (
               <Card>
@@ -704,11 +783,10 @@ export default function ProductDetail() {
                               {[...Array(5)].map((_, i) => (
                                 <Star
                                   key={i}
-                                  className={`w-4 h-4 ${
-                                    i < comment.SoSao
-                                      ? "fill-yellow-400 text-yellow-400"
-                                      : "text-gray-300"
-                                  }`}
+                                  className={`w-4 h-4 ${i < comment.SoSao
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : "text-gray-300"
+                                    }`}
                                 />
                               ))}
                             </div>

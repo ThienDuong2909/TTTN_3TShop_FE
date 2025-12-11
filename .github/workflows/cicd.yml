@@ -38,6 +38,8 @@ jobs:
           push: true
           context: .
           tags: ${{ secrets.REGISTRY }}/${{ secrets.IMAGE_NAME }}:latest
+          build-args: |
+  VITE_OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0

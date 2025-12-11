@@ -143,6 +143,12 @@ export interface CreateOrderPayload {
 }
 
 export function createOrder(data: CreateOrderPayload): Promise<any>;
+export function createPayOSLink(orderId: number): Promise<{
+  data: {
+    checkoutUrl: string;
+    qrCode?: string;
+  }
+}>;
 
 export function checkStockAvailability(maCTSP: number): Promise<{ soLuongTon: number }>;
 export declare const clearCartApi: (maKH: number) => Promise<any>;
@@ -1084,15 +1090,6 @@ export interface Province {
   wards: any[];
 }
 
-export interface District {
-  code: number;
-  name: string;
-  division_type: string;
-  codename: string;
-  province_code: number;
-  wards: any[];
-}
-
 export interface Ward {
   code: number;
   name: string;
@@ -1103,5 +1100,4 @@ export interface Ward {
 }
 
 export function getProvinces(): Promise<Province[]>;
-export function getDistricts(): Promise<District[]>;
 export function getWards(): Promise<Ward[]>;

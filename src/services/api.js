@@ -830,17 +830,6 @@ export const getWards = async () => {
   }
 };
 
-export const getDistricts = async () => {
-  try {
-    const response = await fetch("https://provinces.open-api.vn/api/v2/d/");
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching districts:", error);
-    return [];
-  }
-};
-
 // Xóa màu
 export const deleteColor = async (colorId) => {
   try {
@@ -1220,6 +1209,16 @@ export const removeFromCartApi = async (
 export const createOrder = async (payload) => {
   const response = await api.post("/gio-hang/dat-hang", payload);
   return response.data;
+};
+
+export const createPayOSLink = async (orderId) => {
+  try {
+    const response = await api.post(`/payment/payos/create-payment-link/${orderId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating PayOS link:", error);
+    throw error;
+  }
 };
 
 // services/api.js

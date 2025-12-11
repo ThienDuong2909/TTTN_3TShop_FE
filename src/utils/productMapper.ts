@@ -1,6 +1,6 @@
 export const mapSanPhamFromApi = (sanPham: any) => {
-  const allColors = sanPham.ChiTietSanPhams?.map((ct:any) => ct.Mau?.MaHex).filter(Boolean) || [];
-  const allSizes = sanPham.ChiTietSanPhams?.map((ct:any) => ct.KichThuoc?.TenKichThuoc).filter(Boolean) || [];
+  const allColors = sanPham.ChiTietSanPhams?.map((ct: any) => ct.Mau?.MaHex).filter(Boolean) || [];
+  const allSizes = sanPham.ChiTietSanPhams?.map((ct: any) => ct.KichThuoc?.TenKichThuoc).filter(Boolean) || [];
 
   const giaGoc = Number(sanPham.ThayDoiGia?.[0]?.Gia || 0);
   const giam = Number(sanPham.CT_DotGiamGia?.[0]?.PhanTramGiam || 0);
@@ -22,7 +22,7 @@ export const mapSanPhamFromApi = (sanPham: any) => {
     rating: sanPham.BinhLuan.avgRate,
     reviews: sanPham.BinhLuan.luotBinhLuan,
     isNew: false,
-     isBestSeller: !!sanPham.totalSold, // đánh dấu là bestseller nếu có totalSold
+    isBestSeller: !!sanPham.totalSold, // đánh dấu là bestseller nếu có totalSold
     totalSold: sanPham.totalSold ?? 0,
     category: String(sanPham.MaLoaiSP),
     colors: [...new Set(allColors)] as string[],
@@ -30,8 +30,10 @@ export const mapSanPhamFromApi = (sanPham: any) => {
   };
 };
 
-export const mapProductDetailFromApi = (apiData: any)=> {
+export const mapProductDetailFromApi = (apiData: any) => {
+  const mota = apiData.MoTa;
   const chiTietList = apiData.ChiTietSanPhams;
+  console.log("Chi tiết sản phẩm:", chiTietList);
 
   const allColors = new Set<string>();
   const allSizes = new Set<string>();
@@ -68,16 +70,19 @@ export const mapProductDetailFromApi = (apiData: any)=> {
   return {
     id: apiData.MaSP,
     name: apiData.TenSP,
+    mota: mota,
     price: giaSauGiam,
     originalPrice: giam > 0 ? giaGoc : undefined,
     discount: giam > 0 ? giam : undefined,
     image,
     images,
-    rating:  apiData.BinhLuan.avgRate,
-    reviews:  apiData.BinhLuan.luotBinhLuan,
+    rating: apiData.BinhLuan.avgRate,
+    reviews: apiData.BinhLuan.luotBinhLuan,
     isNew: true,
     isBestSeller: false,
     category: apiData.MaLoaiSP.toString(),
+    categoryName: apiData.LoaiSP?.TenLoai,
+    totalSold: 0,
     colors: Array.from(allColors),
     sizes: Array.from(allSizes),
     sizeMap: sizeMapObj,

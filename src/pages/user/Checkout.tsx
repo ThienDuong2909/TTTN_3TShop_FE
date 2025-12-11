@@ -2,7 +2,7 @@
 // Checkout with success modal
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Loader2 } from "lucide-react";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import {
@@ -16,12 +16,11 @@ import { Badge } from "../../components/ui/badge";
 import { useApp } from "../../contexts/AppContext";
 import {
   createOrder as apiCreateOrder,
+  createPayOSLink,
   getCurrentExchangeRate,
   getProvinces,
-  getDistricts,
   getWards,
   Province,
-  District,
   Ward,
 } from "../../services/api";
 import {
@@ -45,8 +44,11 @@ declare global {
   }
 }
 
+import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
+import { Label } from "../../components/ui/label";
+
 export default function Checkout() {
-  const { state, getCartTotal, clearCart } = useApp();
+  const { state, getCartTotal, clearCart, refreshCart } = useApp();
   const navigate = useNavigate();
   const [name, setName] = useState(state.user?.name || "");
   const [address, setAddress] = useState(state.user?.address || "");
@@ -54,6 +56,7 @@ export default function Checkout() {
   const [deliveryTime, setDeliveryTime] = useState(
     new Date().toISOString().slice(0, 16)
   ); // Default to current date and time
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "paypal" | "qr">("cod");
   const [errors, setErrors] = useState<{
     name?: string;
     address?: string;
@@ -65,32 +68,47 @@ export default function Checkout() {
   const addressRef = useRef(address);
   const phoneRef = useRef(phone);
   const deliveryTimeRef = useRef(deliveryTime);
+
   const [usdRate, setUsdRate] = useState(23000);
+  const [payOSUrl, setPayOSUrl] = useState("");
+  const [isPayOSOpen, setIsPayOSOpen] = useState(false);
+
+  // Update PayOS config whenever it changes so `openPayOS` uses latest config? 
+  // Actually usePayOS accepts config. If config changes, does it update? 
+  // Usually hooks react to state changes. 
+  // But we need to set checkout URL *after* getting it from backend.
+  // We might need to call open() only when config is ready. 
+  // UseEffect to trigger open if ready? Or ref?
+  // Let's rely on setting state, and then in a useEffect, if checkoutUrl is present and we just set it, open it.
+  // Or just calling open() might work if the hook updates its internal ref. 
+  // Re-reading docs: "usePayOS chấp nhận một đối số là Object... trả về {open, exit}".
+  // If we update state, component re-renders, usePayOS gets new config.
+
+
+
 
   // Address split state
   const [provinces, setProvinces] = useState<Province[]>([]);
-  const [districts, setDistricts] = useState<District[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
   const [selectedProvinceCode, setSelectedProvinceCode] = useState<string>("");
-  const [selectedDistrictCode, setSelectedDistrictCode] = useState<string>("");
   const [selectedWardCode, setSelectedWardCode] = useState<string>("");
   const [houseNumber, setHouseNumber] = useState<string>("");
-  const [filteredDistricts, setFilteredDistricts] = useState<District[]>([]);
   const [filteredWards, setFilteredWards] = useState<Ward[]>([]);
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+  const [isLoadingCart, setIsLoadingCart] = useState(false);
 
   // Fetch address data
   useEffect(() => {
     const fetchAddressData = async () => {
+      setIsLoadingAddress(true);
       try {
-        const [provincesData, districtsData, wardsData] = await Promise.all([
+        const [provincesData, wardsData] = await Promise.all([
           getProvinces(),
-          getDistricts(),
           getWards(),
         ]);
         // Filter only Ho Chi Minh City (Code 79)
         const hcmCity = provincesData.filter((p) => p.code === 79);
         setProvinces(hcmCity);
-        setDistricts(districtsData);
         setWards(wardsData);
 
         // Auto select HCM City if available
@@ -99,32 +117,18 @@ export default function Checkout() {
         }
       } catch (error) {
         console.error("Error fetching address data:", error);
+      } finally {
+        setIsLoadingAddress(false);
       }
     };
     fetchAddressData();
   }, []);
 
-  // Filter districts when province changes
+  // Filter wards when province changes
   useEffect(() => {
     if (selectedProvinceCode) {
-      const filtered = districts.filter(
-        (d) => d.province_code === Number(selectedProvinceCode)
-      );
-      setFilteredDistricts(filtered);
-      setSelectedDistrictCode("");
-      setSelectedWardCode("");
-    } else {
-      setFilteredDistricts([]);
-      setSelectedDistrictCode("");
-      setSelectedWardCode("");
-    }
-  }, [selectedProvinceCode, districts]);
-
-  // Filter wards when district changes
-  useEffect(() => {
-    if (selectedDistrictCode) {
       const filtered = wards.filter(
-        (w) => w.district_code === Number(selectedDistrictCode)
+        (w) => w.province_code === Number(selectedProvinceCode)
       );
       setFilteredWards(filtered);
       setSelectedWardCode("");
@@ -132,26 +136,23 @@ export default function Checkout() {
       setFilteredWards([]);
       setSelectedWardCode("");
     }
-  }, [selectedDistrictCode, wards]);
+  }, [selectedProvinceCode, wards]);
 
   // Update full address string
   useEffect(() => {
-    if (selectedProvinceCode && selectedDistrictCode && selectedWardCode && houseNumber) {
+    if (selectedProvinceCode && selectedWardCode && houseNumber) {
       const province = provinces.find(
         (p) => p.code === Number(selectedProvinceCode)
       );
-      const district = districts.find(
-        (d) => d.code === Number(selectedDistrictCode)
-      );
       const ward = wards.find((w) => w.code === Number(selectedWardCode));
 
-      if (province && district && ward) {
-        const fullAddress = `${houseNumber}, ${ward.name}, ${district.name}, ${province.name}`;
+      if (province && ward) {
+        const fullAddress = `${houseNumber}, ${ward.name}, ${province.name}`;
         setAddress(fullAddress);
         addressRef.current = fullAddress;
       }
     }
-  }, [selectedProvinceCode, selectedDistrictCode, selectedWardCode, houseNumber, provinces, districts, wards]);
+  }, [selectedProvinceCode, selectedWardCode, houseNumber, provinces, wards]);
 
 
   const subtotal = getCartTotal();
@@ -163,6 +164,23 @@ export default function Checkout() {
       navigate("/login", { state: { from: "/checkout" } });
     }
   }, [state.user]);
+
+  // Refresh cart if empty and user exists (handle reload)
+  useEffect(() => {
+    const fetchCart = async () => {
+      if (state.user && state.cart.length === 0) {
+        setIsLoadingCart(true);
+        try {
+          await refreshCart();
+        } catch (error) {
+          console.error("Failed to refresh cart:", error);
+        } finally {
+          setIsLoadingCart(false);
+        }
+      }
+    };
+    fetchCart();
+  }, [state.user, state.cart.length]);
   useEffect(() => {
     getCurrentExchangeRate()
       .then((rate) => {
@@ -223,7 +241,8 @@ export default function Checkout() {
             nameRef.current,
             addressRef.current,
             phoneRef.current,
-            deliveryTimeRef.current
+            deliveryTimeRef.current,
+            "paypal"
           );
         },
         onError: (err) => {
@@ -244,11 +263,13 @@ export default function Checkout() {
     return Object.keys(newErrors).length === 0;
   };
 
+
   const handlePlaceOrder = async (
     nameValue = name,
     addressValue = address,
     phoneValue = phone,
-    deliveryTimeValue = deliveryTime
+    deliveryTimeValue = deliveryTime,
+    paymentMethodArg = "cod" // Default or explicit
   ) => {
     try {
       const payload = {
@@ -261,8 +282,39 @@ export default function Checkout() {
           maCTSP: item.product.id,
           soLuong: item.quantity,
         })),
+        phuongThucThanhToan: paymentMethodArg,
       };
-      await apiCreateOrder(payload);
+
+      const response = await apiCreateOrder(payload);
+
+      // Handle PayOS (QR) Payment
+      if (paymentMethodArg === "qr") {
+        const orderId = response.data?.MaDDH || response.data?.id;
+
+        if (orderId) {
+          try {
+            // This call should return the checkoutUrl from backend
+            const payOSRes = await createPayOSLink(orderId);
+            console.log("PayOS Response:", payOSRes);
+
+            if (payOSRes.data && payOSRes.data.checkoutUrl) {
+              // Open PayOS checkout page in new tab
+              window.open(payOSRes.data.checkoutUrl, '_blank');
+
+              // Clear cart and show success message
+              clearCart();
+              setShowSuccessModal(true);
+              return;
+            }
+          } catch (payOSError: any) {
+            console.error("PayOS Error:", payOSError);
+            console.error("PayOS Error Response:", payOSError.response?.data);
+            const errorMsg = payOSError.response?.data?.message || payOSError.message || "Lỗi không xác định";
+            alert(`Lỗi khi tạo link thanh toán PayOS: ${errorMsg}`);
+          }
+        }
+      }
+
       clearCart();
       setShowSuccessModal(true);
     } catch (err) {
@@ -285,6 +337,15 @@ export default function Checkout() {
     now.getDate()
   )}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
   if (state.cart.length === 0 && !showSuccessModal) {
+    if (isLoadingCart) {
+      return (
+        <div className="container mx-auto px-4 py-20 text-center flex justify-center items-center">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
+          <span className="ml-2 text-gray-600">Đang tải giỏ hàng...</span>
+        </div>
+      );
+    }
+
     return (
       <div className="container mx-auto px-4 py-20 text-center">
         <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -328,12 +389,16 @@ export default function Checkout() {
               </div>
               <div>
                 <label className="text-sm font-medium">Địa chỉ giao hàng</label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 mt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 mt-2">
                   <div className="space-y-2">
-                    <label className="text-xs text-gray-500">Tỉnh / Thành phố</label>
+                    <label className="text-xs text-gray-500 flex items-center gap-2">
+                      Tỉnh / Thành phố
+                      {isLoadingAddress && <Loader2 className="h-3 w-3 animate-spin text-gray-400" />}
+                    </label>
                     <Select
                       value={selectedProvinceCode}
                       onValueChange={setSelectedProvinceCode}
+                      disabled={isLoadingAddress}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Chọn Tỉnh / Thành phố" />
@@ -352,34 +417,11 @@ export default function Checkout() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs text-gray-500">Quận / Huyện</label>
-                    <Select
-                      value={selectedDistrictCode}
-                      onValueChange={setSelectedDistrictCode}
-                      disabled={!selectedProvinceCode}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn Quận / Huyện" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {filteredDistricts.map((district) => (
-                          <SelectItem
-                            key={district.code}
-                            value={district.code.toString()}
-                          >
-                            {district.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
                     <label className="text-xs text-gray-500">Phường / Xã</label>
                     <Select
                       value={selectedWardCode}
                       onValueChange={setSelectedWardCode}
-                      disabled={!selectedDistrictCode}
+                      disabled={!selectedProvinceCode}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Chọn Phường / Xã" />
@@ -538,9 +580,28 @@ export default function Checkout() {
               >
                 Xác nhận đặt hàng (Thanh toán COD)
               </Button>
-            </div> */}
+            </div> 
+            */}
+            <div className="space-y-4 pt-4">
+              {/*
+              <Button
+                className="w-full bg-brand-600 hover:bg-brand-700 h-12 text-lg"
+                onClick={() => {
+                  if (validate()) {
+                    handlePlaceOrder(name, address, phone, deliveryTime, "qr");
+                  }
+                }}
+              >
+                Thanh toán qua PayOS (QR)
+              </Button>
+            */}
 
-            <div ref={paypalContainerRef} className="w-full mt-4"></div>
+              {/* PayPal Container - Always show */}
+              <div
+                ref={paypalContainerRef}
+                className="w-full"
+              ></div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -560,6 +621,8 @@ export default function Checkout() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+
     </div>
   );
 }
