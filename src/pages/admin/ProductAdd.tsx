@@ -24,7 +24,7 @@ import { formatDate } from "@/lib/utils";
 // Khai báo kiểu cho import.meta.env
 declare global {
   interface ImportMetaEnv {
-    VITE_API_BASE_URL: any;
+    VITE_API_BASE_URL: string;
     readonly VITE_OPENAI_API_KEY: string;
   }
 
@@ -578,12 +578,12 @@ QUAN TRỌNG:
           );
 
           // Auto-analyze the first image with AI
-          if (successfulUploads.length > 0 && formData.images.length === 0) {
-            // Only analyze if this is the first image
-            setTimeout(() => {
-              analyzeImageWithAI(successfulUploads[0].url);
-            }, 1000);
-          }
+          // if (successfulUploads.length > 0 && formData.images.length === 0) {
+          //   // Only analyze if this is the first image
+          //   setTimeout(() => {
+          //     analyzeImageWithAI(successfulUploads[0].url);
+          //   }, 1000);
+          // }
         } else {
           toast.error(
             "Không thể upload hình ảnh. Vui lòng kiểm tra cấu hình Cloudinary!"
@@ -930,8 +930,7 @@ QUAN TRỌNG:
               */}
             </div>
             <div className="flex gap-2">
-
-              {formData.images.length > 0 && (
+              {/* {formData.images.length > 0 && (
                 <button
                   type="button"
                   onClick={() => analyzeImageWithAI(formData.images[0].url)}
@@ -944,8 +943,7 @@ QUAN TRỌNG:
                   <Sparkles className="w-4 h-4 mr-2" />
                   {isAnalyzing ? "Đang phân tích..." : "Phân tích AI"}
                 </button>
-              )}
-
+              )} */}
               <button
                 type="button"
                 onClick={addImage}
@@ -977,16 +975,15 @@ QUAN TRỌNG:
                   </div>
                 )}
                 <div className="absolute top-1 right-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
+                  {/* <button
                     type="button"
                     onClick={() => analyzeImageWithAI(image.url)}
                     disabled={isAnalyzing}
                     className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
                     title="Phân tích ảnh với AI"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                  </button>
-
+                  > */}
+                  {/* <Sparkles className="w-3 h-3" />
+                  </button> */}
                   {image.AnhChinh !== 1 && (
                     <button
                       type="button"
