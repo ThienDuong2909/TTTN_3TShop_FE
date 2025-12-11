@@ -1,38 +1,36 @@
-import { useState, useEffect, useMemo } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import {
-  Star,
-  Share2,
   ChevronLeft,
   ChevronRight,
-  Plus,
   Minus,
+  Plus,
+  Share2,
   ShoppingCart,
-  Truck,
-  Shield,
-  RotateCcw,
+  Star,
 } from "lucide-react";
-import { Button } from "../../components/ui/button";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
+import type { Product } from "../../components/ProductCard";
+import { ProductCard } from "../../components/ProductCard";
+import { Avatar, AvatarFallback } from "../../components/ui/avatar";
 import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
+import { Skeleton } from "../../components/ui/skeleton";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "../../components/ui/tabs";
-import { Avatar, AvatarFallback } from "../../components/ui/avatar";
-import { ProductCard } from "../../components/ProductCard";
 import { useApp } from "../../contexts/AppContext";
-import { products, categories } from "../../libs/data";
-import { getProductDetail, getProductComments } from "../../services/api";
+import { products } from "../../libs/data";
+import {
+  addToCartApi,
+  getProductComments,
+  getProductDetail,
+} from "../../services/api";
 import { mapProductDetailFromApi } from "../../utils/productMapper";
-import type { Product } from "../../components/ProductCard";
-import { addToCartApi } from "../../services/api";
-import { Toast } from "@radix-ui/react-toast";
-import { toast } from "sonner";
-import { Skeleton } from "../../components/ui/skeleton";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -352,7 +350,9 @@ export default function ProductDetail() {
             </Link>
           </li>
           <li>/</li>
-          <li className="text-base font-medium text-gray-900 dark:text-white">{product.name}</li>
+          <li className="text-base font-medium text-gray-900 dark:text-white">
+            {product.name}
+          </li>
         </ol>
       </nav>
 
@@ -403,10 +403,11 @@ export default function ProductDetail() {
               {productImages.map((image, index) => (
                 <button
                   key={index}
-                  className={`aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border-2 ${selectedImageIndex === index
-                    ? "border-brand-600"
-                    : "border-transparent"
-                    }`}
+                  className={`aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border-2 ${
+                    selectedImageIndex === index
+                      ? "border-brand-600"
+                      : "border-transparent"
+                  }`}
                   onClick={() => setSelectedImageIndex(index)}
                 >
                   <img
@@ -433,13 +434,14 @@ export default function ProductDetail() {
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={`w-5 h-5 ${i <
+                    className={`w-5 h-5 ${
+                      i <
                       Math.floor(
                         commentsSummary?.averageRating || product.rating
                       )
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-gray-300"
-                      }`}
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
+                    }`}
                   />
                 ))}
               </div>
@@ -482,7 +484,7 @@ export default function ProductDetail() {
                   {Math.round(
                     ((product.originalPrice - product.price) /
                       product.originalPrice) *
-                    100
+                      100
                   )}
                   %)
                 </p>
@@ -502,10 +504,11 @@ export default function ProductDetail() {
                   {product.colors.map((color) => (
                     <button
                       key={color}
-                      className={`w-8 h-8 rounded-full border-2 ${selectedColor === color
-                        ? "border-brand-600 ring-2 ring-brand-200"
-                        : "border-gray-300"
-                        }`}
+                      className={`w-8 h-8 rounded-full border-2 ${
+                        selectedColor === color
+                          ? "border-brand-600 ring-2 ring-brand-200"
+                          : "border-gray-300"
+                      }`}
                       style={{ backgroundColor: color }}
                       onClick={() => setSelectedColor(color)}
                       title={colorNames[color] || color}
@@ -621,7 +624,6 @@ export default function ProductDetail() {
               </p>
             </div>
           </div>
-
         </div>
       </div>
 
@@ -639,9 +641,7 @@ export default function ProductDetail() {
           <Card>
             <CardContent className="pt-6">
               <div className="prose max-w-none">
-                <p>
-                  {product?.mota}
-                </p>
+                <p>{product?.mota}</p>
               </div>
             </CardContent>
           </Card>
@@ -663,13 +663,14 @@ export default function ProductDetail() {
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              className={`w-4 h-4 ${i <
+                              className={`w-4 h-4 ${
+                                i <
                                 Math.floor(
                                   Number(commentsSummary.averageRating)
                                 )
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                                }`}
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-gray-300"
+                              }`}
                             />
                           ))}
                         </div>
@@ -783,10 +784,11 @@ export default function ProductDetail() {
                               {[...Array(5)].map((_, i) => (
                                 <Star
                                   key={i}
-                                  className={`w-4 h-4 ${i < comment.SoSao
-                                    ? "fill-yellow-400 text-yellow-400"
-                                    : "text-gray-300"
-                                    }`}
+                                  className={`w-4 h-4 ${
+                                    i < comment.SoSao
+                                      ? "fill-yellow-400 text-yellow-400"
+                                      : "text-gray-300"
+                                  }`}
                                 />
                               ))}
                             </div>
