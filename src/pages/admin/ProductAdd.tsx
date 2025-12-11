@@ -309,7 +309,7 @@ export const ProductAdd = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "qwen/qwen2.5-vl-72b-instruct:free",
+            model: "GPT-4o",
             messages: [
               {
                 role: "user",
@@ -580,9 +580,9 @@ QUAN TRỌNG:
           // Auto-analyze the first image with AI
           if (successfulUploads.length > 0 && formData.images.length === 0) {
             // Only analyze if this is the first image
-            // setTimeout(() => {
-            //   analyzeImageWithAI(successfulUploads[0].url);
-            // }, 1000);
+            setTimeout(() => {
+              analyzeImageWithAI(successfulUploads[0].url);
+            }, 1000);
           }
         } else {
           toast.error(
@@ -922,12 +922,15 @@ QUAN TRỌNG:
               <h2 className="text-lg font-semibold text-gray-900">
                 Hình ảnh sản phẩm ({formData.images.length}/5)
               </h2>
+              {/*
               <p className="text-xs text-gray-600 mt-1">
                 Upload từ 1-5 hình ảnh. Ảnh đầu tiên sẽ là ảnh chính và được
                 phân tích AI.
               </p>
+              */}
             </div>
             <div className="flex gap-2">
+
               {formData.images.length > 0 && (
                 <button
                   type="button"
@@ -942,6 +945,7 @@ QUAN TRỌNG:
                   {isAnalyzing ? "Đang phân tích..." : "Phân tích AI"}
                 </button>
               )}
+
               <button
                 type="button"
                 onClick={addImage}
@@ -973,7 +977,7 @@ QUAN TRỌNG:
                   </div>
                 )}
                 <div className="absolute top-1 right-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {/* <button
+                  <button
                     type="button"
                     onClick={() => analyzeImageWithAI(image.url)}
                     disabled={isAnalyzing}
@@ -982,7 +986,7 @@ QUAN TRỌNG:
                   >
                     <Sparkles className="w-3 h-3" />
                   </button>
-                  */}
+
                   {image.AnhChinh !== 1 && (
                     <button
                       type="button"
