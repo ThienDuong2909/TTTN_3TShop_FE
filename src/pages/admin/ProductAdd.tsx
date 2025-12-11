@@ -580,9 +580,9 @@ QUAN TRỌNG:
           // Auto-analyze the first image with AI
           if (successfulUploads.length > 0 && formData.images.length === 0) {
             // Only analyze if this is the first image
-            setTimeout(() => {
-              analyzeImageWithAI(successfulUploads[0].url);
-            }, 1000);
+            // setTimeout(() => {
+            //   analyzeImageWithAI(successfulUploads[0].url);
+            // }, 1000);
           }
         } else {
           toast.error(
@@ -592,8 +592,7 @@ QUAN TRỌNG:
 
         if (successfulUploads.length < validFiles.length) {
           toast.warning(
-            `${
-              validFiles.length - successfulUploads.length
+            `${validFiles.length - successfulUploads.length
             } ảnh upload thất bại!`
           );
         }
@@ -934,11 +933,10 @@ QUAN TRỌNG:
                   type="button"
                   onClick={() => analyzeImageWithAI(formData.images[0].url)}
                   disabled={isAnalyzing}
-                  className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                    isAnalyzing
-                      ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
-                  }`}
+                  className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${isAnalyzing
+                    ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   {isAnalyzing ? "Đang phân tích..." : "Phân tích AI"}
@@ -948,11 +946,10 @@ QUAN TRỌNG:
                 type="button"
                 onClick={addImage}
                 disabled={isUploading || formData.images.length >= 5}
-                className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                  isUploading || formData.images.length >= 5
-                    ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-                    : "bg-[#825B32] text-white hover:bg-[#6d4a2a]"
-                }`}
+                className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${isUploading || formData.images.length >= 5
+                  ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                  : "bg-[#825B32] text-white hover:bg-[#6d4a2a]"
+                  }`}
               >
                 <Upload className="w-4 h-4 mr-2" />
                 {isUploading ? "Đang upload..." : "Thêm hình ảnh"}
@@ -976,7 +973,7 @@ QUAN TRỌNG:
                   </div>
                 )}
                 <div className="absolute top-1 right-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
+                  {/* <button
                     type="button"
                     onClick={() => analyzeImageWithAI(image.url)}
                     disabled={isAnalyzing}
@@ -985,6 +982,7 @@ QUAN TRỌNG:
                   >
                     <Sparkles className="w-3 h-3" />
                   </button>
+                  */}
                   {image.AnhChinh !== 1 && (
                     <button
                       type="button"
