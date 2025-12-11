@@ -13,7 +13,7 @@ import Index from "./pages/Index";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ProductListing from "./pages/user/ProductListing";
-import ProductDetail from "./pages/admin/ProductDetail";
+import ProductDetail from "./pages/user/ProductDetail";
 import NotFound from "./pages/NotFound";
 import SearchResults from "./pages/user/SearchResults";
 import OrderManagement from "./pages/user/OrderManagement";
