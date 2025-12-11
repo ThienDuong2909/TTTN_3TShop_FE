@@ -23,7 +23,6 @@ jobs:
       - name: Install & Test
         run: |
           npm ci
-          npm run build --if-present
 
       - name: Login to Registry
         uses: docker/login-action@v3
