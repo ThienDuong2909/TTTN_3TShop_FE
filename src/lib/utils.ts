@@ -257,8 +257,8 @@ export const convertNumberToWords = (amount: number) => {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      // hour: '2-digit',
+      // minute: '2-digit',
     }) : new Date(dateString).toLocaleDateString('vi-VN', {
       month: 'short',
       day: 'numeric',
