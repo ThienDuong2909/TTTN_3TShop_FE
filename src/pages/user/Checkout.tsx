@@ -1,6 +1,7 @@
 // filepath: e:\ThucTap\TTTN_3TShop_FE\frontend\src\pages\Checkout.tsx
 // Checkout with success modal
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
+
 import { useNavigate } from "react-router-dom";
 import { ShoppingBag, Loader2 } from "lucide-react";
 import { Input } from "../../components/ui/input";
@@ -30,13 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "../../components/ui/dialog";
 import dayjs from "dayjs";
 declare global {
   interface Window {
@@ -44,8 +38,6 @@ declare global {
   }
 }
 
-import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
-import { Label } from "../../components/ui/label";
 
 export default function Checkout() {
   const { state, getCartTotal, clearCart, refreshCart } = useApp();
@@ -56,13 +48,13 @@ export default function Checkout() {
   const [deliveryTime, setDeliveryTime] = useState(
     new Date().toISOString().slice(0, 16)
   ); // Default to current date and time
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "paypal" | "qr">("cod");
+
   const [errors, setErrors] = useState<{
     name?: string;
     address?: string;
     phone?: string;
   }>({});
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
   const paypalContainerRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef(name);
   const addressRef = useRef(address);
@@ -70,21 +62,14 @@ export default function Checkout() {
   const deliveryTimeRef = useRef(deliveryTime);
 
   const [usdRate, setUsdRate] = useState(23000);
-  const [payOSUrl, setPayOSUrl] = useState("");
-  const [isPayOSOpen, setIsPayOSOpen] = useState(false);
 
-  // Update PayOS config whenever it changes so `openPayOS` uses latest config? 
-  // Actually usePayOS accepts config. If config changes, does it update? 
-  // Usually hooks react to state changes. 
-  // But we need to set checkout URL *after* getting it from backend.
-  // We might need to call open() only when config is ready. 
-  // UseEffect to trigger open if ready? Or ref?
-  // Let's rely on setting state, and then in a useEffect, if checkoutUrl is present and we just set it, open it.
-  // Or just calling open() might work if the hook updates its internal ref. 
-  // Re-reading docs: "usePayOS chấp nhận một đối số là Object... trả về {open, exit}".
-  // If we update state, component re-renders, usePayOS gets new config.
-
-
+  const isFormValid = useMemo(() => {
+    return (
+      name.trim() !== "" &&
+      address.trim() !== "" &&
+      /^\d{10}$/.test(phone.trim())
+    );
+  }, [name, address, phone]);
 
 
   // Address split state
@@ -204,13 +189,11 @@ export default function Checkout() {
 
     window.paypal
       .Buttons({
-        createOrder: (data, actions) => {
+        onClick: (_data: any, actions: any) => {
           const currentName = nameRef.current.trim();
           const currentAddress = addressRef.current.trim();
           const currentPhone = phoneRef.current.trim();
-          console.log("Current Name:", currentName);
-          console.log("Current Address:", currentAddress);
-          console.log("Current Phone:", currentPhone);
+
           const newErrors: typeof errors = {};
           if (!currentName) newErrors.name = "Vui lòng nhập họ và tên";
           if (!currentAddress)
@@ -223,7 +206,8 @@ export default function Checkout() {
           if (Object.keys(newErrors).length > 0) {
             return actions.reject();
           }
-
+        },
+        createOrder: (_data: any, actions: any) => {
           return actions.order.create({
             purchase_units: [
               {
@@ -235,8 +219,8 @@ export default function Checkout() {
             ],
           });
         },
-        onApprove: async (data, actions) => {
-          const details = await actions.order.capture();
+        onApprove: async (_data: any, actions: any) => {
+          await actions.order.capture();
           await handlePlaceOrder(
             nameRef.current,
             addressRef.current,
@@ -245,12 +229,13 @@ export default function Checkout() {
             "paypal"
           );
         },
-        onError: (err) => {
+        onError: (err: any) => {
           console.error(err);
         },
       })
       .render(paypalContainerRef.current);
   }, [total, usdRate]);
+
 
   const validate = () => {
     const newErrors: typeof errors = {};
@@ -273,7 +258,7 @@ export default function Checkout() {
   ) => {
     try {
       const payload = {
-        maKH: state.user?.id,
+        maKH: state.user?.id ? Number(state.user.id) : 0,
         nguoiNhan: nameValue,
         diaChiGiao: addressValue,
         SDT: phoneValue,
@@ -281,45 +266,39 @@ export default function Checkout() {
         dsSanPham: state.cart.map((item) => ({
           maCTSP: item.product.id,
           soLuong: item.quantity,
-        })),
+        })) as any,
         phuongThucThanhToan: paymentMethodArg,
       };
 
-      const response = await apiCreateOrder(payload);
-
       // Handle PayOS (QR) Payment
       if (paymentMethodArg === "qr") {
-        const orderId = response.data?.MaDDH || response.data?.id;
+        const payOSRes = await createPayOSLink(payload.maKH!);
+        console.log("PayOS Response:", payOSRes);
 
-        if (orderId) {
-          try {
-            // This call should return the checkoutUrl from backend
-            const payOSRes = await createPayOSLink(orderId);
-            console.log("PayOS Response:", payOSRes);
+        if (payOSRes.data && payOSRes.data.checkoutUrl) {
+          // Save payload to localStorage to create order after successful payment
+          localStorage.setItem("pendingOrderPayload", JSON.stringify(payload));
 
-            if (payOSRes.data && payOSRes.data.checkoutUrl) {
-              // Open PayOS checkout page in new tab
-              window.open(payOSRes.data.checkoutUrl, '_blank');
-
-              // Clear cart and show success message
-              clearCart();
-              setShowSuccessModal(true);
-              return;
-            }
-          } catch (payOSError: any) {
-            console.error("PayOS Error:", payOSError);
-            console.error("PayOS Error Response:", payOSError.response?.data);
-            const errorMsg = payOSError.response?.data?.message || payOSError.message || "Lỗi không xác định";
-            alert(`Lỗi khi tạo link thanh toán PayOS: ${errorMsg}`);
-          }
+          // Redirect to PayOS checkout page
+          window.location.href = payOSRes.data.checkoutUrl;
+          return;
         }
-      }
+      } else {
+        // Create order immediately for other payment methods
 
-      clearCart();
-      setShowSuccessModal(true);
-    } catch (err) {
-      alert("Lỗi khi gửi đơn hàng về server.");
-      console.error(err);
+        console.log("Creating order with payload:", payload);
+        await apiCreateOrder(payload);
+        clearCart();
+        navigate("/checkout-success");
+      }
+    } catch (err: any) {
+      if (paymentMethodArg === "qr") {
+        const errorMsg = err.response?.data?.message || err.message || "Lỗi không xác định";
+        alert(`Lỗi khi tạo link thanh toán PayOS: ${errorMsg}`);
+      } else {
+        alert("Lỗi khi gửi đơn hàng về server.");
+        console.error(err);
+      }
     }
   };
 
@@ -336,7 +315,7 @@ export default function Checkout() {
   const minDateTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
     now.getDate()
   )}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  if (state.cart.length === 0 && !showSuccessModal) {
+  if (state.cart.length === 0) {
     if (isLoadingCart) {
       return (
         <div className="container mx-auto px-4 py-20 text-center flex justify-center items-center">
@@ -573,17 +552,7 @@ export default function Checkout() {
                 {formatPrice(total)}
               </span>
             </div>
-            {/* <div className="space-y-4">
-              <Button
-                className="w-full bg-brand-600 hover:bg-brand-700"
-                onClick={handlePlaceOrder}
-              >
-                Xác nhận đặt hàng (Thanh toán COD)
-              </Button>
-            </div> 
-            */}
             <div className="space-y-4 pt-4">
-              {/*
               <Button
                 className="w-full bg-brand-600 hover:bg-brand-700 h-12 text-lg"
                 onClick={() => {
@@ -594,34 +563,21 @@ export default function Checkout() {
               >
                 Thanh toán qua PayOS (QR)
               </Button>
-            */}
 
               {/* PayPal Container - Always show */}
-              <div
-                ref={paypalContainerRef}
-                className="w-full"
-              ></div>
+              <div className="relative z-0 w-full">
+                {!isFormValid && (
+                  <div
+                    className="absolute inset-0 z-50 bg-transparent cursor-pointer"
+                    onClick={() => validate()}
+                  />
+                )}
+                <div ref={paypalContainerRef} className="w-full"></div>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      <Dialog open={showSuccessModal}>
-        <DialogContent className="text-center">
-          <DialogHeader>
-            <DialogTitle className="text-green-600 text-xl font-bold">
-              Đặt hàng thành công!
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-gray-600 mt-2">
-            Vui lòng chờ nhân viên xét duyệt đơn hàng của bạn.
-          </p>
-          <DialogFooter className="mt-6">
-            <Button onClick={() => navigate("/")}>Tiếp tục mua sắm</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
 
     </div>
   );

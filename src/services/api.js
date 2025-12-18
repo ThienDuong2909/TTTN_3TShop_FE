@@ -67,7 +67,7 @@ export const getEmployees = async () => {
       const mapped = result.data.map((item) => {
         // Find latest department (most recent NgayBatDau) for all employee info
         let latestDepartment = null;
-        
+
         if (item.NhanVien_BoPhans && item.NhanVien_BoPhans.length > 0) {
           // Sắp xếp theo NgayBatDau giảm dần (mới nhất trước)
           const sortedDepartments = [...item.NhanVien_BoPhans].sort((a, b) => {
@@ -75,7 +75,7 @@ export const getEmployees = async () => {
             const dateB = new Date(b.NgayBatDau);
             return dateB - dateA; // Sort descending (newest first)
           });
-          
+
           // Lấy bản ghi đầu tiên (NgayBatDau gần nhất)
           latestDepartment = sortedDepartments[0];
         }
@@ -1217,9 +1217,9 @@ export const createOrder = async (payload) => {
   return response.data;
 };
 
-export const createPayOSLink = async (orderId) => {
+export const createPayOSLink = async (maKH) => {
   try {
-    const response = await api.post(`/payment/payos/create-payment-link/${orderId}`);
+    const response = await api.post(`/payment/payos/create-payment-link/${maKH}`);
     return response.data;
   } catch (error) {
     console.error("Error creating PayOS link:", error);
@@ -1236,6 +1236,16 @@ export async function checkStockAvailability(maCTSP) {
 export const clearCartApi = async (maKH) => {
   const response = await api.post("/gio-hang/xoa-tat-ca", { maKH });
   return response.data.data;
+};
+
+// Cập nhật số lượng sản phẩm trong giỏ hàng
+export const updateCartItemQuantity = async (data) => {
+  try {
+    const response = await api.put("/gio-hang/cap-nhat", data);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
 };
 // Lấy tất cả danh mục sản phẩm
 // Giả sử API trả về danh mục theo đường dẫn "/loai-sp" hoặc "/category"

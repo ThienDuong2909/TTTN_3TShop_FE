@@ -126,6 +126,28 @@ export function addToCartApi(data: {
   tenKichThuoc: string;
 }): Promise<any>;
 
+export function updateCartItemQuantity(data: {
+  maKH: number;
+  maCTSP: number;
+  soLuong: number;
+}): Promise<{
+  status: string;
+  data: {
+    MaDDH: number;
+    items: Array<{
+      maCTDDH: number;
+      soLuong: number;
+      donGia: string;
+      maCTSP: number;
+      sanPham: any;
+      mau?: { hex: string };
+      kichThuoc?: { ten: string };
+      anhSanPham?: string;
+    }>;
+  };
+  message: string;
+}>;
+
 export function getCartItemsApi(maKH: string | number): Promise<any>;
 export function removeFromCartApi(maKH: number, maSP: number, maHex: string, tenKichThuoc: string, donGia: number): Promise<any>;
 export interface OrderProduct {
@@ -143,7 +165,7 @@ export interface CreateOrderPayload {
 }
 
 export function createOrder(data: CreateOrderPayload): Promise<any>;
-export function createPayOSLink(orderId: number): Promise<{
+export function createPayOSLink(maKH: number | string): Promise<{
   data: {
     checkoutUrl: string;
     qrCode?: string;
