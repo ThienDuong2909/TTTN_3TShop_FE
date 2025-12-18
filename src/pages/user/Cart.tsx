@@ -6,6 +6,7 @@ import {
   checkStockAvailability,
   getCartItemsApi,
   getProductRecommendations,
+  updateCartItemQuantity,
 } from "@/services/api";
 import { CartItem } from "@/types/cart-item.type";
 import { Separator } from "@radix-ui/react-dropdown-menu";
@@ -18,8 +19,9 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner"; // Assuming toast is available, or use alert/console
 
 export default function Cart() {
   const {
@@ -43,6 +45,9 @@ export default function Cart() {
   const [stockErrors, setStockErrors] = useState<{ [key: string]: string }>({});
   const [stockLimits, setStockLimits] = useState<{ [key: string]: number }>({});
 
+  // Debounce refs
+  const debounceTimers = useRef<{ [key: number]: any }>({});
+
   // Recommendation states
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [productNameMap, setProductNameMap] = useState<{
@@ -50,49 +55,57 @@ export default function Cart() {
   }>({});
   const [showRecommendations, setShowRecommendations] = useState(false);
 
+  // Helper to process cart data from API response
+  const processCartData = useCallback((items: any[]) => {
+    const groupedMap = new Map<string, CartItem>();
+
+    for (const item of items) {
+      const productId = item.maCTSP;
+      const color = item.mau?.hex;
+      const size = item.kichThuoc?.ten;
+      const donGia = Number(item.donGia ?? 0);
+
+      const key = `${productId}-${color}-${size}-${donGia}`;
+
+      if (!groupedMap.has(key)) {
+        groupedMap.set(key, {
+          product: {
+            id: productId,
+            name: item.sanPham?.tenSP || "Tên SP",
+            price: donGia,
+            originalPrice: undefined,
+            image: item.anhSanPham,
+            rating: 4.5,
+            reviews: 0,
+            discount: 0,
+            isNew: false,
+            isBestSeller: false,
+            category: "",
+            colors: [],
+            sizes: [],
+            mota: "",
+            totalSold: 0,
+          },
+          quantity: item.soLuong,
+          selectedColor: color,
+          selectedSize: size,
+        });
+      } else {
+        const existing = groupedMap.get(key)!;
+        existing.quantity += item.soLuong;
+      }
+    }
+    return Array.from(groupedMap.values());
+  }, []);
+
   const refreshCart = async () => {
     try {
       if (!state.user) return;
-
+      // Do not set global loading here to avoid full page flickering on small updates
+      // setLoading(true); 
       const res = await getCartItemsApi(state.user.id);
-      const groupedMap = new Map<string, CartItem>();
-
-      for (const item of res.items) {
-        const productId = item.maCTSP;
-        const color = item.mau?.hex;
-        const size = item.kichThuoc?.ten;
-        const donGia = Number(item.donGia ?? 0);
-
-        const key = `${productId}-${color}-${size}-${donGia}`;
-
-        if (!groupedMap.has(key)) {
-          groupedMap.set(key, {
-            product: {
-              id: productId,
-              name: item.sanPham?.tenSP || "Tên SP",
-              price: donGia,
-              originalPrice: undefined,
-              image: item.anhSanPham,
-              rating: 4.5,
-              reviews: 0,
-              discount: 0,
-              isNew: false,
-              isBestSeller: false,
-              category: "",
-              colors: [],
-              sizes: [],
-            },
-            quantity: item.soLuong,
-            selectedColor: color,
-            selectedSize: size,
-          });
-        } else {
-          const existing = groupedMap.get(key)!;
-          existing.quantity += item.soLuong;
-        }
-      }
-
-      setCartFromBackend(Array.from(groupedMap.values()));
+      const cartItems = processCartData(res.items);
+      setCartFromBackend(cartItems);
     } catch (err) {
       console.error("Lỗi khi refresh giỏ hàng:", err);
     }
@@ -186,34 +199,85 @@ export default function Cart() {
   };
 
   const handleQuantityChange = async (maCTSP: number, newQuantity: number) => {
-    if (newQuantity < 1) return;
+    if (!state.user) return;
 
-    try {
-      const result = await checkStockAvailability(maCTSP);
-      const availableStock = result.soLuongTon;
-      const key = `${maCTSP}`;
-
-      if (newQuantity > availableStock) {
-        setStockErrors((prev) => ({
-          ...prev,
-          [key]: `Chỉ còn ${availableStock} sản phẩm trong kho`,
-        }));
-        setStockLimits((prev) => ({ ...prev, [key]: availableStock }));
-        return;
-      }
-
-      setStockErrors((prev) => {
-        const updated = { ...prev };
-        delete updated[key];
-        return updated;
-      });
-      setStockLimits((prev) => ({ ...prev, [key]: availableStock }));
-
-      updateCartQuantity(maCTSP, newQuantity);
-    } catch (error) {
-      console.error("Lỗi kiểm tra kho:", error);
-      alert("Không thể kiểm tra tồn kho.");
+    // Clear existing timer for this product
+    if (debounceTimers.current[maCTSP]) {
+      clearTimeout(debounceTimers.current[maCTSP]);
     }
+
+    // 1. Optimistic Update
+    setStockErrors((prev) => {
+      const updated = { ...prev };
+      delete updated[maCTSP];
+      return updated;
+    });
+
+    if (newQuantity <= 0) {
+      updateCartQuantity(maCTSP, newQuantity);
+    } else {
+      updateCartQuantity(maCTSP, newQuantity);
+    }
+
+    // 2. Debounce API Call
+    debounceTimers.current[maCTSP] = setTimeout(async () => {
+      try {
+        if (newQuantity > 0) {
+          try {
+            // Re-check stock from API to be safe before confirming update
+            const stockRes = await checkStockAvailability(maCTSP);
+            const availableStock = stockRes.soLuongTon;
+
+            // Update local limit state so UI knows for next time
+            setStockLimits((prev) => ({ ...prev, [maCTSP]: availableStock }));
+
+            if (newQuantity > availableStock) {
+              setStockErrors((prev) => ({
+                ...prev,
+                [maCTSP]: `Chỉ còn ${availableStock} sản phẩm`,
+              }));
+
+              // Revert UI to max available
+              updateCartQuantity(maCTSP, availableStock);
+
+              // Call API with max available
+              await updateCartItemQuantity({
+                maKH: Number(state.user!.id),
+                maCTSP: maCTSP,
+                soLuong: availableStock
+              });
+
+              return;
+            }
+          } catch (err) {
+            console.error("Stock check failed:", err);
+          }
+        }
+
+        // Call Update API
+        const response = await updateCartItemQuantity({
+          maKH: Number(state.user!.id),
+          maCTSP: maCTSP,
+          soLuong: newQuantity
+        });
+
+        if (response && (response.status === 'success' || response.data)) {
+          // Update successful, sync state with server data
+          if (response.data && response.data.items) {
+            const processedItems = processCartData(response.data.items);
+            setCartFromBackend(processedItems);
+          }
+        } else {
+          console.error("Update failed:", response);
+          refreshCart(); // Revert
+          toast.error(response?.message || "Cập nhật thất bại");
+        }
+
+      } catch (error) {
+        console.error("Error updating cart:", error);
+        refreshCart(); // Revert
+      }
+    }, 800); // 800ms debounce
   };
 
   const applyCoupon = () => {

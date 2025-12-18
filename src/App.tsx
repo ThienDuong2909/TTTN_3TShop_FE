@@ -23,6 +23,8 @@ import OrderDetail from "./pages/user/OrderDetail";
 import Profile from "./pages/user/Profile";
 import Cart from "./pages/user/Cart";
 import Checkout from "./pages/user/Checkout";
+import CheckoutSuccess from "./pages/user/CheckoutSuccess";
+import CheckoutFail from "./pages/user/CheckoutFail";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -517,6 +519,23 @@ function App() {
                 >
                   <Checkout />
                 </ProtectedRoute>
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/checkout-success"
+            element={
+              <MainLayout>
+                <CheckoutSuccess />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/checkout-fail"
+            element={
+              <MainLayout>
+                <CheckoutFail />
               </MainLayout>
             }
           />
