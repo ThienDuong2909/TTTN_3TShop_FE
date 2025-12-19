@@ -2022,6 +2022,17 @@ export const getFPGrowthRules = async (params = {}) => {
   }
 };
 
+// Lấy tất cả rules mới nhất (all-rule-recent) 
+export const getAllRuleRecent = async () => {
+  try {
+    const response = await api.get("/fpgrowth/all-rule-recent");
+    return response.data;
+  } catch (error) {
+    console.error("Get All Rule Recent error:", error);
+    return handleError(error);
+  }
+};
+
 // Làm mới cache FP-Growth
 export const refreshFPGrowthCache = async () => {
   try {
