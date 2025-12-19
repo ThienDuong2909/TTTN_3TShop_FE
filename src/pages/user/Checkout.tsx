@@ -32,6 +32,8 @@ import {
   SelectValue,
 } from "../../components/ui/select";
 import dayjs from "dayjs";
+import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
+import { Label } from "../../components/ui/label";
 declare global {
   interface Window {
     paypal: any;
@@ -48,6 +50,7 @@ export default function Checkout() {
   const [deliveryTime, setDeliveryTime] = useState(
     new Date().toISOString().slice(0, 16)
   ); // Default to current date and time
+  const [paymentMethod, setPaymentMethod] = useState("qr");
 
   const [errors, setErrors] = useState<{
     name?: string;
@@ -553,19 +556,36 @@ export default function Checkout() {
               </span>
             </div>
             <div className="space-y-4 pt-4">
-              <Button
-                className="w-full bg-brand-600 hover:bg-brand-700 h-12 text-lg"
-                onClick={() => {
-                  if (validate()) {
-                    handlePlaceOrder(name, address, phone, deliveryTime, "qr");
-                  }
-                }}
-              >
-                Thanh toán qua PayOS (QR)
-              </Button>
+              <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                <div className="flex items-center space-x-2 border p-3 rounded-md has-[[data-state=checked]]:border-brand-600">
+                  <RadioGroupItem value="qr" id="qr" />
+                  <Label htmlFor="qr" className="flex-1 cursor-pointer">
+                    Thanh toán qua PayOS (QR)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 border p-3 rounded-md has-[[data-state=checked]]:border-brand-600">
+                  <RadioGroupItem value="paypal" id="paypal" />
+                  <Label htmlFor="paypal" className="flex-1 cursor-pointer">
+                    Thanh toán qua PayPal
+                  </Label>
+                </div>
+              </RadioGroup>
 
-              {/* PayPal Container - Always show */}
-              <div className="relative z-0 w-full">
+              {paymentMethod === "qr" && (
+                <Button
+                  className="w-full bg-brand-600 hover:bg-brand-700 h-12 text-lg"
+                  onClick={() => {
+                    if (validate()) {
+                      handlePlaceOrder(name, address, phone, deliveryTime, "qr");
+                    }
+                  }}
+                >
+                  Thanh toán
+                </Button>
+              )}
+
+              {/* PayPal Container - Toggle visibility */}
+              <div className={`relative z-0 w-full ${paymentMethod === "paypal" ? "block" : "hidden"}`}>
                 {!isFormValid && (
                   <div
                     className="absolute inset-0 z-50 bg-transparent cursor-pointer"
