@@ -37,7 +37,7 @@ const TABS = [
     icon: CheckCircle,
     color: "text-green-600",
   },
-  { label: "Đã huỷ", value: "DAHUY", icon: XCircle, color: "text-red-600" },
+  // { label: "Đã huỷ", value: "DAHUY", icon: XCircle, color: "text-red-600" },
   {
     label: "Trả hàng/Hoàn tiền",
     value: "TRAHANG",
@@ -388,7 +388,7 @@ export default function OrderManagement() {
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {/* Tabs */}
         <div className="border-b border-gray-200">
-          <div className="flex flex-wrap">
+          <div className="flex w-full">
             {TABS.map((t) => {
               const TabIcon = t.icon;
               const isActive = tab === t.value;
@@ -396,7 +396,7 @@ export default function OrderManagement() {
                 <Button
                   key={t.value}
                   variant="ghost"
-                  className={`px-6 py-4 rounded-none border-b-2 transition-all duration-200 ${
+                  className={`flex-1 px-4 py-4 rounded-none border-b-2 transition-all duration-200 ${
                     isActive
                       ? "border-b-2 text-white shadow-md"
                       : "border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50"
