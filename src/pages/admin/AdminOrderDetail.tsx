@@ -516,7 +516,7 @@ export const OrderDetail = () => {
           )}
 
           {/* Show cancel button only for orders with status "Đã đặt" (id = 1) */}
-          {orderDetail.ThongTinDonHang.TrangThai.Ma === 1 && (
+          {/* {orderDetail.ThongTinDonHang.TrangThai.Ma === 1 && (
             <Button
               variant="outline"
               size="sm"
@@ -526,7 +526,7 @@ export const OrderDetail = () => {
               <AlertCircle className="w-4 h-4 mr-2" />
               Hủy đơn hàng
             </Button>
-          )}
+          )} */}
 
           {/* Show create invoice button only for orders not in "Đã đặt" (id = 1) and not in "Hủy" (id = 5) status */}
           {orderDetail.ThongTinDonHang.TrangThai.Ma !== 1 &&
@@ -649,9 +649,8 @@ export const OrderDetail = () => {
                         />
                       ) : null}
                       <Package
-                        className={`w-6 h-6 text-gray-400 ${
-                          item.SanPham.HinhAnh ? "hidden" : ""
-                        }`}
+                        className={`w-6 h-6 text-gray-400 ${item.SanPham.HinhAnh ? "hidden" : ""
+                          }`}
                       />
                     </div>
 
