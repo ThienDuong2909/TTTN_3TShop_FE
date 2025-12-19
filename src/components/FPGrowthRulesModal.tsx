@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronUp, ArrowRight, Loader2, TrendingUp } from "lucide-react";
-import { getFPGrowthRules } from "@/services/api";
+import { getAllRuleRecent } from "@/services/api";
 import { toast } from "sonner";
 
 interface FPGrowthRulesModalProps {
@@ -31,21 +31,22 @@ interface Product {
 }
 
 interface Rule {
-  rule_id: number;
+  rule_id: number | string;
   antecedent_ids: number[];
-  consequent_id: number;
+  consequent_id?: number;
+  itemset_ids?: number[];
   support: number;
   confidence: number;
-  lift: number;
   antecedent_products: Product[];
-  consequent_product: Product;
+  consequent_product?: Product | Product[];
+  itemsets_detailed?: Product[][] | Product[];
   interpretation: string;
 }
 
 export default function FPGrowthRulesModal({ open, onOpenChange }: FPGrowthRulesModalProps) {
   const [rules, setRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(false);
-  const [expandedRules, setExpandedRules] = useState<Set<number>>(new Set());
+  const [expandedRules, setExpandedRules] = useState<Set<number | string>>(new Set());
   const [modelInfo, setModelInfo] = useState<any>(null);
 
   useEffect(() => {
@@ -57,12 +58,13 @@ export default function FPGrowthRulesModal({ open, onOpenChange }: FPGrowthRules
   const loadRules = async () => {
     setLoading(true);
     try {
-      const response = await getFPGrowthRules({ limit: 100 });
+      const response = await getAllRuleRecent();
       console.log("Rules response:", response);
-      
+
       if (response.success && response.data) {
         setRules(response.data.rules || []);
-        setModelInfo(response.data.model_info);
+        // API mới không có model_info
+        // setModelInfo(response.data.model_info);
       } else {
         toast.error("Không thể tải danh sách rules");
       }
@@ -74,7 +76,7 @@ export default function FPGrowthRulesModal({ open, onOpenChange }: FPGrowthRules
     }
   };
 
-  const toggleExpanded = (ruleId: number) => {
+  const toggleExpanded = (ruleId: number | string) => {
     const newExpanded = new Set(expandedRules);
     if (newExpanded.has(ruleId)) {
       newExpanded.delete(ruleId);
@@ -114,12 +116,6 @@ export default function FPGrowthRulesModal({ open, onOpenChange }: FPGrowthRules
     return "text-gray-600 dark:text-gray-400";
   };
 
-  const getLiftColor = (lift: number) => {
-    if (lift >= 1.5) return "text-purple-600 dark:text-purple-400";
-    if (lift >= 1.2) return "text-violet-600 dark:text-violet-400";
-    if (lift >= 1.0) return "text-indigo-600 dark:text-indigo-400";
-    return "text-gray-600 dark:text-gray-400";
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -129,7 +125,7 @@ export default function FPGrowthRulesModal({ open, onOpenChange }: FPGrowthRules
             <TrendingUp className="h-5 w-5 lg:h-6 lg:w-6 text-brand-600" />
             Danh sách Association Rules
           </DialogTitle>
-          <DialogDescription>
+          {/* <DialogDescription>
             {modelInfo && (
               <div className="flex flex-wrap gap-2 lg:gap-4 mt-2 text-xs lg:text-sm">
                 <span>
@@ -146,7 +142,7 @@ export default function FPGrowthRulesModal({ open, onOpenChange }: FPGrowthRules
                 </span>
               </div>
             )}
-          </DialogDescription>
+          </DialogDescription> */}
         </DialogHeader>
 
         {loading ? (
@@ -161,7 +157,7 @@ export default function FPGrowthRulesModal({ open, onOpenChange }: FPGrowthRules
           <div className="space-y-4 py-4">
             {rules.map((rule) => {
               const isExpanded = expandedRules.has(rule.rule_id);
-              
+
               return (
                 <Card
                   key={rule.rule_id}
@@ -172,7 +168,7 @@ export default function FPGrowthRulesModal({ open, onOpenChange }: FPGrowthRules
                     <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
                       {/* Antecedent Products */}
                       <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap flex-1 min-w-0 w-full lg:w-auto">
-                        {rule.antecedent_products.map((product, idx) => (
+                        {(rule.antecedent_products || []).map((product, idx) => (
                           <div key={product.MaSP} className="flex items-center gap-2 flex-shrink-0">
                             {idx > 0 && (
                               <span className="text-2xl font-bold text-brand-600 dark:text-brand-400 px-1">
@@ -186,7 +182,7 @@ export default function FPGrowthRulesModal({ open, onOpenChange }: FPGrowthRules
                                 className="w-12 h-12 lg:w-14 lg:h-14 object-cover rounded flex-shrink-0"
                               />
                               <div className="flex flex-col min-w-0 flex-1">
-                                <span 
+                                <span
                                   className="text-xs lg:text-sm font-medium line-clamp-2 leading-tight"
                                   title={product.TenSP}
                                 >
@@ -201,35 +197,76 @@ export default function FPGrowthRulesModal({ open, onOpenChange }: FPGrowthRules
                         ))}
                       </div>
 
-                      {/* Arrow */}
-                      <ArrowRight className="h-6 w-6 lg:h-7 lg:w-7 text-brand-600 dark:text-brand-400 flex-shrink-0 mx-auto lg:mx-1 rotate-90 lg:rotate-0" />
+                      {/* Arrow & Consequent Product(s) */}
+                      {(() => {
+                        // Extract consecutive items from multiple possible fields
+                        let consequentItems: Product[] = [];
 
-                      {/* Consequent Product */}
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-brand-50 dark:bg-brand-900/20 border-2 border-brand-200 dark:border-brand-800 w-[180px] lg:w-[200px] flex-shrink-0 mx-auto lg:mx-0">
-                        <img
-                          src={getProductImage(rule.consequent_product)}
-                          alt={rule.consequent_product.TenSP}
-                          className="w-12 h-12 lg:w-14 lg:h-14 object-cover rounded flex-shrink-0"
-                        />
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <span 
-                            className="text-xs lg:text-sm font-medium line-clamp-2 leading-tight"
-                            title={rule.consequent_product.TenSP}
-                          >
-                            {rule.consequent_product.TenSP}
-                          </span>
-                          <span className="text-xs text-muted-foreground mt-0.5 truncate">
-                            {getProductPrice(rule.consequent_product)}
-                          </span>
-                        </div>
-                      </div>
+                        // 1. Try itemsets_detailed
+                        if (rule.itemsets_detailed) {
+                          if (Array.isArray(rule.itemsets_detailed[0])) {
+                            // If it's Product[][]
+                            consequentItems = (rule.itemsets_detailed[0] as Product[]).filter(Boolean);
+                          } else {
+                            // If it's Product[]
+                            consequentItems = (rule.itemsets_detailed as Product[]).filter(Boolean);
+                          }
+                        }
+
+                        // 2. Fallback to consequent_product if empty
+                        if (consequentItems.length === 0 && rule.consequent_product) {
+                          if (Array.isArray(rule.consequent_product)) {
+                            consequentItems = rule.consequent_product.filter(Boolean);
+                          } else {
+                            consequentItems = [rule.consequent_product];
+                          }
+                        }
+
+                        if (consequentItems.length === 0) return null;
+
+                        return (
+                          <>
+                            <ArrowRight className="h-6 w-6 lg:h-7 lg:w-7 text-brand-600 dark:text-brand-400 flex-shrink-0 mx-auto lg:mx-1 rotate-90 lg:rotate-0" />
+
+                            <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap flex-shrink-0 mx-auto lg:mx-0">
+                              {consequentItems.map((product, idx) => (
+                                <div key={product.MaSP || `consequent-${idx}`} className="flex items-center gap-2 flex-shrink-0">
+                                  {idx > 0 && (
+                                    <span className="text-xl font-bold text-brand-600 dark:text-brand-400 px-0.5">
+                                      +
+                                    </span>
+                                  )}
+                                  <div className="flex items-center gap-2 p-2 rounded-lg bg-brand-50 dark:bg-brand-900/20 border-2 border-brand-200 dark:border-brand-800 w-[180px] lg:w-[200px]">
+                                    <img
+                                      src={getProductImage(product)}
+                                      alt={product.TenSP}
+                                      className="w-12 h-12 lg:w-14 lg:h-14 object-cover rounded flex-shrink-0"
+                                    />
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                      <span
+                                        className="text-xs lg:text-sm font-medium line-clamp-2 leading-tight"
+                                        title={product.TenSP}
+                                      >
+                                        {product.TenSP}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground mt-0.5 truncate">
+                                        {getProductPrice(product)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        );
+                      })()}
 
                       {/* Quick Metrics */}
                       <div className="flex items-center gap-2 w-full lg:w-auto lg:ml-auto flex-shrink-0 justify-between lg:justify-end mt-2 lg:mt-0">
                         <Badge variant="secondary" className={`${getConfidenceColor(rule.confidence)} font-semibold px-3 py-1 text-xs lg:text-sm`}>
                           {(rule.confidence * 100).toFixed(1)}%
                         </Badge>
-                        
+
                         {/* Expand Button */}
                         <Button
                           variant="ghost"
@@ -257,7 +294,7 @@ export default function FPGrowthRulesModal({ open, onOpenChange }: FPGrowthRules
                         </div>
 
                         {/* Detailed Metrics */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 lg:gap-4">
                           <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 border border-emerald-200 dark:border-emerald-800">
                             <div className="text-xs text-muted-foreground mb-1">Confidence</div>
                             <div className={`text-xl lg:text-2xl font-bold ${getConfidenceColor(rule.confidence)}`}>
@@ -278,15 +315,6 @@ export default function FPGrowthRulesModal({ open, onOpenChange }: FPGrowthRules
                             </div>
                           </div>
 
-                          <div className="p-3 rounded-lg bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 border border-purple-200 dark:border-purple-800">
-                            <div className="text-xs text-muted-foreground mb-1">Lift</div>
-                            <div className={`text-xl lg:text-2xl font-bold ${getLiftColor(rule.lift)}`}>
-                              {rule.lift.toFixed(2)}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Mức độ liên quan
-                            </div>
-                          </div>
                         </div>
 
                         {/* Rule ID */}
