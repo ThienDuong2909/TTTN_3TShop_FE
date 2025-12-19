@@ -1237,9 +1237,8 @@ export default function Orders() {
                 className="w-full"
               >
                 <TabsList
-                  className={`grid w-full ${
-                    isDeliveryStaff ? "grid-cols-4 mb-6" : "grid-cols-6 mb-6"
-                  }`}
+                  className={`grid w-full ${isDeliveryStaff ? "grid-cols-4 mb-6" : "grid-cols-6 mb-6"
+                    }`}
                 >
                   {!isDeliveryStaff && (
                     <TabsTrigger value="1" className="text-xs">
@@ -1300,8 +1299,8 @@ export default function Orders() {
                                 checked={
                                   selectedOrders.size > 0 &&
                                   selectedOrders.size ===
-                                    orders.filter((order) => order.MaTTDH === 1)
-                                      .length
+                                  orders.filter((order) => order.MaTTDH === 1)
+                                    .length
                                 }
                                 onCheckedChange={handleSelectAllOrders}
                                 disabled={loading}
@@ -1336,8 +1335,8 @@ export default function Orders() {
                                 checked={
                                   selectedOrders.size > 0 &&
                                   selectedOrders.size ===
-                                    orders.filter((order) => order.MaTTDH === 3)
-                                      .length
+                                  orders.filter((order) => order.MaTTDH === 3)
+                                    .length
                                 }
                                 onCheckedChange={(checked) => {
                                   if (checked) {
@@ -1543,7 +1542,7 @@ export default function Orders() {
                                               <CheckCircle className="h-3 w-3 mr-1" />
                                               Duyệt
                                             </Button>
-                                            <Button
+                                            {/* <Button
                                               variant="outline"
                                               size="sm"
                                               className="h-8 px-3 text-xs text-red-600 border-red-600 hover:bg-red-50"
@@ -1556,7 +1555,7 @@ export default function Orders() {
                                             >
                                               <XCircle className="h-3 w-3 mr-1" />
                                               Hủy
-                                            </Button>
+                                            </Button> */}
                                           </>
                                         )}
                                       {order.MaTTDH === 2 && (
@@ -1658,7 +1657,7 @@ export default function Orders() {
                               đến{" "}
                               {Math.min(
                                 pagination.currentPage *
-                                  pagination.itemsPerPage,
+                                pagination.itemsPerPage,
                                 pagination.totalItems
                               )}{" "}
                               trong tổng số {pagination.totalItems} đơn hàng

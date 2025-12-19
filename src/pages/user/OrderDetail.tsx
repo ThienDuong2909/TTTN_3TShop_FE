@@ -191,9 +191,8 @@ const OrderDetailSkeleton = () => (
             {Array.from({ length: 3 }).map((_, index) => (
               <div
                 key={index}
-                className={`flex items-center p-4 ${
-                  index !== 2 ? "border-b border-gray-200" : ""
-                }`}
+                className={`flex items-center p-4 ${index !== 2 ? "border-b border-gray-200" : ""
+                  }`}
               >
                 <div className="w-20 h-20 bg-white rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
                   <Skeleton className="w-full h-full" />
@@ -760,11 +759,10 @@ export default function OrderDetail() {
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {/* Header thông tin đơn hàng */}
         <div
-          className={`text-white p-6 transition-all duration-500 ${
-            progressiveStates.header
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-4"
-          }`}
+          className={`text-white p-6 transition-all duration-500 ${progressiveStates.header
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-4"
+            }`}
           style={{ background: `linear-gradient(to right, #684827, #5a3e22)` }}
         >
           <div className="flex items-center justify-between mb-4">
@@ -808,11 +806,10 @@ export default function OrderDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Thông tin người nhận */}
             <div
-              className={`bg-gray-50 rounded-lg p-5 transition-all duration-500 ${
-                progressiveStates.userInfo
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-4"
-              }`}
+              className={`bg-gray-50 rounded-lg p-5 transition-all duration-500 ${progressiveStates.userInfo
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+                }`}
             >
               <div className="flex items-center mb-4">
                 <div
@@ -858,11 +855,10 @@ export default function OrderDetail() {
 
             {/* Thông tin xử lý */}
             <div
-              className={`bg-gray-50 rounded-lg p-5 transition-all duration-500 ${
-                progressiveStates.processInfo
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-4"
-              }`}
+              className={`bg-gray-50 rounded-lg p-5 transition-all duration-500 ${progressiveStates.processInfo
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+                }`}
             >
               <div className="flex items-center mb-4">
                 <div className="bg-green-100 p-2 rounded-lg mr-3">
@@ -906,11 +902,10 @@ export default function OrderDetail() {
 
           {/* Chi tiết sản phẩm */}
           <div
-            className={`mb-8 transition-all duration-500 ${
-              progressiveStates.productDetails
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-            }`}
+            className={`mb-8 transition-all duration-500 ${progressiveStates.productDetails
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-4"
+              }`}
           >
             <div className="flex items-center mb-6">
               <div className="bg-orange-100 p-2 rounded-lg mr-3">
@@ -937,11 +932,10 @@ export default function OrderDetail() {
                 return (
                   <div
                     key={ct.MaCTDDH}
-                    className={`flex items-center p-4 transition-all duration-300 ${
-                      index !== order.CT_DonDatHangs.length - 1
-                        ? "border-b border-gray-200"
-                        : ""
-                    }`}
+                    className={`flex items-center p-4 transition-all duration-300 ${index !== order.CT_DonDatHangs.length - 1
+                      ? "border-b border-gray-200"
+                      : ""
+                      }`}
                     style={{
                       animationDelay: `${index * 100}ms`,
                       animation: progressiveStates.productDetails
@@ -999,15 +993,14 @@ export default function OrderDetail() {
 
           {/* Tổng cộng và thao tác */}
           <div
-            className={`border-t pt-6 transition-all duration-500 ${
-              progressiveStates.actions
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-            }`}
+            className={`border-t pt-6 transition-all duration-500 ${progressiveStates.actions
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-4"
+              }`}
           >
             <div className="flex items-center justify-between">
               <div className="flex space-x-3">
-                {status === "CHOXACNHAN" && (
+                {/* {status === "CHOXACNHAN" && (
                   <Button
                     variant="outline"
                     className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400"
@@ -1015,7 +1008,7 @@ export default function OrderDetail() {
                   >
                     Hủy đơn hàng
                   </Button>
-                )}
+                )} */}
                 {status === "HOANTAT" && (
                   <>
                     <Button
