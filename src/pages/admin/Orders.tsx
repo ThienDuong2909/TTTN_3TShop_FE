@@ -211,116 +211,9 @@ export default function Orders() {
     "7": { label: "Trả hàng", color: "secondary", icon: Undo2 },
   };
 
-  // Process orders on client-side (search, sort, filter)
-  const processOrders = useCallback(
-    (
-      ordersToProcess: Order[],
-      searchTerm: string,
-      sortField: string | null,
-      sortDirection: "asc" | "desc" | null,
-      currentPage: number = 1
-    ) => {
-      let processed = [...ordersToProcess];
-
-      // Apply search filter
-      if (searchTerm.trim()) {
-        const normalizedSearchTerm = normalizeVietnameseText(searchTerm);
-        processed = processed.filter((order) => {
-          // Normalize all searchable fields
-          const normalizedOrderId = normalizeVietnameseText(
-            order.MaDDH?.toString() || ""
-          );
-          const normalizedRecipientName = normalizeVietnameseText(
-            order.NguoiNhan || ""
-          );
-          const normalizedPhone = normalizeVietnameseText(order.SDT || "");
-          const normalizedCustomerName = normalizeVietnameseText(
-            order.KhachHang?.TenKH || ""
-          );
-
-          // Check if search term matches any of the normalized fields
-          return (
-            normalizedOrderId.includes(normalizedSearchTerm) ||
-            normalizedRecipientName.includes(normalizedSearchTerm) ||
-            normalizedPhone.includes(normalizedSearchTerm) ||
-            normalizedCustomerName.includes(normalizedSearchTerm)
-          );
-        });
-      }
-
-      // Apply sorting only if sortField and sortDirection are provided
-      if (sortField && sortDirection) {
-        processed.sort((a, b) => {
-          let aValue: any;
-          let bValue: any;
-
-          switch (sortField) {
-            case "MaDDH":
-              aValue = a.MaDDH || 0;
-              bValue = b.MaDDH || 0;
-              break;
-            case "NgayTao":
-              aValue = new Date(a.NgayTao);
-              bValue = new Date(b.NgayTao);
-              break;
-            case "TongTien":
-              aValue = Number(a.TongTien) || 0;
-              bValue = Number(b.TongTien) || 0;
-              break;
-            case "NguoiNhan":
-              aValue = a.NguoiNhan || "";
-              bValue = b.NguoiNhan || "";
-              break;
-            case "NguoiGiao":
-              aValue = a.NguoiGiao?.MaNV || 0;
-              bValue = b.NguoiGiao?.MaNV || 0;
-              break;
-            case "SoLuong":
-              aValue =
-                a.CT_DonDatHangs?.reduce(
-                  (total, item) => total + item.SoLuong,
-                  0
-                ) || 0;
-              bValue =
-                b.CT_DonDatHangs?.reduce(
-                  (total, item) => total + item.SoLuong,
-                  0
-                ) || 0;
-              break;
-            default:
-              return 0; // No sorting for unknown fields
-          }
-
-          if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-          if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-          return 0;
-        });
-      }
-
-      // Store filtered result for reference (no need to set state)
-      // setFilteredOrders(processed);
-
-      // Apply pagination
-      const totalItems = processed.length;
-      const totalPages = Math.ceil(totalItems / pagination.itemsPerPage);
-      const startIndex = (currentPage - 1) * pagination.itemsPerPage;
-      const endIndex = startIndex + pagination.itemsPerPage;
-      const paginatedOrders = processed.slice(startIndex, endIndex);
-
-      setOrders(paginatedOrders);
-      setPagination((prev) => ({
-        ...prev,
-        totalItems,
-        totalPages: Math.max(totalPages, 1),
-        currentPage: Math.min(currentPage, Math.max(totalPages, 1)),
-      }));
-    },
-    [pagination.itemsPerPage]
-  );
-
-  // Fetch orders by status (simplified - no server-side processing)
+  // Fetch orders by status (with server-side pagination)
   const fetchOrdersByStatus = useCallback(
-    async (status: string) => {
+    async (status: string, page: number = 1) => {
       try {
         setLoading(true);
 
@@ -329,21 +222,40 @@ export default function Orders() {
         // If user is delivery staff, use assigned orders API
         if (isDeliveryStaff) {
           result = await getAssignedOrders({
-            page: pagination.currentPage,
+            page: page,
             limit: pagination.itemsPerPage,
             status: status,
           });
         } else {
-          // For admin and store staff, use regular orders API
-          result = await getOrdersByStatus(status);
+          // For admin and store staff, use regular orders API with pagination
+          result = await getOrdersByStatus(status, page);
         }
 
         if (result && result.success && result.data) {
           const fetchedOrders = result.data.orders || result.data || [];
+          const paginationData = result.data.pagination;
+
           setAllOrders(fetchedOrders);
-          // Clear current orders while loading new data
-          setOrders([]);
-          // Let useEffect handle the processing
+          setOrders(fetchedOrders);
+
+          // Update pagination from server response
+          if (paginationData) {
+            setPagination((prev) => ({
+              ...prev,
+              currentPage: paginationData.currentPage || page,
+              totalPages: paginationData.totalPages || 1,
+              totalItems: paginationData.totalItems || fetchedOrders.length,
+              itemsPerPage: paginationData.itemsPerPage || prev.itemsPerPage,
+            }));
+          } else {
+            // Fallback for APIs without pagination data
+            setPagination((prev) => ({
+              ...prev,
+              currentPage: page,
+              totalPages: 1,
+              totalItems: fetchedOrders.length,
+            }));
+          }
         } else {
           setAllOrders([]);
           setOrders([]);
@@ -363,7 +275,7 @@ export default function Orders() {
         setLoading(false);
       }
     },
-    [isDeliveryStaff, pagination.currentPage, pagination.itemsPerPage]
+    [isDeliveryStaff, pagination.itemsPerPage]
   ); // Add dependencies
 
   // Calculate statistics from assigned orders for delivery staff
@@ -462,7 +374,7 @@ export default function Orders() {
 
   // Fetch orders when activeTab changes
   useEffect(() => {
-    fetchOrdersByStatus(activeTab);
+    fetchOrdersByStatus(activeTab, 1);
   }, [activeTab]); // Remove fetchOrdersByStatus from dependency to avoid cycle
 
   // Handle tab change
@@ -475,108 +387,33 @@ export default function Orders() {
     // Don't call fetchOrdersByStatus here, let useEffect handle it
   };
 
-  // Re-process orders when pagination currentPage changes
+  // Client-side search filter on current page data
   useEffect(() => {
-    if (allOrders.length > 0) {
-      // Filter orders by current active tab status
-      const statusId = parseInt(activeTab);
-      const filteredByStatus = allOrders.filter(
-        (order) => order.MaTTDH === statusId
-      );
-
-      // Process the filtered orders
-      processOrders(
-        filteredByStatus,
-        searchTerm,
-        sortBy,
-        sortOrder?.toLowerCase() as "asc" | "desc" | null,
-        pagination.currentPage
-      );
-    }
-  }, [
-    pagination.currentPage,
-    processOrders,
-    activeTab,
-    allOrders,
-    searchTerm,
-    sortBy,
-    sortOrder,
-  ]);
-
-  // Handle search with debounce (only for searchTerm changes)
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (allOrders.length > 0) {
-        // Filter orders by current active tab status
-        const statusId = parseInt(activeTab);
-        const filteredByStatus = allOrders.filter(
-          (order) => order.MaTTDH === statusId
+    if (allOrders.length > 0 && searchTerm.trim()) {
+      const normalizedSearchTerm = normalizeVietnameseText(searchTerm);
+      const filtered = allOrders.filter((order) => {
+        const normalizedOrderId = normalizeVietnameseText(
+          order.MaDDH?.toString() || ""
         );
-
-        // Process the filtered orders
-        processOrders(
-          filteredByStatus,
-          searchTerm,
-          sortBy,
-          sortOrder?.toLowerCase() as "asc" | "desc" | null,
-          1
+        const normalizedRecipientName = normalizeVietnameseText(
+          order.NguoiNhan || ""
         );
-        setPagination((prev) => ({ ...prev, currentPage: 1 }));
-      }
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]); // Only trigger on searchTerm changes
-
-  // Handle sort changes
-  useEffect(() => {
-    if (allOrders.length > 0) {
-      // Filter orders by current active tab status
-      const statusId = parseInt(activeTab);
-      const filteredByStatus = allOrders.filter(
-        (order) => order.MaTTDH === statusId
-      );
-
-      // Process the filtered orders
-      processOrders(
-        filteredByStatus,
-        searchTerm,
-        sortBy,
-        sortOrder?.toLowerCase() as "asc" | "desc" | null,
-        1
-      );
-      setPagination((prev) => ({ ...prev, currentPage: 1 }));
-    }
-  }, [sortBy, sortOrder]); // Only trigger on sort changes
-
-  // Handle when allOrders data changes (new data loaded)
-  useEffect(() => {
-    if (allOrders.length > 0) {
-      // Filter orders by current active tab status
-      const statusId = parseInt(activeTab);
-      const filteredByStatus = allOrders.filter(
-        (order) => order.MaTTDH === statusId
-      );
-
-      // Process the filtered orders
-      processOrders(
-        filteredByStatus,
-        searchTerm,
-        sortBy,
-        sortOrder?.toLowerCase() as "asc" | "desc" | null,
-        1
-      );
+        const normalizedPhone = normalizeVietnameseText(order.SDT || "");
+        const normalizedCustomerName = normalizeVietnameseText(
+          order.KhachHang?.TenKH || ""
+        );
+        return (
+          normalizedOrderId.includes(normalizedSearchTerm) ||
+          normalizedRecipientName.includes(normalizedSearchTerm) ||
+          normalizedPhone.includes(normalizedSearchTerm) ||
+          normalizedCustomerName.includes(normalizedSearchTerm)
+        );
+      });
+      setOrders(filtered);
     } else {
-      // If no orders, clear the display
-      setOrders([]);
-      setPagination((prev) => ({
-        ...prev,
-        totalItems: 0,
-        totalPages: 1,
-        currentPage: 1,
-      }));
+      setOrders(allOrders);
     }
-  }, [allOrders]); // Only trigger on allOrders changes
+  }, [searchTerm, allOrders]);
 
   // Handle search input change
   const handleSearchChange = useCallback(
@@ -619,9 +456,10 @@ export default function Orders() {
     return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
   };
 
-  // Handle page change
+  // Handle page change - fetch from server with new page
   const handlePageChange = (newPage: number) => {
     setPagination((prev) => ({ ...prev, currentPage: newPage }));
+    fetchOrdersByStatus(activeTab, newPage);
   };
 
   // Handle order selection for approval
@@ -1174,12 +1012,12 @@ export default function Orders() {
       icon: CheckCircle,
       color: "text-green-600",
     },
-    {
-      title: isDeliveryStaff ? "Đã hủy" : "Hủy",
-      value: stats.cancelled,
-      icon: XCircle,
-      color: "text-red-600",
-    },
+    // {
+    //   title: isDeliveryStaff ? "Đã hủy" : "Hủy",
+    //   value: stats.cancelled,
+    //   icon: XCircle,
+    //   color: "text-red-600",
+    // },
     {
       title: isDeliveryStaff ? "Trả lại" : "Trả hàng",
       value: stats.returned,
@@ -1197,7 +1035,7 @@ export default function Orders() {
       <main className="py-6">
         <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           {/* Statistics */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
             {statisticsCards.map((stat, index) => (
               <Card key={index} className="shadow-sm">
                 <CardContent className="p-4">
@@ -1237,8 +1075,9 @@ export default function Orders() {
                 className="w-full"
               >
                 <TabsList
-                  className={`grid w-full ${isDeliveryStaff ? "grid-cols-4 mb-6" : "grid-cols-6 mb-6"
-                    }`}
+                  className={`grid w-full ${
+                    isDeliveryStaff ? "grid-cols-3 mb-6" : "grid-cols-5 mb-6"
+                  }`}
                 >
                   {!isDeliveryStaff && (
                     <TabsTrigger value="1" className="text-xs">
@@ -1256,9 +1095,9 @@ export default function Orders() {
                   <TabsTrigger value="4" className="text-xs">
                     Hoàn tất ({stats.completed})
                   </TabsTrigger>
-                  <TabsTrigger value="5" className="text-xs">
+                  {/* <TabsTrigger value="5" className="text-xs">
                     Hủy ({stats.cancelled})
-                  </TabsTrigger>
+                  </TabsTrigger> */}
                   <TabsTrigger value="7" className="text-xs">
                     Trả hàng ({stats.returned})
                   </TabsTrigger>
@@ -1299,8 +1138,8 @@ export default function Orders() {
                                 checked={
                                   selectedOrders.size > 0 &&
                                   selectedOrders.size ===
-                                  orders.filter((order) => order.MaTTDH === 1)
-                                    .length
+                                    orders.filter((order) => order.MaTTDH === 1)
+                                      .length
                                 }
                                 onCheckedChange={handleSelectAllOrders}
                                 disabled={loading}
@@ -1335,8 +1174,8 @@ export default function Orders() {
                                 checked={
                                   selectedOrders.size > 0 &&
                                   selectedOrders.size ===
-                                  orders.filter((order) => order.MaTTDH === 3)
-                                    .length
+                                    orders.filter((order) => order.MaTTDH === 3)
+                                      .length
                                 }
                                 onCheckedChange={(checked) => {
                                   if (checked) {
@@ -1657,7 +1496,7 @@ export default function Orders() {
                               đến{" "}
                               {Math.min(
                                 pagination.currentPage *
-                                pagination.itemsPerPage,
+                                  pagination.itemsPerPage,
                                 pagination.totalItems
                               )}{" "}
                               trong tổng số {pagination.totalItems} đơn hàng
