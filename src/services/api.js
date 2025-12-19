@@ -876,9 +876,9 @@ export const getPurchaseOrderStatuses = async () => {
 // ===================
 
 // Lấy danh sách đơn hàng theo trạng thái
-export const getOrdersByStatus = async (status) => {
+export const getOrdersByStatus = async (status, page = 1) => {
   try {
-    const response = await api.get(`/orders/by-status?status=${status}`);
+    const response = await api.get(`/orders/by-status?status=${status}&page=${page}`);
     return response.data;
   } catch (error) {
     return handleError(error);
