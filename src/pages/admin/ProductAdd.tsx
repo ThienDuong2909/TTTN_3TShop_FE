@@ -24,8 +24,9 @@ import { formatDate } from "@/lib/utils";
 // Khai báo kiểu cho import.meta.env
 declare global {
   interface ImportMetaEnv {
-    VITE_API_BASE_URL: string;
+    readonly VITE_API_BASE_URL: string;
     readonly VITE_OPENAI_API_KEY: string;
+    readonly VITE_GEMINI_KEY: string;
   }
 
   interface ImportMeta {
@@ -282,48 +283,32 @@ export const ProductAdd = () => {
     return true;
   };
 
-  // Analyze image with AI
+  // Analyze image with AI (Google Gemini)
   const analyzeImageWithAI = async (imageUrl: string) => {
     try {
       setIsAnalyzing(true);
       toast.info("Đang phân tích ảnh với AI...");
 
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      const apiKey = import.meta.env.VITE_GEMINI_KEY;
       if (!apiKey) {
         throw new Error(
-          "OpenAI API key không được cấu hình. Vui lòng kiểm tra file .env"
+          "Gemini API key không được cấu hình. Vui lòng kiểm tra file .env"
         );
       }
 
       // Tạo danh sách danh mục hiện có để AI tham khảo
       const availableCategories = categories
-        .map((cat) => cat.TenLoai)
+        .map((cat) => `${cat.TenLoai} (ID: ${cat.MaLoaiSP})`)
         .join(", ");
 
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gpt-4o",
-            messages: [
-              {
-                role: "user",
-                content: [
-                  {
-                    type: "text",
-                    text: `Hãy phân tích ảnh sau và trả lời CHỈ với JSON thuần túy, không có markdown, không có text khác.
+      const prompt = `Hãy phân tích ảnh sau và trả lời CHỈ với JSON thuần túy, không có markdown, không có text khác.
 
 Danh mục sản phẩm hiện có trong hệ thống: ${availableCategories}
 
 Hãy chọn danh mục phù hợp nhất từ danh sách trên hoặc gợi ý danh mục mới nếu cần thiết.
 
 {
-  "category_name": "Tên danh mục phù hợp nhất (phải có trong danh sách: ${availableCategories})",
+  "category_name": "Tên danh mục phù hợp nhất (phải có trong danh sách trên)",
   "category_id": "Mã danh mục tương ứng (số)",
   "gender": "Nam / Nữ / Unisex",
   "main_color": "Tên màu sắc chính",
@@ -333,18 +318,54 @@ Hãy chọn danh mục phù hợp nhất từ danh sách trên hoặc gợi ý d
 
 QUAN TRỌNG: 
 - Chỉ trả về JSON thuần túy, không có \`\`\`json, không có \`\`\`, không có text giải thích
-- category_name phải khớp chính xác với một trong các danh mục: ${availableCategories}
-- category_id phải là mã số tương ứng với category_name`,
+- category_name phải khớp chính xác với một trong các danh mục đã liệt kê
+- category_id phải là mã số tương ứng với category_name`;
+
+      // Fetch image and convert to base64
+      const imageResponse = await fetch(imageUrl);
+      const imageBlob = await imageResponse.blob();
+      const base64Image = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result as string;
+          // Remove data URL prefix (e.g., "data:image/jpeg;base64,")
+          resolve(base64.split(",")[1]);
+        };
+        reader.readAsDataURL(imageBlob);
+      });
+
+      // Get image mime type
+      const mimeType = imageBlob.type || "image/jpeg";
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: prompt,
                   },
                   {
-                    type: "image_url",
-                    image_url: {
-                      url: imageUrl,
+                    inline_data: {
+                      mime_type: mimeType,
+                      data: base64Image,
                     },
                   },
                 ],
               },
             ],
+            generationConfig: {
+              temperature: 0.4,
+              topK: 32,
+              topP: 1,
+              maxOutputTokens: 2048,
+            },
           }),
         }
       );
@@ -402,11 +423,18 @@ QUAN TRỌNG:
       console.log("AI API response status:", response);
 
       if (!response.ok) {
-        throw new Error(`AI error: ${response.status}`);
+        const errorData = await response.json();
+        console.error("Gemini API error:", errorData);
+        throw new Error(
+          `AI error: ${response.status} - ${
+            errorData.error?.message || "Unknown error"
+          }`
+        );
       }
 
       const data = await response.json();
-      const content = data.choices[0]?.message?.content;
+      // Gemini response format: data.candidates[0].content.parts[0].text
+      const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!content) {
         throw new Error("Không nhận được phản hồi từ AI");
@@ -578,12 +606,12 @@ QUAN TRỌNG:
           );
 
           // Auto-analyze the first image with AI
-          // if (successfulUploads.length > 0 && formData.images.length === 0) {
-          //   // Only analyze if this is the first image
-          //   setTimeout(() => {
-          //     analyzeImageWithAI(successfulUploads[0].url);
-          //   }, 1000);
-          // }
+          if (successfulUploads.length > 0 && formData.images.length === 0) {
+            // Only analyze if this is the first image
+            setTimeout(() => {
+              analyzeImageWithAI(successfulUploads[0].url);
+            }, 1000);
+          }
         } else {
           toast.error(
             "Không thể upload hình ảnh. Vui lòng kiểm tra cấu hình Cloudinary!"
@@ -931,7 +959,7 @@ QUAN TRỌNG:
               */}
             </div>
             <div className="flex gap-2">
-              {/* {formData.images.length > 0 && (
+              {formData.images.length > 0 && (
                 <button
                   type="button"
                   onClick={() => analyzeImageWithAI(formData.images[0].url)}
@@ -945,7 +973,7 @@ QUAN TRỌNG:
                   <Sparkles className="w-4 h-4 mr-2" />
                   {isAnalyzing ? "Đang phân tích..." : "Phân tích AI"}
                 </button>
-              )} */}
+              )}
               <button
                 type="button"
                 onClick={addImage}
@@ -978,7 +1006,7 @@ QUAN TRỌNG:
                   </div>
                 )}
                 <div className="absolute top-1 right-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {/* <button
+                  <button
                     type="button"
                     onClick={() => analyzeImageWithAI(image.url)}
                     disabled={isAnalyzing}
@@ -986,7 +1014,7 @@ QUAN TRỌNG:
                     title="Phân tích ảnh với AI"
                   >
                     <Sparkles className="w-3 h-3" />
-                  </button> */}
+                  </button>
                   {image.AnhChinh !== 1 && (
                     <button
                       type="button"
