@@ -1,13 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import {
-  Package,
-  ShoppingCart,
-  Users,
-  FileText,
-  TrendingUp,
-  DollarSign,
-} from "lucide-react";
+import { ShoppingCart, Users, FileText, DollarSign } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import {
   Card,
@@ -28,17 +21,14 @@ import { Badge } from "../../components/ui/badge";
 import { useApp } from "../../contexts/AppContext";
 import AdminHeader from "../../components/AdminHeader";
 import RevenueReport from "./RevenueReport";
-import InventoryReport from "./InventoryReport";
-import ProfitReport from "./ProfitReport";
-import { Order } from "@/types/order.type";
+import InventoryDashboardSection from "../../components/admin/InventoryDashboardSection";
+import ProfitDashboardSection from "../../components/admin/ProfitDashboardSection";
 
 import { useNavigate } from "react-router-dom";
 import {
   getCurrentMonthOrders,
   getAllEmployees,
   getPurchaseOrdersNCC,
-  getInventoryReport,
-  getProfitReport,
 } from "../../services/api";
 import type {
   CurrentMonthOrdersData,
@@ -47,47 +37,6 @@ import type {
 } from "../../services/api";
 import { orders } from "@/libs/data";
 
-// Inventory Report Types
-interface InventoryItem {
-  "Loại sản phẩm": string;
-  "Mã sản phẩm": number;
-  "Tên sản phẩm": string;
-  "Số lượng tồn": string;
-  "Giá nhập": string;
-}
-
-interface InventoryReportData {
-  ngayBaoCao: string;
-  data: InventoryItem[];
-}
-
-// Profit Report Types
-interface ProfitSummary {
-  tongTriGiaNhapTotal: number;
-  tongTriGiaXuatTotal: number;
-  tongLoiNhuan: number;
-  phanTramLoiNhuanTrungBinh: number;
-  tongTriGiaNhapTotalFormatted: string;
-  tongTriGiaXuatTotalFormatted: string;
-  tongLoiNhuanFormatted: string;
-  phanTramLoiNhuanTrungBinhFormatted: string;
-  soLuongSanPham: number;
-}
-
-interface ProfitCategoryData {
-  totalGiaNhap: number;
-  totalGiaXuat: number;
-  totalLoiNhuan: number;
-  itemCount: number;
-  phanTramLoiNhuan: number;
-}
-
-interface ProfitReportData {
-  summary: ProfitSummary;
-  ngayBatDau: string;
-  ngayKetThuc: string;
-  data?: any[]; // Add data property for API response
-}
 export default function AdminDashboard() {
   const { state } = useApp();
   const navigate = useNavigate();
@@ -98,10 +47,6 @@ export default function AdminDashboard() {
     useState<GetAllEmployeesResponse | null>(null);
   const [purchaseOrdersNCCData, setPurchaseOrdersNCCData] =
     useState<GetPurchaseOrdersNCCResponse | null>(null);
-  const [currentInventoryData, setCurrentInventoryData] =
-    useState<InventoryReportData | null>(null);
-  const [currentProfitData, setCurrentProfitData] =
-    useState<ProfitReportData | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
   // Check if user has permission to access admin dashboard
@@ -120,29 +65,13 @@ export default function AdminDashboard() {
     try {
       setLoadingStats(true);
 
-      const today = new Date().toISOString().split("T")[0];
-      const currentDate = new Date();
-      const firstDayOfMonth = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        1
-      );
-      const monthStart = firstDayOfMonth.toISOString().split("T")[0];
-
       // Parallel API calls for better performance
-      const [
-        ordersResponse,
-        employeesResponse,
-        purchaseOrdersResponse,
-        inventoryResponse,
-        profitResponse,
-      ] = await Promise.all([
-        getCurrentMonthOrders(),
-        getAllEmployees(),
-        getPurchaseOrdersNCC(),
-        getInventoryReport(today),
-        getProfitReport(monthStart, today),
-      ]);
+      const [ordersResponse, employeesResponse, purchaseOrdersResponse] =
+        await Promise.all([
+          getCurrentMonthOrders(),
+          getAllEmployees(),
+          getPurchaseOrdersNCC(),
+        ]);
 
       // Update state based on successful responses
       if (ordersResponse.success) {
@@ -154,20 +83,12 @@ export default function AdminDashboard() {
       if (purchaseOrdersResponse.success) {
         setPurchaseOrdersNCCData(purchaseOrdersResponse);
       }
-      if (inventoryResponse.success) {
-        setCurrentInventoryData(inventoryResponse.data);
-      }
-      if (profitResponse.success) {
-        setCurrentProfitData(profitResponse.data);
-      }
     } catch (error) {
       console.error("Error loading dashboard data:", error);
       // Reset state on error
       setCurrentMonthData(null);
       setEmployeesData(null);
       setPurchaseOrdersNCCData(null);
-      setCurrentInventoryData(null);
-      setCurrentProfitData(null);
     } finally {
       setLoadingStats(false);
     }
@@ -321,80 +242,6 @@ export default function AdminDashboard() {
   };
 
   console.log("Dashboard Stats:", stats);
-
-  // Helper functions for inventory data
-  const getInventoryByCategory = () => {
-    if (!currentInventoryData?.data) return {};
-
-    return currentInventoryData.data.reduce((acc, item) => {
-      const category = item["Loại sản phẩm"];
-      const quantity = parseInt(item["Số lượng tồn"]) || 0;
-      const price = parseFloat(item["Giá nhập"]) || 0;
-      const value = quantity * price;
-
-      if (!acc[category]) {
-        acc[category] = {
-          totalQuantity: 0,
-          totalValue: 0,
-          itemCount: 0,
-        };
-      }
-
-      acc[category].totalQuantity += quantity;
-      acc[category].totalValue += value;
-      acc[category].itemCount += 1;
-
-      return acc;
-    }, {} as Record<string, { totalQuantity: number; totalValue: number; itemCount: number }>);
-  };
-
-  const inventoryByCategory = getInventoryByCategory();
-  const totalInventoryValue = Object.values(inventoryByCategory).reduce(
-    (sum, category) => sum + category.totalValue,
-    0
-  );
-
-  // Helper function for profit data by category
-  const getProfitByCategory = (): Record<string, ProfitCategoryData> => {
-    if (!currentProfitData?.data || !Array.isArray(currentProfitData.data)) {
-      return {};
-    }
-
-    return currentProfitData.data.reduce(
-      (acc: Record<string, ProfitCategoryData>, item: any) => {
-        const category = item.loaiSanPham || item["Loại sản phẩm"] || "Khác";
-        const giaNhap = parseFloat(item.tongTriGiaNhap) || 0;
-        const giaXuat = parseFloat(item.tongTriGiaXuat) || 0;
-        const loiNhuan = parseFloat(item.loiNhuan) || 0;
-
-        if (!acc[category]) {
-          acc[category] = {
-            totalGiaNhap: 0,
-            totalGiaXuat: 0,
-            totalLoiNhuan: 0,
-            itemCount: 0,
-            phanTramLoiNhuan: 0,
-          };
-        }
-
-        acc[category].totalGiaNhap += giaNhap;
-        acc[category].totalGiaXuat += giaXuat;
-        acc[category].totalLoiNhuan += loiNhuan;
-        acc[category].itemCount += 1;
-
-        // Calculate average profit percentage for category
-        if (acc[category].totalGiaNhap > 0) {
-          acc[category].phanTramLoiNhuan =
-            (acc[category].totalLoiNhuan / acc[category].totalGiaNhap) * 100;
-        }
-
-        return acc;
-      },
-      {}
-    );
-  };
-
-  const profitByCategory = getProfitByCategory();
 
   // Overview Dashboard
   const OverviewContent = () => (
@@ -557,286 +404,11 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Current Inventory Report Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Tồn kho hiện tại
-            </CardTitle>
-            <div className="scale-90">
-              <InventoryReport />
-            </div>
-          </div>
-          <CardDescription>
-            {currentInventoryData
-              ? `Tính đến ngày ${formatDate(
-                  currentInventoryData.ngayBaoCao
-                )} - Tổng trị giá: ${formatPrice(totalInventoryValue)}`
-              : "Báo cáo tồn kho theo loại sản phẩm"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loadingStats ? (
-            <div className="space-y-3">
-              {[...Array(4)].map((_, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-3 border rounded"
-                >
-                  <div className="space-y-1">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                    <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
-                    <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : currentInventoryData ? (
-            <div className="space-y-4">
-              {/* Grid display for inventory categories */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(inventoryByCategory).map(([category, data]) => (
-                  <div
-                    key={category}
-                    className="p-4 border rounded-lg hover:bg-muted/50 transition-colors bg-white dark:bg-gray-800 shadow-sm"
-                  >
-                    <div className="space-y-2">
-                      <div className="font-semibold text-lg text-primary">
-                        {category}
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">
-                            Số sản phẩm:
-                          </span>
-                          <span className="font-medium">{data.itemCount}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">
-                            Tồn kho:
-                          </span>
-                          <span className="font-medium">
-                            {data.totalQuantity.toLocaleString("vi-VN")}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center pt-1 border-t">
-                          <span className="text-sm font-medium">Trị giá:</span>
-                          <span className="font-bold text-primary">
-                            {formatPrice(data.totalValue)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4">
-                Không thể tải dữ liệu tồn kho
-              </p>
-              <InventoryReport />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Inventory Dashboard Section with Charts */}
+      <InventoryDashboardSection />
 
-      {/* Current Profit Report Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Lợi nhuận sản phẩm tháng hiện tại
-            </CardTitle>
-            <div className="scale-90">
-              <ProfitReport />
-            </div>
-          </div>
-          <CardDescription>
-            {currentProfitData
-              ? `Từ ngày ${formatDate(
-                  currentProfitData.ngayBatDau
-                )} đến ${formatDate(
-                  currentProfitData.ngayKetThuc
-                )} - Tổng lợi nhuận: ${
-                  currentProfitData.summary.tongLoiNhuanFormatted
-                }`
-              : "Báo cáo lợi nhuận sản phẩm theo tháng"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loadingStats ? (
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-3 border rounded"
-                >
-                  <div className="space-y-1">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
-                    <div className="h-3 bg-gray-200 rounded animate-pulse w-20"></div>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                    <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : currentProfitData ? (
-            <div className="space-y-4">
-              {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                <Card className="p-3">
-                  <div className="text-xs text-muted-foreground">
-                    Tổng trị giá nhập
-                  </div>
-                  <div className="text-sm font-bold">
-                    {currentProfitData.summary.tongTriGiaNhapTotalFormatted}
-                  </div>
-                </Card>
-                <Card className="p-3">
-                  <div className="text-xs text-muted-foreground">
-                    Tổng trị giá bán
-                  </div>
-                  <div className="text-sm font-bold">
-                    {currentProfitData.summary.tongTriGiaXuatTotalFormatted}
-                  </div>
-                </Card>
-                <Card className="p-3">
-                  <div className="text-xs text-muted-foreground">
-                    Tổng lợi nhuận
-                  </div>
-                  <div className="text-sm font-bold">
-                    {currentProfitData.summary.tongLoiNhuanFormatted}
-                  </div>
-                </Card>
-                <Card className="p-3">
-                  <div className="text-xs text-muted-foreground">
-                    % Lợi nhuận TB
-                  </div>
-                  <div className="text-sm font-bold">
-                    {
-                      currentProfitData.summary
-                        .phanTramLoiNhuanTrungBinhFormatted
-                    }
-                  </div>
-                </Card>
-              </div>
-
-              {/* Profit by Category Grid */}
-              {Object.keys(profitByCategory).length > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">
-                    Lợi nhuận theo loại sản phẩm
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {Object.entries(profitByCategory).map(
-                      ([category, data]) => (
-                        <div
-                          key={category}
-                          className="p-4 border rounded-lg hover:bg-muted/50 transition-colors bg-white dark:bg-gray-800 shadow-sm"
-                        >
-                          <div className="space-y-2">
-                            <div className="font-semibold text-lg text-primary">
-                              {category}
-                            </div>
-                            <div className="space-y-1">
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">
-                                  Số sản phẩm:
-                                </span>
-                                <span className="font-medium">
-                                  {data.itemCount}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">
-                                  Trị giá nhập:
-                                </span>
-                                <span className="font-medium">
-                                  {formatPrice(data.totalGiaNhap)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">
-                                  Trị giá xuất:
-                                </span>
-                                <span className="font-medium">
-                                  {formatPrice(data.totalGiaXuat)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center pt-1 border-t">
-                                <span className="text-sm font-medium">
-                                  Lợi nhuận:
-                                </span>
-                                <span
-                                  className={`font-bold ${
-                                    data.totalLoiNhuan > 0
-                                      ? "text-green-600"
-                                      : "text-red-600"
-                                  }`}
-                                >
-                                  {formatPrice(data.totalLoiNhuan)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">
-                                  % Lợi nhuận:
-                                </span>
-                                <span
-                                  className={`font-medium ${
-                                    data.phanTramLoiNhuan > 0
-                                      ? "text-green-600"
-                                      : "text-red-600"
-                                  }`}
-                                >
-                                  {data.phanTramLoiNhuan.toFixed(1)}%
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Quick Stats */}
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {currentProfitData.summary.soLuongSanPham} sản phẩm được
-                    phân tích
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Trong khoảng thời gian từ{" "}
-                    {formatDate(currentProfitData.ngayBatDau)} đến{" "}
-                    {formatDate(currentProfitData.ngayKetThuc)}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4">
-                Không thể tải dữ liệu lợi nhuận
-              </p>
-              <ProfitReport />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Profit Dashboard Section with Charts */}
+      <ProfitDashboardSection />
 
       {/* Recent Orders section */}
       <Card>
