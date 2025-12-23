@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogFooter } from "@/components/ui/dialog";
+import { MultiProductReviewDialog } from "@/components/MultiProductReviewDialog";
+import { ReturnRequestDialog } from "@/components/ReturnRequestDialog";
 import { useApp } from "@/contexts/AppContext";
 import { getOrderDetail, cancelOrder } from "@/services/api";
 import {
@@ -191,8 +193,9 @@ const OrderDetailSkeleton = () => (
             {Array.from({ length: 3 }).map((_, index) => (
               <div
                 key={index}
-                className={`flex items-center p-4 ${index !== 2 ? "border-b border-gray-200" : ""
-                  }`}
+                className={`flex items-center p-4 ${
+                  index !== 2 ? "border-b border-gray-200" : ""
+                }`}
               >
                 <div className="w-20 h-20 bg-white rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
                   <Skeleton className="w-full h-full" />
@@ -622,6 +625,18 @@ export default function OrderDetail() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
 
+  // Review dialog state
+  const [reviewDialog, setReviewDialog] = useState({
+    isOpen: false,
+    productsToReview: [],
+  });
+
+  // Return request dialog state
+  const [returnRequestDialog, setReturnRequestDialog] = useState({
+    isOpen: false,
+    order: null,
+  });
+
   // Progressive loading states
   const [progressiveStates, setProgressiveStates] = useState({
     header: false,
@@ -753,16 +768,103 @@ export default function OrderDetail() {
     0
   );
 
+  // Check if order update time is within 7 days
+  const isWithin7Days = () => {
+    if (!order.NgayCapNhat) return false;
+    const updateDate = new Date(order.NgayCapNhat);
+    const today = new Date();
+    const diffTime = today.getTime() - updateDate.getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    return diffDays <= 7;
+  };
+
+  // Handle review click
+  const handleReviewClick = () => {
+    const productsToReview = order.CT_DonDatHangs.filter(
+      (ct) => !ct.BinhLuans || ct.BinhLuans.length === 0
+    ).map((ct) => ({
+      MaCTDonDatHang: ct.MaCTDDH,
+      TenSP: ct.ChiTietSanPham?.SanPham?.TenSP || "",
+      AnhSP: ct.ChiTietSanPham?.SanPham?.AnhSanPhams?.[0]?.DuongDan || "",
+      KichThuoc: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || "",
+      MauSac: ct.ChiTietSanPham?.Mau?.TenMau || "",
+      SoLuong: ct.SoLuong,
+      DonGia: ct.DonGia || 0,
+    }));
+
+    setReviewDialog({
+      isOpen: true,
+      productsToReview,
+    });
+  };
+
+  // Handle review submitted
+  const handleReviewSubmitted = () => {
+    loadOrderDetail(); // Refresh order after review submission
+  };
+
+  // Handle return request
+  const handleReturnRequest = () => {
+    // Transform order data to match ReturnRequestDialog expected format
+    const transformedOrder = {
+      MaDDH: order.MaDDH,
+      NgayTao: order.NgayTao,
+      TrangThai: {
+        Ma: order.MaTTDH || 0,
+        Ten: statusInfo.label || "Không xác định",
+      },
+      TongTien: order.CT_DonDatHangs.reduce(
+        (sum, ct) => sum + Number(ct.DonGia) * ct.SoLuong,
+        0
+      ),
+      DiaChiGiao: order.DiaChiGiao,
+      SDTNguoiNhan: order.SDT,
+      TenNguoiNhan: order.NguoiNhan,
+      items: order.CT_DonDatHangs.map((ct) => {
+        const images = ct.ChiTietSanPham?.SanPham?.AnhSanPhams || [];
+        const mainImage = images.find((img) => img.AnhChinh) || images[0];
+        const imageUrl =
+          mainImage?.DuongDan ||
+          "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=600&fit=crop";
+
+        return {
+          MaCTDDH: ct.MaCTDDH,
+          SanPham: {
+            MaSP: ct.ChiTietSanPham?.MaSP || 0,
+            TenSP: ct.ChiTietSanPham?.SanPham?.TenSP || "",
+            AnhSP: imageUrl,
+            KichThuoc: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc || "",
+            MauSac: ct.ChiTietSanPham?.Mau?.TenMau || "",
+          },
+          SoLuong: ct.SoLuong,
+          DonGia: Number(ct.DonGia),
+          ThanhTien: Number(ct.DonGia) * ct.SoLuong,
+        };
+      }),
+    };
+
+    setReturnRequestDialog({
+      isOpen: true,
+      order: transformedOrder,
+    });
+  };
+
+  // Handle return requested
+  const handleReturnRequested = () => {
+    loadOrderDetail(); // Refresh order after return request is submitted
+  };
+
   return (
     <div>
       {/* Main Card */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {/* Header thông tin đơn hàng */}
         <div
-          className={`text-white p-6 transition-all duration-500 ${progressiveStates.header
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-4"
-            }`}
+          className={`text-white p-6 transition-all duration-500 ${
+            progressiveStates.header
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-4"
+          }`}
           style={{ background: `linear-gradient(to right, #684827, #5a3e22)` }}
         >
           <div className="flex items-center justify-between mb-4">
@@ -806,10 +908,11 @@ export default function OrderDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Thông tin người nhận */}
             <div
-              className={`bg-gray-50 rounded-lg p-5 transition-all duration-500 ${progressiveStates.userInfo
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-                }`}
+              className={`bg-gray-50 rounded-lg p-5 transition-all duration-500 ${
+                progressiveStates.userInfo
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-4"
+              }`}
             >
               <div className="flex items-center mb-4">
                 <div
@@ -855,10 +958,11 @@ export default function OrderDetail() {
 
             {/* Thông tin xử lý */}
             <div
-              className={`bg-gray-50 rounded-lg p-5 transition-all duration-500 ${progressiveStates.processInfo
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-                }`}
+              className={`bg-gray-50 rounded-lg p-5 transition-all duration-500 ${
+                progressiveStates.processInfo
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-4"
+              }`}
             >
               <div className="flex items-center mb-4">
                 <div className="bg-green-100 p-2 rounded-lg mr-3">
@@ -902,10 +1006,11 @@ export default function OrderDetail() {
 
           {/* Chi tiết sản phẩm */}
           <div
-            className={`mb-8 transition-all duration-500 ${progressiveStates.productDetails
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-4"
-              }`}
+            className={`mb-8 transition-all duration-500 ${
+              progressiveStates.productDetails
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+            }`}
           >
             <div className="flex items-center mb-6">
               <div className="bg-orange-100 p-2 rounded-lg mr-3">
@@ -932,10 +1037,11 @@ export default function OrderDetail() {
                 return (
                   <div
                     key={ct.MaCTDDH}
-                    className={`flex items-center p-4 transition-all duration-300 ${index !== order.CT_DonDatHangs.length - 1
-                      ? "border-b border-gray-200"
-                      : ""
-                      }`}
+                    className={`flex items-center p-4 transition-all duration-300 ${
+                      index !== order.CT_DonDatHangs.length - 1
+                        ? "border-b border-gray-200"
+                        : ""
+                    }`}
                     style={{
                       animationDelay: `${index * 100}ms`,
                       animation: progressiveStates.productDetails
@@ -993,10 +1099,11 @@ export default function OrderDetail() {
 
           {/* Tổng cộng và thao tác */}
           <div
-            className={`border-t pt-6 transition-all duration-500 ${progressiveStates.actions
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-4"
-              }`}
+            className={`border-t pt-6 transition-all duration-500 ${
+              progressiveStates.actions
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+            }`}
           >
             <div className="flex items-center justify-between">
               <div className="flex space-x-3">
@@ -1015,15 +1122,20 @@ export default function OrderDetail() {
                       variant="outline"
                       className="hover:bg-orange-50"
                       style={{ borderColor: "#684827", color: "#684827" }}
+                      onClick={handleReviewClick}
                     >
                       Đánh giá
                     </Button>
-                    <Button
-                      variant="outline"
-                      className="border-orange-300 text-orange-600 hover:bg-orange-50"
-                    >
-                      Yêu cầu trả hàng
-                    </Button>
+                    {/* Only show return request button if order is within 7 days */}
+                    {isWithin7Days() && (
+                      <Button
+                        variant="outline"
+                        className="border-orange-300 text-orange-600 hover:bg-orange-50"
+                        onClick={handleReturnRequest}
+                      >
+                        Yêu cầu trả hàng
+                      </Button>
+                    )}
                   </>
                 )}
               </div>
@@ -1109,6 +1221,22 @@ export default function OrderDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Review Dialog */}
+      <MultiProductReviewDialog
+        isOpen={reviewDialog.isOpen}
+        onClose={() => setReviewDialog({ isOpen: false, productsToReview: [] })}
+        productsToReview={reviewDialog.productsToReview}
+        onReviewSubmitted={handleReviewSubmitted}
+      />
+
+      {/* Return Request Dialog */}
+      <ReturnRequestDialog
+        isOpen={returnRequestDialog.isOpen}
+        onClose={() => setReturnRequestDialog({ isOpen: false, order: null })}
+        order={returnRequestDialog.order}
+        onReturnRequested={handleReturnRequested}
+      />
 
       {/* CSS Animation keyframes */}
       <style jsx>{`
