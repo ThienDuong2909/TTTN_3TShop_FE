@@ -88,13 +88,13 @@ export const OrderDialogsContainer: React.FC<OrderDialogsContainerProps> = ({
       />
 
       {/* Cancel Order Dialog */}
-      <CancelOrderDialog
+      {/* <CancelOrderDialog
         isOpen={showCancelModal}
         onClose={closeCancelModal}
         selectedOrder={selectedOrder}
         onConfirm={confirmCancelOrder}
         loading={cancelLoading}
-      />
+      /> */}
     </>
   );
 };

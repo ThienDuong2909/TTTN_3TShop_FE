@@ -50,6 +50,16 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   };
   const StatusIcon = statusInfo.icon;
 
+  // Check if order update time is within 7 days
+  const isWithin7Days = () => {
+    if (!order.NgayCapNhat) return false;
+    const updateDate = new Date(order.NgayCapNhat);
+    const today = new Date();
+    const diffTime = today.getTime() - updateDate.getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    return diffDays <= 7;
+  };
+
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -149,8 +159,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       {/* Sản phẩm ẩn với animation */}
       {hasMoreProducts && (
         <div
-          className={`overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
-            }`}
+          className={`overflow-hidden transition-all duration-500 ease-in-out ${
+            isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+          }`}
           style={{
             transform: isExpanded ? "translateY(0)" : "translateY(-10px)",
           }}
@@ -167,8 +178,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium transition-all duration-200 hover:scale-105"
           >
             <div
-              className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : "rotate-0"
-                }`}
+              className={`transition-transform duration-300 ${
+                isExpanded ? "rotate-180" : "rotate-0"
+              }`}
             >
               <ChevronDown className="w-4 h-4" />
             </div>
@@ -193,43 +205,45 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           )} */}
           {(order.TrangThaiDH?.TrangThai === "HOANTAT" ||
             order.TrangThaiDH?.TrangThai === "TRAHANG") && (
-              <>
-                {hasReviews(order) ? (
-                  <Button
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleViewReviews(order);
-                    }}
-                    className="text-blue-600 border-blue-600 hover:bg-blue-50 transition-colors duration-200"
-                  >
-                    Xem đánh giá
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleReviewClick(order);
-                    }}
-                    className="transition-colors duration-200"
-                  >
-                    Đánh Giá
-                  </Button>
-                )}
-                {/* Return/Return Request buttons logic */}
-                {hasReturnSlip && hasReturnSlip(order) ? (
-                  <Button
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleViewReturnDetails && handleViewReturnDetails(order);
-                    }}
-                    className="text-green-600 border-green-600 hover:bg-green-50 transition-colors duration-200"
-                  >
-                    Xem thông tin trả hàng
-                  </Button>
-                ) : (
+            <>
+              {hasReviews(order) ? (
+                <Button
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewReviews(order);
+                  }}
+                  className="text-blue-600 border-blue-600 hover:bg-blue-50 transition-colors duration-200"
+                >
+                  Xem đánh giá
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleReviewClick(order);
+                  }}
+                  className="transition-colors duration-200"
+                >
+                  Đánh Giá
+                </Button>
+              )}
+              {/* Return/Return Request buttons logic */}
+              {hasReturnSlip && hasReturnSlip(order) ? (
+                <Button
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewReturnDetails && handleViewReturnDetails(order);
+                  }}
+                  className="text-green-600 border-green-600 hover:bg-green-50 transition-colors duration-200"
+                >
+                  Xem thông tin trả hàng
+                </Button>
+              ) : (
+                // Only show return request button if order is within 7 days
+                isWithin7Days() && (
                   <Button
                     variant="outline"
                     onClick={(e) => {
@@ -240,9 +254,10 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                   >
                     Yêu cầu trả hàng, hoàn tiền
                   </Button>
-                )}
-              </>
-            )}
+                )
+              )}
+            </>
+          )}
         </div>
         <div>
           <span className="text-gray-600">Thành tiền: </span>
