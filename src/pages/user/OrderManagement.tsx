@@ -20,50 +20,50 @@ import { useNavigate } from "react-router-dom";
 const TABS = [
   { label: "Tất cả", value: "ALL", icon: Package, color: "text-gray-600" },
   {
-    label: "Chờ Duyệt",
-    value: "CHOXACNHAN",
+    label: "Đã xác nhận",
+    value: 2, // Status code for approved orders
     icon: Clock,
     color: "text-yellow-600",
   },
   {
     label: "Đang vận chuyển",
-    value: "DANGGIAO",
+    value: 3, // Status code for shipping orders
     icon: Truck,
     color: "text-blue-600",
   },
   {
     label: "Hoàn thành",
-    value: "HOANTAT",
+    value: 4, // Status code for completed orders
     icon: CheckCircle,
     color: "text-green-600",
   },
-  // { label: "Đã huỷ", value: "DAHUY", icon: XCircle, color: "text-red-600" },
+  // { label: "Đã huỷ", value: 5, icon: XCircle, color: "text-red-600" },
   {
     label: "Trả hàng/Hoàn tiền",
-    value: "TRAHANG",
+    value: 7, // Status code for returned orders
     icon: RotateCcw,
     color: "text-purple-600",
   },
 ];
 
 const STATUS_MAP = {
-  CHOXACNHAN: {
-    label: "Chờ duyệt",
+  2: {
+    label: "Đã xác nhận",
     color: "bg-yellow-100 text-yellow-800",
     icon: Clock,
   },
-  DANGGIAO: {
+  3: {
     label: "Đang vận chuyển",
     color: "bg-blue-100 text-blue-800",
     icon: Truck,
   },
-  HOANTAT: {
+  4: {
     label: "Hoàn thành",
     color: "bg-green-100 text-green-800",
     icon: CheckCircle,
   },
-  DAHUY: { label: "Đã huỷ", color: "bg-red-100 text-red-800", icon: XCircle },
-  TRAHANG: {
+  5: { label: "Đã huỷ", color: "bg-red-100 text-red-800", icon: XCircle },
+  7: {
     label: "Trả hàng/Hoàn tiền",
     color: "bg-purple-100 text-purple-800",
     icon: Package,
@@ -80,7 +80,7 @@ function formatPrice(price) {
 export default function OrderManagement() {
   const { state } = useApp();
   const [orders, setOrders] = useState([]);
-  const [tab, setTab] = useState("ALL");
+  const [tab, setTab] = useState(2); // Default to "Đã xác nhận" tab
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [reviewDialog, setReviewDialog] = useState({
@@ -130,7 +130,7 @@ export default function OrderManagement() {
   const filteredOrders = orders
     .filter((order) => {
       if (tab === "ALL") return true;
-      return order.TrangThaiDH?.TrangThai === tab;
+      return order.MaTTDH === tab;
     })
     .filter((order) => {
       if (!search.trim()) return true;
@@ -197,12 +197,12 @@ export default function OrderManagement() {
 
   // Check if order can be returned (completed orders without return slip)
   const canReturnOrder = (order) => {
-    return order.TrangThaiDH?.TrangThai === "HOANTAT" && !hasReturnSlip(order);
+    return order.MaTTDH === 4 && !hasReturnSlip(order);
   };
 
   // Check if order is in return status
   const isReturnStatus = (order) => {
-    return order.TrangThaiDH?.TrangThai === "TRAHANG";
+    return order.MaTTDH === 7;
   };
 
   // Handle review click
@@ -261,10 +261,8 @@ export default function OrderManagement() {
       MaDDH: order.MaDDH,
       NgayTao: order.NgayTao,
       TrangThai: {
-        Ma: order.TrangThaiDH?.MaTTDH || 0,
-        Ten:
-          STATUS_MAP[order.TrangThaiDH?.TrangThai]?.label ||
-          order.TrangThaiDH?.Note,
+        Ma: order.MaTTDH || 0,
+        Ten: STATUS_MAP[order.MaTTDH]?.label || "Không xác định",
       },
       TongTien: order.CT_DonDatHangs.reduce(
         (sum, ct) => sum + Number(ct.DonGia) * ct.SoLuong,
