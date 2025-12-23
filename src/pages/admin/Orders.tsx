@@ -137,7 +137,7 @@ export default function Orders() {
   const isDeliveryStaff = currentUser?.role === "NhanVienGiaoHang";
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("1");
+  const [activeTab, setActiveTab] = useState("2");
   const [sortBy, setSortBy] = useState<string | null>(null); // null means no sorting
   const [sortOrder, setSortOrder] = useState<"ASC" | "DESC" | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -204,7 +204,7 @@ export default function Orders() {
   // Order status mapping
   const ORDER_STATUSES = {
     "1": { label: "Đã đặt", color: "secondary", icon: Clock },
-    "2": { label: "Đã duyệt", color: "default", icon: CheckCircle },
+    "2": { label: "Đã xác nhận", color: "default", icon: CheckCircle },
     "3": { label: "Đang giao", color: "default", icon: Package },
     "4": { label: "Hoàn tất", color: "outline", icon: CheckCircle },
     "5": { label: "Hủy", color: "destructive", icon: XCircle },
@@ -988,14 +988,14 @@ export default function Orders() {
       icon: Package,
       color: "text-blue-600",
     },
+    // {
+    //   title: isDeliveryStaff ? "Chờ xử lý" : "Đã đặt",
+    //   value: stats.placed,
+    //   icon: Clock,
+    //   color: "text-yellow-600",
+    // },
     {
-      title: isDeliveryStaff ? "Chờ xử lý" : "Đã đặt",
-      value: stats.placed,
-      icon: Clock,
-      color: "text-yellow-600",
-    },
-    {
-      title: isDeliveryStaff ? "Được duyệt" : "Đã duyệt",
+      title: isDeliveryStaff ? "Đã xác nhận" : "Đã xác nhận",
       value: stats.approved,
       icon: CheckCircle,
       color: "text-blue-600",
@@ -1035,7 +1035,7 @@ export default function Orders() {
       <main className="py-6">
         <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           {/* Statistics */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             {statisticsCards.map((stat, index) => (
               <Card key={index} className="shadow-sm">
                 <CardContent className="p-4">
@@ -1076,17 +1076,17 @@ export default function Orders() {
               >
                 <TabsList
                   className={`grid w-full ${
-                    isDeliveryStaff ? "grid-cols-3 mb-6" : "grid-cols-5 mb-6"
+                    isDeliveryStaff ? "grid-cols-3 mb-6" : "grid-cols-4 mb-6"
                   }`}
                 >
-                  {!isDeliveryStaff && (
+                  {/* {!isDeliveryStaff && (
                     <TabsTrigger value="1" className="text-xs">
                       Đã đặt ({stats.placed})
                     </TabsTrigger>
-                  )}
+                  )} */}
                   {!isDeliveryStaff && (
                     <TabsTrigger value="2" className="text-xs">
-                      Đã duyệt ({stats.approved})
+                      Đã xác nhận ({stats.approved})
                     </TabsTrigger>
                   )}
                   <TabsTrigger value="3" className="text-xs">
