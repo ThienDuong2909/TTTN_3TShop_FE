@@ -489,7 +489,7 @@ export default function InventoryDashboardSection() {
                 </div>
 
                 {/* Top 5 Categories by Inventory Value */}
-                <div className="border rounded-lg overflow-hidden">
+                {/* <div className="border rounded-lg overflow-hidden">
                   <h3 className="text-lg font-bold text-black p-4 flex items-center gap-2">
                     <Trophy className="h-5 w-5" />
                     Top 5 danh mục có trị giá tồn kho cao nhất
@@ -568,7 +568,6 @@ export default function InventoryDashboardSection() {
                       })}
                     </TableBody>
                   </Table>
-                  {/* Total row */}
                   <div className="border-t bg-muted/50 p-3 flex justify-between items-center">
                     <span className="font-semibold">
                       Tổng trị giá tồn kho ({categoryData.length} danh mục)
@@ -582,7 +581,7 @@ export default function InventoryDashboardSection() {
                       )}
                     </span>
                   </div>
-                </div>
+                </div> */}
               </div>
             )}
 
@@ -590,7 +589,7 @@ export default function InventoryDashboardSection() {
             {viewMode === "product" && (
               <div className="space-y-6">
                 {/* Top 10 Products by Inventory Value */}
-                <div className="border rounded-lg overflow-hidden">
+                {/* <div className="border rounded-lg overflow-hidden">
                   <h3 className="text-lg font-bold text-black p-4 flex items-center gap-2">
                     <Trophy className="h-5 w-5" />
                     Top 10 sản phẩm có trị giá tồn kho cao nhất
@@ -669,7 +668,7 @@ export default function InventoryDashboardSection() {
                       })()}
                     </TableBody>
                   </Table>
-                </div>
+                </div> */}
 
                 {/* Full Product Table */}
                 <div className="border rounded-lg overflow-hidden">

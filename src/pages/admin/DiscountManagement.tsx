@@ -1,10 +1,9 @@
 import {
-  ArrowLeft,
   Calendar,
   CheckCircle,
   Clock,
+  Edit,
   Eye,
-  Filter,
   Package,
   Plus,
   Tag,
@@ -14,6 +13,9 @@ import {
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { CreateDiscountPeriodDialog } from "../../components/CreateDiscountDialog";
+import { DiscountPeriodDetailDialog } from "../../components/DiscountDetailDialog";
+import { EditDiscountDialog } from "../../components/EditDiscountDialog";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import {
@@ -48,8 +50,6 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import { deletePromotion, getPromotions } from "../../services/api";
-import { CreateDiscountPeriodDialog } from "../../components/CreateDiscountDialog";
-import { DiscountPeriodDetailDialog } from "../../components/DiscountDetailDialog";
 // import { useApp } from "../context/AppContext";
 
 // Simple mock user state for testing
@@ -127,6 +127,8 @@ export default function DiscountManagement() {
   const [periodToDelete, setPeriodToDelete] = useState<DiscountPeriod | null>(
     null
   );
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [periodToEdit, setPeriodToEdit] = useState<DiscountPeriod | null>(null);
 
   // Load discount periods from API
   useEffect(() => {
@@ -274,6 +276,11 @@ export default function DiscountManagement() {
   const handleDeleteDiscount = (period: DiscountPeriod) => {
     setPeriodToDelete(period);
     setShowDeleteDialog(true);
+  };
+
+  const handleEditDiscount = (period: DiscountPeriod) => {
+    setPeriodToEdit(period);
+    setShowEditDialog(true);
   };
 
   const confirmDeleteDiscount = async () => {
@@ -474,21 +481,24 @@ export default function DiscountManagement() {
                         </Button>
                         {isAdmin && (
                           <>
-                            {/* <Button
+                            <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleEditDiscount(period)}
                             >
                               <Edit className="h-3 w-3" />
-                            </Button> */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-600 hover:text-red-700"
-                              onClick={() => handleDeleteDiscount(period)}
-                            >
-                              <Trash2 className="h-3 w-3" />
                             </Button>
+                            {/* Hide Delete button for active promotions */}
+                            {period.TrangThai !== "Đang diễn ra" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => handleDeleteDiscount(period)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
                           </>
                         )}
                       </div>
@@ -539,6 +549,23 @@ export default function DiscountManagement() {
             onClose={handleDetailClose}
             period={selectedPeriod}
             onRefresh={loadDiscountPeriods}
+          />
+        )}
+
+        {/* Edit Discount Dialog */}
+        {periodToEdit && (
+          <EditDiscountDialog
+            isOpen={showEditDialog}
+            onClose={() => {
+              setShowEditDialog(false);
+              setPeriodToEdit(null);
+            }}
+            discount={periodToEdit}
+            onSuccess={() => {
+              setShowEditDialog(false);
+              setPeriodToEdit(null);
+              loadDiscountPeriods();
+            }}
           />
         )}
 
