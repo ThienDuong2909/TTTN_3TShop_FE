@@ -1568,19 +1568,29 @@ export const createPromotion = async (promotionData) => {
 };
 
 // Cập nhật đợt giảm giá
-export const updatePromotion = async (promotionId, promotionData) => {
+// export const updatePromotion = async (promotionId, promotionData) => {
+//   try {
+//     const response = await api.put(`/promotions/${promotionId}`, promotionData);
+//     return response.data;
+//   } catch (error) {
+//     return handleError(error);
+//   }
+// };
+
+// Xóa đợt giảm giá
+export const deletePromotion = async (promotionId) => {
   try {
-    const response = await api.put(`/promotions/${promotionId}`, promotionData);
+    const response = await api.delete(`/promotions/${promotionId}`);
     return response.data;
   } catch (error) {
     return handleError(error);
   }
 };
 
-// Xóa đợt giảm giá
-export const deletePromotion = async (promotionId) => {
+// Cập nhật đợt giảm giá
+export const updatePromotion = async (promotionId, data) => {
   try {
-    const response = await api.delete(`/promotions/${promotionId}`);
+    const response = await api.put(`/promotions/${promotionId}`, data);
     return response.data;
   } catch (error) {
     return handleError(error);
