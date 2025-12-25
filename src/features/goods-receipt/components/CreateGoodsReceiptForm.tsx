@@ -495,7 +495,7 @@ export default function CreateGoodsReceiptForm({
                   <SelectItem key={po.MaPDH || po.id} value={po.MaPDH || po.id}>
                     {po.MaPDH || po.id} -{" "}
                     {po.NhaCungCap?.TenNCC || po.supplierName} -{" "}
-                    {formatDate(po.NgayDat)}
+                    {formatDate(po.NgayKienNghiGiao)}
                   </SelectItem>
                 ))
               )}
