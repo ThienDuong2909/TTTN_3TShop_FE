@@ -88,19 +88,16 @@ function Footer() {
           <ul className="space-y-3">
             {customerLinks.map((link) => (
               <li key={link.name}>
-                <Link
-                  to={link.href}
-                  className="text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
-                >
+                <p className="text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
                   {link.name}
-                </Link>
+                </p>
               </li>
             ))}
           </ul>
         </div>
 
         {/* Categories */}
-        <div>
+        {/* <div>
           <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
             Danh mục
           </h4>
@@ -116,7 +113,7 @@ function Footer() {
               </li>
             ))}
           </ul>
-        </div>
+        </div> */}
 
         {/* Support */}
         <div>
@@ -126,12 +123,9 @@ function Footer() {
           <ul className="space-y-3">
             {supportLinks.map((link) => (
               <li key={link.name}>
-                <Link
-                  to={link.href}
-                  className="text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
-                >
+                <p className="text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
                   {link.name}
-                </Link>
+                </p>
               </li>
             ))}
           </ul>
